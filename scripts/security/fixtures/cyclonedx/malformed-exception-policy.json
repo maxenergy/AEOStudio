@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "aeostudio.cyclonedx-license-policy.v1",
+  "allowlist": {
+    "name": "Fixture exact SPDX allowlist",
+    "licenses": ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC", "0BSD"]
+  },
+  "exceptions": [
+    {
+      "name": "Unowned fixture exception",
+      "scope": {
+        "purl": "pkg:npm/reviewed-package@3.1.4"
+      },
+      "license": "GPL-3.0-only",
+      "reason": "This fixture intentionally omits the accountable owner.",
+      "compensatingControl": "Distribution remains blocked unless required notices are present.",
+      "expiresAt": "2099-12-31"
+    }
+  ]
+}

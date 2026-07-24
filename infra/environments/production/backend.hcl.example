@@ -1,0 +1,5 @@
+bucket         = "replace-with-production-opentofu-state-bucket"
+key            = "aeostudio/production/opentofu.tfstate"
+region         = "ap-southeast-1"
+encrypt        = true
+use_lockfile   = true

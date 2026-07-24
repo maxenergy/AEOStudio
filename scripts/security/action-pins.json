@@ -1,0 +1,17 @@
+{
+  "actions/attest": "f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6",
+  "actions/checkout": "11d5960a326750d5838078e36cf38b85af677262",
+  "actions/download-artifact": "d3f86a106a0bac45b974a628896c90dbdf5c8093",
+  "actions/setup-node": "49933ea5288caeca8642d1e84afbd3f7d6820020",
+  "actions/upload-artifact": "ea165f8d65b6e75b540449e92b4886f43607fa02",
+  "anchore/sbom-action": "e22c389904149dbc22b58101806040fa8d37a610",
+  "aquasecurity/trivy-action": "ed142fd0673e97e23eac54620cfb913e5ce36c25",
+  "aws-actions/amazon-ecr-login": "d539f0932e70871a027e9d5a9d8fc38589180a64",
+  "aws-actions/amazon-ecs-deploy-task-definition": "c465972ecbd160473f22e683363b422a5412a3de",
+  "aws-actions/amazon-ecs-render-task-definition": "138c24f321fdbdf7edee4a685519d253cae2cdea",
+  "aws-actions/configure-aws-credentials": "61815dcd50bd041e203e49132bacad1fd04d2708",
+  "docker/build-push-action": "10e90e3645eae34f1e60eeb005ba3a3d33f178e8",
+  "docker/setup-buildx-action": "8d2750c68a42422c14e847fe6c8ac0403b4cbd6f",
+  "opentofu/setup-opentofu": "a1320f892987e89d278cc92dc5adc984fb93aca4",
+  "pnpm/action-setup": "b906affcce14559ad1aafd4ab0e942779e9f58b1"
+}

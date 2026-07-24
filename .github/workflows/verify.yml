@@ -1,0 +1,303 @@
+name: Verify
+
+on:
+  pull_request:
+  merge_group:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  application:
+    name: Application and browser gates
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+        with:
+          version: 11.15.1
+          run_install: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.15.0
+          cache: pnpm
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run deterministic verification
+        run: pnpm verify
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run browser acceptance
+        run: pnpm test:e2e
+
+  policy:
+    name: Local security policy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+        with:
+          version: 11.15.1
+          run_install: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.15.0
+          cache: pnpm
+
+      - name: Install locked dependencies
+        run: |
+          pnpm install --frozen-lockfile
+          npm ci --prefix scripts/recovery --ignore-scripts
+
+      - name: Verify npm registry signatures
+        run: |
+          pnpm audit signatures
+          npm audit signatures --prefix scripts/recovery
+
+      - name: Verify secret, license, workflow and infrastructure policy
+        run: pnpm security:verify
+
+  infrastructure:
+    name: OpenTofu static gates
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      TF_IN_AUTOMATION: 'true'
+      TF_INPUT: 'false'
+      TF_PLUGIN_CACHE_DIR: ${{ github.workspace }}/.opentofu-plugin-cache
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Install pinned OpenTofu
+        uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4
+        with:
+          tofu_version: 1.11.6
+          tofu_wrapper: false
+          cache: true
+
+      - name: Prepare provider cache
+        run: mkdir -p "$TF_PLUGIN_CACHE_DIR"
+
+      - name: Check OpenTofu formatting
+        run: tofu fmt -check -recursive infra
+
+      - name: Initialize without backends and validate
+        run: |
+          set -euo pipefail
+          tofu -chdir=infra/bootstrap init -backend=false -input=false -lockfile=readonly
+          tofu -chdir=infra/bootstrap validate
+          tofu -chdir=infra/environments/staging init -backend=false -input=false -lockfile=readonly
+          tofu -chdir=infra/environments/staging validate
+          tofu -chdir=infra/environments/production init -backend=false -input=false -lockfile=readonly
+          tofu -chdir=infra/environments/production validate
+
+  staging_plan:
+    name: Trusted staging OpenTofu plan evidence
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.repository.fork == false
+    needs: [infrastructure, policy]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: staging-plan
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      TF_IN_AUTOMATION: 'true'
+      TF_INPUT: 'false'
+      TF_PLUGIN_CACHE_DIR: ${{ github.workspace }}/.opentofu-plugin-cache
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Check trusted plan prerequisites
+        id: plan_readiness
+        env:
+          ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+          BACKEND_HCL: ${{ secrets.AEO_STAGING_BACKEND_HCL }}
+          EXPECTED_BACKEND_BUCKET: ${{ vars.AEO_STAGING_BACKEND_BUCKET }}
+          PLAN_ROLE_ARN: ${{ vars.AWS_STAGING_PLAN_ROLE_ARN }}
+          TFVARS_JSON: ${{ secrets.AEO_STAGING_PLAN_TFVARS_JSON }}
+        run: |
+          set -euo pipefail
+          mkdir -p output
+          missing=""
+          [[ -n "$ACCOUNT_ID" ]] || missing="${missing}AWS_ACCOUNT_ID,"
+          [[ -n "$PLAN_ROLE_ARN" ]] || missing="${missing}AWS_STAGING_PLAN_ROLE_ARN,"
+          [[ -n "$BACKEND_HCL" ]] || missing="${missing}AEO_STAGING_BACKEND_HCL,"
+          [[ -n "$EXPECTED_BACKEND_BUCKET" ]] || missing="${missing}AEO_STAGING_BACKEND_BUCKET,"
+          [[ -n "$TFVARS_JSON" ]] || missing="${missing}AEO_STAGING_PLAN_TFVARS_JSON,"
+          if [[ -n "$missing" ]]; then
+            jq -n \
+              --arg accountId "$ACCOUNT_ID" \
+              --arg missing "${missing%,}" \
+              --arg repository "$GITHUB_REPOSITORY" \
+              --arg runAttempt "$GITHUB_RUN_ATTEMPT" \
+              --arg runId "$GITHUB_RUN_ID" \
+              --arg sourceRef "$GITHUB_REF" \
+              --arg sourceSha "$GITHUB_SHA" \
+              '{
+                schemaVersion: "aeostudio.opentofu-plan-evidence.v2",
+                status: "NOT_RUN",
+                reason: "MISSING_TRUSTED_CONFIGURATION",
+                environment: "staging",
+                region: "ap-southeast-1",
+                accountId: $accountId,
+                repository: $repository,
+                sourceRef: $sourceRef,
+                sourceSha: $sourceSha,
+                workflowPath: ".github/workflows/verify.yml",
+                workflowName: "Verify",
+                workflowRunId: $runId,
+                workflowRunAttempt: $runAttempt,
+                jobName: "Trusted staging OpenTofu plan evidence",
+                missing: ($missing | split(","))
+              }' > output/task-18-staging-plan-evidence.json
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "OpenTofu staging plan: NOT_RUN (trusted role or reviewed inputs missing)." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          [[ "$ACCOUNT_ID" =~ ^[0-9]{12}$ ]]
+          test "$PLAN_ROLE_ARN" = "arn:aws:iam::${ACCOUNT_ID}:role/aeostudio-staging-plan"
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+
+      - name: Install Node.js for the plan evidence policy
+        if: steps.plan_readiness.outputs.ready == 'true'
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.15.0
+
+      - name: Install pinned OpenTofu
+        if: steps.plan_readiness.outputs.ready == 'true'
+        uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4
+        with:
+          tofu_version: 1.11.6
+          tofu_wrapper: false
+          cache: true
+
+      - name: Materialize reviewed plan inputs
+        if: steps.plan_readiness.outputs.ready == 'true'
+        env:
+          BACKEND_HCL: ${{ secrets.AEO_STAGING_BACKEND_HCL }}
+          EXPECTED_BACKEND_BUCKET: ${{ vars.AEO_STAGING_BACKEND_BUCKET }}
+          TFVARS_JSON: ${{ secrets.AEO_STAGING_PLAN_TFVARS_JSON }}
+        run: |
+          set -euo pipefail
+          umask 077
+          printf '%s\n' "$BACKEND_HCL" > "$RUNNER_TEMP/staging-backend.raw.hcl"
+          printf '%s\n' "$TFVARS_JSON" > "$RUNNER_TEMP/staging.tfvars.json"
+          jq -e 'type == "object"' "$RUNNER_TEMP/staging.tfvars.json" > /dev/null
+          node scripts/infra/staging-backend-config.mjs canonicalize \
+            --input "$RUNNER_TEMP/staging-backend.raw.hcl" \
+            --output "$RUNNER_TEMP/staging-backend.hcl" \
+            --expected-bucket "$EXPECTED_BACKEND_BUCKET"
+          mkdir -p "$TF_PLUGIN_CACHE_DIR"
+
+      - name: Configure read-only staging plan credentials
+        if: steps.plan_readiness.outputs.ready == 'true'
+        uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708
+        with:
+          role-to-assume: ${{ vars.AWS_STAGING_PLAN_ROLE_ARN }}
+          role-session-name: aeostudio-staging-plan-${{ github.run_id }}
+          aws-region: ap-southeast-1
+          allowed-account-ids: ${{ vars.AWS_ACCOUNT_ID }}
+          unset-current-credentials: true
+
+      - name: Initialize the real staging backend
+        if: steps.plan_readiness.outputs.ready == 'true'
+        run: tofu -chdir=infra/environments/staging init -input=false -backend-config="$RUNNER_TEMP/staging-backend.hcl" -lockfile=readonly
+
+      - name: Create redacted staging plan evidence
+        if: steps.plan_readiness.outputs.ready == 'true'
+        env:
+          EXPECTED_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+          PLAN_ROLE_ARN: ${{ vars.AWS_STAGING_PLAN_ROLE_ARN }}
+        run: |
+          set -euo pipefail
+          actual_account_id="$(aws sts get-caller-identity --query Account --output text)"
+          caller_arn="$(aws sts get-caller-identity --query Arn --output text)"
+          test "$actual_account_id" = "$EXPECTED_ACCOUNT_ID"
+          test "$PLAN_ROLE_ARN" = "arn:aws:iam::${EXPECTED_ACCOUNT_ID}:role/aeostudio-staging-plan"
+          set +e
+          tofu -chdir=infra/environments/staging plan -input=false -lock=false -detailed-exitcode \
+            -var-file="$RUNNER_TEMP/staging.tfvars.json" \
+            -out="$RUNNER_TEMP/staging.tfplan"
+          plan_exit=$?
+          set -e
+          if [[ "$plan_exit" -eq 1 ]]; then
+            jq -n \
+              --arg accountId "$actual_account_id" \
+              --arg repository "$GITHUB_REPOSITORY" \
+              --arg runAttempt "$GITHUB_RUN_ATTEMPT" \
+              --arg runId "$GITHUB_RUN_ID" \
+              --arg sourceRef "$GITHUB_REF" \
+              --arg sourceSha "$GITHUB_SHA" \
+              '{
+                schemaVersion: "aeostudio.opentofu-plan-evidence.v2",
+                status: "FAILED",
+                reason: "TOFU_PLAN_FAILED",
+                environment: "staging",
+                region: "ap-southeast-1",
+                accountId: $accountId,
+                repository: $repository,
+                sourceRef: $sourceRef,
+                sourceSha: $sourceSha,
+                workflowPath: ".github/workflows/verify.yml",
+                workflowName: "Verify",
+                workflowRunId: $runId,
+                workflowRunAttempt: $runAttempt,
+                jobName: "Trusted staging OpenTofu plan evidence"
+              }' > output/task-18-staging-plan-evidence.json
+            exit 1
+          fi
+          tofu -chdir=infra/environments/staging show -json "$RUNNER_TEMP/staging.tfplan" > "$RUNNER_TEMP/staging-plan.json"
+          tofu_version="$(tofu version | head -n 1)"
+          AEO_PLAN_ACCOUNT_ID="$actual_account_id" \
+          AEO_PLAN_BACKEND_CONFIG_SHA256="$(sha256sum "$RUNNER_TEMP/staging-backend.hcl" | cut -d ' ' -f 1)" \
+          AEO_PLAN_CALLER_ARN="$caller_arn" \
+          AEO_PLAN_CREATED_AT="$(date -u +%Y-%m-%dT%H:%M:%S.000Z)" \
+          AEO_PLAN_EXIT_CODE="$plan_exit" \
+          AEO_PLAN_ROLE_ARN="$PLAN_ROLE_ARN" \
+          AEO_PLAN_TFVARS_SHA256="$(sha256sum "$RUNNER_TEMP/staging.tfvars.json" | cut -d ' ' -f 1)" \
+          AEO_PLAN_TOFU_VERSION="$tofu_version" \
+            node scripts/infra/staging-plan-evidence.mjs create --plan-json "$RUNNER_TEMP/staging-plan.json" --plan-binary "$RUNNER_TEMP/staging.tfplan" --iac-root infra --output output/task-18-staging-plan-evidence.json
+
+      - name: Upload staging plan status or redacted evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: staging-opentofu-plan-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: output/task-18-staging-plan-evidence.json
+          if-no-files-found: error
+          retention-days: 90

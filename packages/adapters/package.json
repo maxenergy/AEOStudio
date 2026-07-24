@@ -1,0 +1,103 @@
+{
+  "name": "@aeostudio/adapters",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "development": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./generation": {
+      "types": "./src/generation/index.ts",
+      "development": "./src/generation/index.ts",
+      "default": "./dist/generation/index.js"
+    },
+    "./crawler": {
+      "types": "./src/crawler/index.ts",
+      "development": "./src/crawler/index.ts",
+      "default": "./dist/crawler/index.js"
+    },
+    "./identity": {
+      "types": "./src/identity/index.ts",
+      "development": "./src/identity/index.ts",
+      "default": "./dist/identity/index.js"
+    },
+    "./queue": {
+      "types": "./src/queue/index.ts",
+      "development": "./src/queue/index.ts",
+      "default": "./dist/queue/index.js"
+    },
+    "./storage": {
+      "types": "./src/storage/index.ts",
+      "development": "./src/storage/index.ts",
+      "default": "./dist/storage/index.js"
+    },
+    "./publication": {
+      "types": "./src/publication/index.ts",
+      "development": "./src/publication/index.ts",
+      "default": "./dist/publication/index.js"
+    },
+    "./secrets": {
+      "types": "./src/secrets/index.ts",
+      "development": "./src/secrets/index.ts",
+      "default": "./dist/secrets/index.js"
+    },
+    "./backup": {
+      "types": "./src/backup/index.ts",
+      "development": "./src/backup/index.ts",
+      "default": "./dist/backup/index.js"
+    },
+    "./tenant-data-broker": {
+      "types": "./src/tenant-data-broker/index.ts",
+      "development": "./src/tenant-data-broker/index.ts",
+      "default": "./dist/tenant-data-broker/index.js"
+    },
+    "./observability": {
+      "types": "./src/observability/index.ts",
+      "development": "./src/observability/index.ts",
+      "default": "./dist/observability/index.js"
+    },
+    "./observability/redacting-span-exporter": {
+      "types": "./src/observability/redacting-span-exporter.ts",
+      "development": "./src/observability/redacting-span-exporter.ts",
+      "default": "./dist/observability/redacting-span-exporter.js"
+    },
+    "./observability/telemetry": {
+      "types": "./src/observability/telemetry-runtime.ts",
+      "development": "./src/observability/telemetry-runtime.ts",
+      "default": "./dist/observability/telemetry-runtime.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@aeostudio/application": "workspace:*",
+    "@aeostudio/contracts": "workspace:*",
+    "@aeostudio/domain": "workspace:*",
+    "@aws-sdk/client-secrets-manager": "3.1090.0",
+    "@aws-sdk/client-backup": "3.1090.0",
+    "@aws-sdk/client-rds": "3.1090.0",
+    "@aws-sdk/client-s3": "3.1090.0",
+    "@aws-sdk/client-sqs": "3.1090.0",
+    "@opentelemetry/api": "1.9.1",
+    "@opentelemetry/exporter-trace-otlp-http": "0.220.0",
+    "@opentelemetry/instrumentation-aws-sdk": "0.75.0",
+    "@opentelemetry/instrumentation-http": "0.220.0",
+    "@opentelemetry/instrumentation-nestjs-core": "0.66.0",
+    "@opentelemetry/instrumentation-pg": "0.72.0",
+    "@opentelemetry/instrumentation-undici": "0.30.0",
+    "@opentelemetry/resources": "2.9.0",
+    "@opentelemetry/sdk-node": "0.220.0",
+    "@opentelemetry/sdk-trace-base": "2.9.0",
+    "openid-client": "6.8.4",
+    "pino": "10.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "typescript": "6.0.3"
+  }
+}

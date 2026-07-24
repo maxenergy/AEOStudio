@@ -1,0 +1,118 @@
+name: Supply-chain security
+
+on:
+  pull_request:
+  merge_group:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '23 19 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supply-chain-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scanners:
+    name: Blocking dependency, secret and source scans
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out complete history for Gitleaks
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Create scanner cache and evidence directories
+        run: mkdir -p "$RUNNER_TEMP/trivy-cache" "$RUNNER_TEMP/security-evidence"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+        with:
+          version: 11.15.1
+          run_install: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.15.0
+
+      - name: Install locked dependencies
+        run: |
+          pnpm install --frozen-lockfile
+          npm ci --prefix scripts/recovery --ignore-scripts
+
+      - name: Verify npm registry signatures
+        run: |
+          pnpm audit signatures
+          npm audit signatures --prefix scripts/recovery
+
+      - name: Verify Recovery lock publication cutoff
+        run: node scripts/security/verify-npm-lock-release-age.mjs --lock scripts/recovery/package-lock.json --manifest scripts/recovery/package.json
+
+      - name: Run Gitleaks complete-history secret scan
+        run: >-
+          docker run --rm
+          --volume "$PWD:/src:ro"
+          ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
+          detect --source=/src --config=/src/.gitleaks.toml --redact --no-banner --exit-code=1
+
+      - name: Run Trivy high and critical source scan
+        run: >-
+          docker run --rm
+          --volume "$PWD:/src:ro"
+          --volume "$RUNNER_TEMP/trivy-cache:/root/.cache/trivy"
+          aquasec/trivy:0.72.0@sha256:cffe3f5161a47a6823fbd23d985795b3ed72a4c806da4c4df16266c02accdd6f
+          fs --scanners vuln,secret,misconfig --severity HIGH,CRITICAL
+          --exit-code 1 --skip-dirs /src/node_modules --skip-dirs /src/.git /src
+
+      - name: Generate CycloneDX source SBOM
+        run: |
+          pnpm sbom --no-optional \
+            --sbom-format cyclonedx \
+            --sbom-spec-version 1.7 \
+            --out "$RUNNER_TEMP/security-evidence/source-sbom.cdx.json"
+          npm sbom --prefix scripts/recovery --omit=dev --sbom-format cyclonedx \
+            > "$RUNNER_TEMP/security-evidence/recovery-source-sbom.cdx.json"
+
+      - name: Run OSV CycloneDX SBOM scan
+        run: |
+          docker run --rm \
+            --volume "$RUNNER_TEMP/security-evidence:/evidence:ro" \
+            ghcr.io/google/osv-scanner:v2.4.0@sha256:5116601dedc01c1c580eb92371883ec052fc4c13c3fbc109d621a63ac416d475 \
+            scan --sbom=/evidence/source-sbom.cdx.json
+          docker run --rm \
+            --volume "$RUNNER_TEMP/security-evidence:/evidence:ro" \
+            ghcr.io/google/osv-scanner:v2.4.0@sha256:5116601dedc01c1c580eb92371883ec052fc4c13c3fbc109d621a63ac416d475 \
+            scan --sbom=/evidence/recovery-source-sbom.cdx.json
+
+      - name: Enforce named exact CycloneDX license policy
+        run: |
+          node scripts/security/verify-cyclonedx-licenses.mjs \
+            --sbom "$RUNNER_TEMP/security-evidence/source-sbom.cdx.json" \
+            --policy scripts/security/license-policy.json
+          node scripts/security/verify-cyclonedx-licenses.mjs \
+            --sbom "$RUNNER_TEMP/security-evidence/recovery-source-sbom.cdx.json" \
+            --policy scripts/security/license-policy.json
+
+      - name: Bind source SBOM evidence
+        run: |
+          cd "$RUNNER_TEMP/security-evidence"
+          sha256sum source-sbom.cdx.json recovery-source-sbom.cdx.json > source-sboms.sha256
+          sha256sum --check source-sboms.sha256
+
+      - name: Upload CycloneDX evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: source-cyclonedx-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/security-evidence/source-sbom.cdx.json
+            ${{ runner.temp }}/security-evidence/recovery-source-sbom.cdx.json
+            ${{ runner.temp }}/security-evidence/source-sboms.sha256
+          if-no-files-found: error
+          retention-days: 30

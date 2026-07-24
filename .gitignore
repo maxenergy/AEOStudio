@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+.turbo/
+.next/
+dist/
+*.tsbuildinfo
+
+# Test & coverage
+coverage/
+playwright-report/
+.playwright-cli/
+test-results/
+output/
+
+# Terraform
+.terraform/
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# Misc
+*.tgz

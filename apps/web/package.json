@@ -1,0 +1,24 @@
+{
+  "name": "@aeostudio/web",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev -p 3100",
+    "start": "node -e \"delete process.env.NEXT_MANUAL_SIG_HANDLE; require('./.next/standalone/apps/web/server.js')\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aeostudio/adapters": "workspace:*",
+    "@aeostudio/contracts": "workspace:*",
+    "next": "16.2.11",
+    "react": "19.2.7",
+    "react-dom": "19.2.7"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "typescript": "6.0.3"
+  }
+}

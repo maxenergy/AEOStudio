@@ -1,0 +1,12 @@
+node_modules
+.turbo
+.next
+.playwright-cli
+apps/web/next-env.d.ts
+dist
+coverage
+docs
+playwright-report
+test-results
+pnpm-lock.yaml
+GEO_Agent_Implementation_Playbook_v1.0.docx

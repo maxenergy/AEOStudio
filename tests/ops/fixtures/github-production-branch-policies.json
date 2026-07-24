@@ -1,0 +1,11 @@
+{
+  "total_count": 1,
+  "branch_policies": [
+    {
+      "id": 401,
+      "node_id": "BP_kwDOAeostudio_main",
+      "name": "main",
+      "type": "branch"
+    }
+  ]
+}

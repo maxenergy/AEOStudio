@@ -1,0 +1,1 @@
+export const JOB_BUDGET_SERVICE = Symbol('JOB_BUDGET_SERVICE');

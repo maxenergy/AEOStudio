@@ -1,0 +1,15 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "version": 1,
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/denied-package@2.0.0",
+      "name": "denied-package",
+      "version": "2.0.0",
+      "purl": "pkg:npm/denied-package@2.0.0",
+      "licenses": [{ "license": { "id": "GPL-3.0-only" } }]
+    }
+  ]
+}

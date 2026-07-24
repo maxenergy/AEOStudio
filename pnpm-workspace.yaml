@@ -1,0 +1,20 @@
+packages:
+  - apps/*
+  - packages/*
+
+minimumReleaseAge: 1440
+minimumReleaseAgeStrict: true
+minimumReleaseAgeIgnoreMissingTime: false
+trustPolicy: no-downgrade
+blockExoticSubdeps: true
+overrides:
+  find-my-way: 9.7.0
+  js-yaml: 4.3.0
+  postcss: 8.5.12
+  sharp: 0.35.0
+allowBuilds:
+  cpu-features@0.0.10: false
+  esbuild@0.28.1: true
+  protobufjs@7.6.5: true
+  sharp@0.35.0: true
+  ssh2@1.17.0: false

@@ -1,0 +1,15 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "version": 1,
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/reviewed-package@3.1.5",
+      "name": "reviewed-package",
+      "version": "3.1.5",
+      "purl": "pkg:npm/reviewed-package@3.1.5",
+      "licenses": [{ "license": { "id": "GPL-3.0-only" } }]
+    }
+  ]
+}

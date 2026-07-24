@@ -1,0 +1,851 @@
+name: Build, attest and deploy staging
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
+concurrency:
+  group: staging-release
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: ap-southeast-1
+  ADOT_REPOSITORY: aeostudio-adot
+  ADOT_UPSTREAM_IMAGE: public.ecr.aws/aws-observability/aws-otel-collector@sha256:d2bdfff2c377c3d71d78bd5d9ce9862fd535b12134a5739d87a07801297cf9fd
+  API_REPOSITORY: aeostudio-api
+  CRANE_IMAGE: gcr.io/go-containerregistry/crane@sha256:3a62904867999848c5b16bb9b1eb8b2a7bbaa6061203a90037c91bf33b6b567e
+  RECOVERY_REPOSITORY: aeostudio-recovery
+  WEB_REPOSITORY: aeostudio-web
+  WORKER_REPOSITORY: aeostudio-worker
+
+jobs:
+  verify:
+    name: Blocking application and browser verification
+    permissions:
+      contents: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Check out release source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+        with:
+          version: 11.15.1
+          run_install: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.15.0
+          cache: pnpm
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run deterministic verification
+        run: pnpm verify
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run browser acceptance
+        run: pnpm test:e2e
+
+  security:
+    name: Blocking policy, dependency, secret and source scans
+    permissions:
+      contents: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out complete history for policy and secret scans
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+        with:
+          version: 11.15.1
+          run_install: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.15.0
+          cache: pnpm
+
+      - name: Install locked dependencies
+        run: |
+          pnpm install --frozen-lockfile
+          npm ci --prefix scripts/recovery --ignore-scripts
+
+      - name: Verify npm registry signatures
+        run: |
+          pnpm audit signatures
+          npm audit signatures --prefix scripts/recovery
+
+      - name: Verify Recovery lock publication cutoff
+        run: node scripts/security/verify-npm-lock-release-age.mjs --lock scripts/recovery/package-lock.json --manifest scripts/recovery/package.json
+
+      - name: Verify secret, license, workflow and infrastructure policy
+        run: pnpm security:verify
+
+      - name: Create scanner cache directory
+        run: mkdir -p "$RUNNER_TEMP/trivy-cache"
+
+      - name: Run blocking OSV dependency scan
+        run: >-
+          docker run --rm
+          --volume "$PWD:/src:ro"
+          ghcr.io/google/osv-scanner:v2.4.0@sha256:5116601dedc01c1c580eb92371883ec052fc4c13c3fbc109d621a63ac416d475
+          scan source --lockfile=/src/pnpm-lock.yaml
+
+      - name: Run blocking complete-history Gitleaks scan
+        run: >-
+          docker run --rm
+          --volume "$PWD:/src:ro"
+          ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
+          detect --source=/src --config=/src/.gitleaks.toml --redact --no-banner --exit-code=1
+
+      - name: Run blocking high and critical Trivy source scan
+        run: >-
+          docker run --rm
+          --volume "$PWD:/src:ro"
+          --volume "$RUNNER_TEMP/trivy-cache:/root/.cache/trivy"
+          aquasec/trivy:0.72.0@sha256:cffe3f5161a47a6823fbd23d985795b3ed72a4c806da4c4df16266c02accdd6f
+          fs --scanners vuln,secret,misconfig --severity HIGH,CRITICAL
+          --exit-code 1 --skip-dirs /src/node_modules --skip-dirs /src/.git /src
+
+  build:
+    name: Build images once, scan and attest
+    needs: [verify, security]
+    if: ${{ needs.verify.result == 'success' && needs.security.result == 'success' }}
+    permissions:
+      artifact-metadata: write
+      attestations: write
+      contents: read
+      id-token: write
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    outputs:
+      artifact-name: ${{ steps.manifest.outputs.artifact_name }}
+    steps:
+      - name: Check out release source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Validate the least-privilege staging build role
+        env:
+          EXPECTED_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+          ROLE_ARN: ${{ vars.AWS_STAGING_BUILD_ROLE_ARN }}
+        run: |
+          test -n "$EXPECTED_ACCOUNT_ID"
+          test "$ROLE_ARN" = "arn:aws:iam::${EXPECTED_ACCOUNT_ID}:role/aeostudio-staging-image-builder"
+
+      - name: Acquire short-lived AWS credentials with GitHub OIDC
+        uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708
+        with:
+          role-to-assume: ${{ vars.AWS_STAGING_BUILD_ROLE_ARN }}
+          role-session-name: aeostudio-build-${{ github.run_id }}
+          aws-region: ap-southeast-1
+          allowed-account-ids: ${{ vars.AWS_ACCOUNT_ID }}
+          role-duration-seconds: 3600
+
+      - name: Log in to ECR with the OIDC session
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@d539f0932e70871a027e9d5a9d8fc38589180a64
+
+      - name: Set up BuildKit
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+
+      - name: Mirror pinned ADOT manifest into private ECR without digest drift
+        id: mirror-adot
+        env:
+          PRIVATE_ADOT_IMAGE: ${{ steps.ecr.outputs.registry }}/${{ env.ADOT_REPOSITORY }}
+        run: |
+          set -euo pipefail
+          upstream_digest="${ADOT_UPSTREAM_IMAGE##*@}"
+          destination_tag="${PRIVATE_ADOT_IMAGE}:run-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          # crane copy preserves the complete multi-platform index and child manifests.
+          docker run --rm --volume "$HOME/.docker:/root/.docker:ro" "$CRANE_IMAGE" \
+            copy "$ADOT_UPSTREAM_IMAGE" "$destination_tag"
+          destination_digest="$(docker run --rm --volume "$HOME/.docker:/root/.docker:ro" "$CRANE_IMAGE" digest "$destination_tag")"
+          ecr_digest="$(aws ecr describe-images \
+            --repository-name "$ADOT_REPOSITORY" \
+            --image-ids "imageTag=run-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --query 'imageDetails[0].imageDigest' \
+            --output text)"
+          test "$destination_digest" = "$upstream_digest"
+          test "$ecr_digest" = "$upstream_digest"
+          docker run --rm --volume "$HOME/.docker:/root/.docker:ro" "$CRANE_IMAGE" \
+            manifest "$PRIVATE_ADOT_IMAGE@$destination_digest" > adot-manifest.json
+          test "$(jq '[.manifests[] | select(.platform.os == "linux" and .platform.architecture == "amd64")] | length' adot-manifest.json)" = "1"
+          echo "digest=$destination_digest" >> "$GITHUB_OUTPUT"
+          echo "image=$PRIVATE_ADOT_IMAGE" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push API image once
+        id: build-api
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: true
+          tags: ${{ steps.ecr.outputs.registry }}/${{ env.API_REPOSITORY }}:run-${{ github.run_id }}-${{ github.run_attempt }}
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+          provenance: false
+
+      - name: Build and push Web image once
+        id: build-web
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: true
+          tags: ${{ steps.ecr.outputs.registry }}/${{ env.WEB_REPOSITORY }}:run-${{ github.run_id }}-${{ github.run_attempt }}
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+          provenance: false
+
+      - name: Build and push Worker image once
+        id: build-worker
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        with:
+          context: .
+          file: apps/worker/Dockerfile
+          push: true
+          tags: ${{ steps.ecr.outputs.registry }}/${{ env.WORKER_REPOSITORY }}:run-${{ github.run_id }}-${{ github.run_attempt }}
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          cache-from: type=gha,scope=worker
+          cache-to: type=gha,mode=max,scope=worker
+          provenance: false
+
+      - name: Build and push Recovery image once
+        id: build-recovery
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        with:
+          context: .
+          file: Dockerfile.recovery
+          push: true
+          tags: ${{ steps.ecr.outputs.registry }}/${{ env.RECOVERY_REPOSITORY }}:run-${{ github.run_id }}-${{ github.run_attempt }}
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          cache-from: type=gha,scope=recovery
+          cache-to: type=gha,mode=max,scope=recovery
+          provenance: false
+
+      - name: Block high or critical API image vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          image-ref: ${{ steps.ecr.outputs.registry }}/${{ env.API_REPOSITORY }}@${{ steps.build-api.outputs.digest }}
+          format: table
+          exit-code: '1'
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
+          trivy-version: v0.72.0
+
+      - name: Block high or critical Web image vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          image-ref: ${{ steps.ecr.outputs.registry }}/${{ env.WEB_REPOSITORY }}@${{ steps.build-web.outputs.digest }}
+          format: table
+          exit-code: '1'
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
+          trivy-version: v0.72.0
+
+      - name: Block high or critical Worker image vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          image-ref: ${{ steps.ecr.outputs.registry }}/${{ env.WORKER_REPOSITORY }}@${{ steps.build-worker.outputs.digest }}
+          format: table
+          exit-code: '1'
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
+          trivy-version: v0.72.0
+
+      - name: Block high or critical Recovery image vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          image-ref: ${{ steps.ecr.outputs.registry }}/${{ env.RECOVERY_REPOSITORY }}@${{ steps.build-recovery.outputs.digest }}
+          format: table
+          exit-code: '1'
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
+          trivy-version: v0.72.0
+
+      - name: Block high or critical ADOT image vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          image-ref: ${{ steps.mirror-adot.outputs.image }}@${{ steps.mirror-adot.outputs.digest }}
+          format: table
+          exit-code: '1'
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
+          trivy-version: v0.72.0
+
+      - name: Block secrets in the exact ADOT image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          image-ref: ${{ steps.mirror-adot.outputs.image }}@${{ steps.mirror-adot.outputs.digest }}
+          scanners: secret
+          format: table
+          exit-code: '1'
+          trivy-version: v0.72.0
+
+      - name: Generate API CycloneDX SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610
+        with:
+          image: ${{ steps.ecr.outputs.registry }}/${{ env.API_REPOSITORY }}@${{ steps.build-api.outputs.digest }}
+          format: cyclonedx-json
+          output-file: sbom-api.cdx.json
+          syft-version: v1.49.0
+          upload-artifact: false
+
+      - name: Generate Web CycloneDX SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610
+        with:
+          image: ${{ steps.ecr.outputs.registry }}/${{ env.WEB_REPOSITORY }}@${{ steps.build-web.outputs.digest }}
+          format: cyclonedx-json
+          output-file: sbom-web.cdx.json
+          syft-version: v1.49.0
+          upload-artifact: false
+
+      - name: Generate Worker CycloneDX SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610
+        with:
+          image: ${{ steps.ecr.outputs.registry }}/${{ env.WORKER_REPOSITORY }}@${{ steps.build-worker.outputs.digest }}
+          format: cyclonedx-json
+          output-file: sbom-worker.cdx.json
+          syft-version: v1.49.0
+          upload-artifact: false
+
+      - name: Generate Recovery CycloneDX SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610
+        with:
+          image: ${{ steps.ecr.outputs.registry }}/${{ env.RECOVERY_REPOSITORY }}@${{ steps.build-recovery.outputs.digest }}
+          format: cyclonedx-json
+          output-file: sbom-recovery.cdx.json
+          syft-version: v1.49.0
+          upload-artifact: false
+
+      - name: Generate ADOT CycloneDX SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610
+        with:
+          image: ${{ steps.mirror-adot.outputs.image }}@${{ steps.mirror-adot.outputs.digest }}
+          format: cyclonedx-json
+          output-file: sbom-adot.cdx.json
+          syft-version: v1.49.0
+          upload-artifact: false
+
+      - name: Export exact-digest images for OSV
+        env:
+          ADOT_IMAGE: ${{ steps.mirror-adot.outputs.image }}@${{ steps.mirror-adot.outputs.digest }}
+          API_IMAGE: ${{ steps.ecr.outputs.registry }}/${{ env.API_REPOSITORY }}@${{ steps.build-api.outputs.digest }}
+          RECOVERY_IMAGE: ${{ steps.ecr.outputs.registry }}/${{ env.RECOVERY_REPOSITORY }}@${{ steps.build-recovery.outputs.digest }}
+          WEB_IMAGE: ${{ steps.ecr.outputs.registry }}/${{ env.WEB_REPOSITORY }}@${{ steps.build-web.outputs.digest }}
+          WORKER_IMAGE: ${{ steps.ecr.outputs.registry }}/${{ env.WORKER_REPOSITORY }}@${{ steps.build-worker.outputs.digest }}
+        run: |
+          set -euo pipefail
+          install -d -m 0700 "$RUNNER_TEMP/exact-images"
+          docker pull "$ADOT_IMAGE"
+          docker pull "$API_IMAGE"
+          docker pull "$RECOVERY_IMAGE"
+          docker pull "$WEB_IMAGE"
+          docker pull "$WORKER_IMAGE"
+          docker save --output "$RUNNER_TEMP/exact-images/adot.tar" "$ADOT_IMAGE"
+          docker save --output "$RUNNER_TEMP/exact-images/api.tar" "$API_IMAGE"
+          docker save --output "$RUNNER_TEMP/exact-images/recovery.tar" "$RECOVERY_IMAGE"
+          docker save --output "$RUNNER_TEMP/exact-images/web.tar" "$WEB_IMAGE"
+          docker save --output "$RUNNER_TEMP/exact-images/worker.tar" "$WORKER_IMAGE"
+
+      - name: Scan exact images and final SBOMs with OSV
+        run: |
+          set -euo pipefail
+          docker run --rm --volume "$RUNNER_TEMP/exact-images:/images:ro" ghcr.io/google/osv-scanner:v2.4.0@sha256:5116601dedc01c1c580eb92371883ec052fc4c13c3fbc109d621a63ac416d475 scan image --archive /images/adot.tar --format=json > osv-image-adot.json
+          docker run --rm --volume "$RUNNER_TEMP/exact-images:/images:ro" ghcr.io/google/osv-scanner:v2.4.0@sha256:5116601dedc01c1c580eb92371883ec052fc4c13c3fbc109d621a63ac416d475 scan image --archive /images/api.tar --format=json > osv-image-api.json
+          docker run --rm --volume "$RUNNER_TEMP/exact-images:/images:ro" ghcr.io/google/osv-scanner:v2.4.0@sha256:5116601dedc01c1c580eb92371883ec052fc4c13c3fbc109d621a63ac416d475 scan image --archive /images/recovery.tar --format=json > osv-image-recovery.json
+          docker run --rm --volume "$RUNNER_TEMP/exact-images:/images:ro" ghcr.io/google/osv-scanner:v2.4.0@sha256:5116601dedc01c1c580eb92371883ec052fc4c13c3fbc109d621a63ac416d475 scan image --archive /images/web.tar --format=json > osv-image-web.json
+          docker run --rm --volume "$RUNNER_TEMP/exact-images:/images:ro" ghcr.io/google/osv-scanner:v2.4.0@sha256:5116601dedc01c1c580eb92371883ec052fc4c13c3fbc109d621a63ac416d475 scan image --archive /images/worker.tar --format=json > osv-image-worker.json
+          docker run --rm --volume "$PWD:/workspace:ro" ghcr.io/google/osv-scanner:v2.4.0@sha256:5116601dedc01c1c580eb92371883ec052fc4c13c3fbc109d621a63ac416d475 scan --sbom=/workspace/sbom-adot.cdx.json --format=json > osv-sbom-adot.json
+          docker run --rm --volume "$PWD:/workspace:ro" ghcr.io/google/osv-scanner:v2.4.0@sha256:5116601dedc01c1c580eb92371883ec052fc4c13c3fbc109d621a63ac416d475 scan --sbom=/workspace/sbom-api.cdx.json --format=json > osv-sbom-api.json
+          docker run --rm --volume "$PWD:/workspace:ro" ghcr.io/google/osv-scanner:v2.4.0@sha256:5116601dedc01c1c580eb92371883ec052fc4c13c3fbc109d621a63ac416d475 scan --sbom=/workspace/sbom-recovery.cdx.json --format=json > osv-sbom-recovery.json
+          docker run --rm --volume "$PWD:/workspace:ro" ghcr.io/google/osv-scanner:v2.4.0@sha256:5116601dedc01c1c580eb92371883ec052fc4c13c3fbc109d621a63ac416d475 scan --sbom=/workspace/sbom-web.cdx.json --format=json > osv-sbom-web.json
+          docker run --rm --volume "$PWD:/workspace:ro" ghcr.io/google/osv-scanner:v2.4.0@sha256:5116601dedc01c1c580eb92371883ec052fc4c13c3fbc109d621a63ac416d475 scan --sbom=/workspace/sbom-worker.cdx.json --format=json > osv-sbom-worker.json
+
+      - name: Extract exact-image runtime license SBOMs
+        run: |
+          set -euo pipefail
+          node scripts/security/extract-runtime-license-sbom.mjs --sbom "sbom-adot.cdx.json" --out "license-sbom-adot.cdx.json" --first-party-purl-prefix 'pkg:npm/%40aeostudio/' --runtime-root '/'
+          node scripts/security/extract-runtime-license-sbom.mjs --sbom "sbom-api.cdx.json" --out "license-sbom-api.cdx.json" --first-party-purl-prefix 'pkg:npm/%40aeostudio/' --runtime-root '/workspace'
+          node scripts/security/extract-runtime-license-sbom.mjs --sbom "sbom-recovery.cdx.json" --out "license-sbom-recovery.cdx.json" --first-party-purl-prefix 'pkg:npm/%40aeostudio/' --runtime-root '/opt/aeostudio'
+          node scripts/security/extract-runtime-license-sbom.mjs --sbom "sbom-web.cdx.json" --out "license-sbom-web.cdx.json" --first-party-purl-prefix 'pkg:npm/%40aeostudio/' --runtime-root '/workspace'
+          node scripts/security/extract-runtime-license-sbom.mjs --sbom "sbom-worker.cdx.json" --out "license-sbom-worker.cdx.json" --first-party-purl-prefix 'pkg:npm/%40aeostudio/' --runtime-root '/workspace'
+
+      - name: Enforce final CycloneDX license policy
+        run: |
+          set -euo pipefail
+          node scripts/security/verify-cyclonedx-licenses.mjs --sbom "license-sbom-adot.cdx.json" --policy scripts/security/license-policy.json > "license-adot.json"
+          node scripts/security/verify-cyclonedx-licenses.mjs --sbom "license-sbom-api.cdx.json" --policy scripts/security/license-policy.json > "license-api.json"
+          node scripts/security/verify-cyclonedx-licenses.mjs --sbom "license-sbom-recovery.cdx.json" --policy scripts/security/license-policy.json > "license-recovery.json"
+          node scripts/security/verify-cyclonedx-licenses.mjs --sbom "license-sbom-web.cdx.json" --policy scripts/security/license-policy.json > "license-web.json"
+          node scripts/security/verify-cyclonedx-licenses.mjs --sbom "license-sbom-worker.cdx.json" --policy scripts/security/license-policy.json > "license-worker.json"
+
+      - name: Bind final supply-chain evidence
+        run: >-
+          sha256sum
+          adot-manifest.json sbom-adot.cdx.json sbom-api.cdx.json sbom-web.cdx.json sbom-worker.cdx.json sbom-recovery.cdx.json
+          license-sbom-adot.cdx.json license-sbom-api.cdx.json license-sbom-web.cdx.json license-sbom-worker.cdx.json license-sbom-recovery.cdx.json
+          osv-image-adot.json osv-image-api.json osv-image-web.json osv-image-worker.json osv-image-recovery.json
+          osv-sbom-adot.json osv-sbom-api.json osv-sbom-web.json osv-sbom-worker.json osv-sbom-recovery.json
+          license-adot.json license-api.json license-web.json license-worker.json license-recovery.json
+          > supply-chain-evidence.sha256
+
+      - name: Attest API provenance
+        id: attest-api-provenance
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6
+        with:
+          subject-name: ${{ steps.ecr.outputs.registry }}/${{ env.API_REPOSITORY }}
+          subject-digest: ${{ steps.build-api.outputs.digest }}
+          push-to-registry: true
+
+      - name: Attest API CycloneDX SBOM
+        id: attest-api-sbom
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6
+        with:
+          subject-name: ${{ steps.ecr.outputs.registry }}/${{ env.API_REPOSITORY }}
+          subject-digest: ${{ steps.build-api.outputs.digest }}
+          sbom-path: sbom-api.cdx.json
+          push-to-registry: true
+
+      - name: Attest Web provenance
+        id: attest-web-provenance
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6
+        with:
+          subject-name: ${{ steps.ecr.outputs.registry }}/${{ env.WEB_REPOSITORY }}
+          subject-digest: ${{ steps.build-web.outputs.digest }}
+          push-to-registry: true
+
+      - name: Attest Web CycloneDX SBOM
+        id: attest-web-sbom
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6
+        with:
+          subject-name: ${{ steps.ecr.outputs.registry }}/${{ env.WEB_REPOSITORY }}
+          subject-digest: ${{ steps.build-web.outputs.digest }}
+          sbom-path: sbom-web.cdx.json
+          push-to-registry: true
+
+      - name: Attest Worker provenance
+        id: attest-worker-provenance
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6
+        with:
+          subject-name: ${{ steps.ecr.outputs.registry }}/${{ env.WORKER_REPOSITORY }}
+          subject-digest: ${{ steps.build-worker.outputs.digest }}
+          push-to-registry: true
+
+      - name: Attest Worker CycloneDX SBOM
+        id: attest-worker-sbom
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6
+        with:
+          subject-name: ${{ steps.ecr.outputs.registry }}/${{ env.WORKER_REPOSITORY }}
+          subject-digest: ${{ steps.build-worker.outputs.digest }}
+          sbom-path: sbom-worker.cdx.json
+          push-to-registry: true
+
+      - name: Attest Recovery provenance
+        id: attest-recovery-provenance
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6
+        with:
+          subject-name: ${{ steps.ecr.outputs.registry }}/${{ env.RECOVERY_REPOSITORY }}
+          subject-digest: ${{ steps.build-recovery.outputs.digest }}
+          push-to-registry: true
+
+      - name: Attest Recovery CycloneDX SBOM
+        id: attest-recovery-sbom
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6
+        with:
+          subject-name: ${{ steps.ecr.outputs.registry }}/${{ env.RECOVERY_REPOSITORY }}
+          subject-digest: ${{ steps.build-recovery.outputs.digest }}
+          sbom-path: sbom-recovery.cdx.json
+          push-to-registry: true
+
+      - name: Attest ADOT provenance
+        id: attest-adot-provenance
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6
+        with:
+          subject-name: ${{ steps.mirror-adot.outputs.image }}
+          subject-digest: ${{ steps.mirror-adot.outputs.digest }}
+          push-to-registry: true
+
+      - name: Attest ADOT CycloneDX SBOM
+        id: attest-adot-sbom
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6
+        with:
+          subject-name: ${{ steps.mirror-adot.outputs.image }}
+          subject-digest: ${{ steps.mirror-adot.outputs.digest }}
+          sbom-path: sbom-adot.cdx.json
+          push-to-registry: true
+
+      - name: Preserve signed attestation bundles for promotion verification
+        env:
+          ADOT_PROVENANCE_BUNDLE: ${{ steps.attest-adot-provenance.outputs.bundle-path }}
+          ADOT_SBOM_BUNDLE: ${{ steps.attest-adot-sbom.outputs.bundle-path }}
+          API_PROVENANCE_BUNDLE: ${{ steps.attest-api-provenance.outputs.bundle-path }}
+          API_SBOM_BUNDLE: ${{ steps.attest-api-sbom.outputs.bundle-path }}
+          RECOVERY_PROVENANCE_BUNDLE: ${{ steps.attest-recovery-provenance.outputs.bundle-path }}
+          RECOVERY_SBOM_BUNDLE: ${{ steps.attest-recovery-sbom.outputs.bundle-path }}
+          WEB_PROVENANCE_BUNDLE: ${{ steps.attest-web-provenance.outputs.bundle-path }}
+          WEB_SBOM_BUNDLE: ${{ steps.attest-web-sbom.outputs.bundle-path }}
+          WORKER_PROVENANCE_BUNDLE: ${{ steps.attest-worker-provenance.outputs.bundle-path }}
+          WORKER_SBOM_BUNDLE: ${{ steps.attest-worker-sbom.outputs.bundle-path }}
+        run: |
+          install -d -m 0700 attestations
+          install -m 0600 "$ADOT_PROVENANCE_BUNDLE" attestations/adot-provenance.json
+          install -m 0600 "$ADOT_SBOM_BUNDLE" attestations/adot-sbom.json
+          install -m 0600 "$API_PROVENANCE_BUNDLE" attestations/api-provenance.json
+          install -m 0600 "$API_SBOM_BUNDLE" attestations/api-sbom.json
+          install -m 0600 "$RECOVERY_PROVENANCE_BUNDLE" attestations/recovery-provenance.json
+          install -m 0600 "$RECOVERY_SBOM_BUNDLE" attestations/recovery-sbom.json
+          install -m 0600 "$WEB_PROVENANCE_BUNDLE" attestations/web-provenance.json
+          install -m 0600 "$WEB_SBOM_BUNDLE" attestations/web-sbom.json
+          install -m 0600 "$WORKER_PROVENANCE_BUNDLE" attestations/worker-provenance.json
+          install -m 0600 "$WORKER_SBOM_BUNDLE" attestations/worker-sbom.json
+
+      - name: Write immutable image digest manifest
+        id: manifest
+        env:
+          ADOT_DIGEST: ${{ steps.mirror-adot.outputs.digest }}
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          API_DIGEST: ${{ steps.build-api.outputs.digest }}
+          RECOVERY_DIGEST: ${{ steps.build-recovery.outputs.digest }}
+          WEB_DIGEST: ${{ steps.build-web.outputs.digest }}
+          WORKER_DIGEST: ${{ steps.build-worker.outputs.digest }}
+        run: |
+          artifact_name="release-digests-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          echo "artifact_name=$artifact_name" >> "$GITHUB_OUTPUT"
+          jq -n \
+            --arg sourceSha "$GITHUB_SHA" \
+            --arg sourceRef "$GITHUB_REF" \
+            --arg repository "$GITHUB_REPOSITORY" \
+            --arg runId "$GITHUB_RUN_ID" \
+            --arg runAttempt "$GITHUB_RUN_ATTEMPT" \
+            --arg adotImage "$REGISTRY/$ADOT_REPOSITORY" \
+            --arg adotDigest "$ADOT_DIGEST" \
+            --arg apiImage "$REGISTRY/$API_REPOSITORY" \
+            --arg apiDigest "$API_DIGEST" \
+            --arg webImage "$REGISTRY/$WEB_REPOSITORY" \
+            --arg webDigest "$WEB_DIGEST" \
+            --arg workerImage "$REGISTRY/$WORKER_REPOSITORY" \
+            --arg workerDigest "$WORKER_DIGEST" \
+            '{schemaVersion:"aeostudio.release.v1",sourceSha:$sourceSha,sourceRef:$sourceRef,repository:$repository,buildRunId:$runId,buildRunAttempt:$runAttempt,images:{adot:{image:$adotImage,digest:$adotDigest},api:{image:$apiImage,digest:$apiDigest},web:{image:$webImage,digest:$webDigest},worker:{image:$workerImage,digest:$workerDigest}}}' \
+            > release-digests.json
+          jq -n \
+            --arg sourceSha "$GITHUB_SHA" \
+            --arg sourceRef "$GITHUB_REF" \
+            --arg repository "$GITHUB_REPOSITORY" \
+            --arg runId "$GITHUB_RUN_ID" \
+            --arg runAttempt "$GITHUB_RUN_ATTEMPT" \
+            --arg image "$REGISTRY/$RECOVERY_REPOSITORY" \
+            --arg digest "$RECOVERY_DIGEST" \
+            '{schemaVersion:"aeostudio.recovery-image.v1",sourceSha:$sourceSha,sourceRef:$sourceRef,repository:$repository,buildRunId:$runId,buildRunAttempt:$runAttempt,image:$image,digest:$digest}' \
+            > recovery-image.json
+
+      - name: Upload release manifest and SBOM evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ steps.manifest.outputs.artifact_name }}
+          path: |
+            release-digests.json
+            recovery-image.json
+            adot-manifest.json
+            sbom-adot.cdx.json
+            sbom-api.cdx.json
+            sbom-recovery.cdx.json
+            sbom-web.cdx.json
+            sbom-worker.cdx.json
+            license-sbom-*.cdx.json
+            osv-image-*.json
+            osv-sbom-*.json
+            license-*.json
+            supply-chain-evidence.sha256
+            attestations/*.json
+          if-no-files-found: error
+          retention-days: 90
+
+  deploy-staging:
+    name: Deploy exact digests to synthetic staging
+    needs: build
+    if: ${{ always() && needs.build.result == 'success' }}
+    permissions:
+      attestations: read
+      contents: read
+      id-token: write
+    runs-on: ubuntu-24.04
+    timeout-minutes: 165
+    environment:
+      name: staging
+      url: ${{ vars.AEO_STAGING_BASE_URL }}
+    steps:
+      - name: Check out deployment scripts
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Gate deployment after entering the protected staging environment
+        id: bootstrap-gate
+        env:
+          AEO_BOOTSTRAP_COMPLETE: ${{ vars.AEO_BOOTSTRAP_COMPLETE }}
+        run: |
+          if [ "$AEO_BOOTSTRAP_COMPLETE" = "true" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "Staging deployment is intentionally skipped until protected bootstrap is complete."
+          fi
+
+      - name: Download immutable release manifest
+        if: ${{ steps.bootstrap-gate.outputs.enabled == 'true' }}
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: ${{ needs.build.outputs.artifact-name }}
+          path: release
+
+      - name: Validate the least-privilege staging deploy role
+        if: ${{ steps.bootstrap-gate.outputs.enabled == 'true' }}
+        env:
+          EXPECTED_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+          ROLE_ARN: ${{ vars.AWS_STAGING_DEPLOY_ROLE_ARN }}
+        run: |
+          test -n "$EXPECTED_ACCOUNT_ID"
+          test "$ROLE_ARN" = "arn:aws:iam::${EXPECTED_ACCOUNT_ID}:role/aeostudio-staging-deployer"
+
+      - name: Acquire release-broker credentials with GitHub OIDC
+        id: credentials
+        if: ${{ steps.bootstrap-gate.outputs.enabled == 'true' }}
+        uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708
+        with:
+          role-to-assume: ${{ vars.AWS_STAGING_DEPLOY_ROLE_ARN }}
+          role-session-name: aeostudio-staging-${{ github.run_id }}
+          aws-region: ap-southeast-1
+          allowed-account-ids: ${{ vars.AWS_ACCOUNT_ID }}
+          role-duration-seconds: 10800
+
+      - name: Log in to private ECR for attestation verification
+        if: ${{ steps.bootstrap-gate.outputs.enabled == 'true' }}
+        uses: aws-actions/amazon-ecr-login@d539f0932e70871a027e9d5a9d8fc38589180a64
+        with:
+          mask-password: true
+
+      - name: Verify signed provenance and CycloneDX attestations before the broker
+        if: ${{ steps.bootstrap-gate.outputs.enabled == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test "$(jq -r .schemaVersion release/release-digests.json)" = "aeostudio.release.v1"
+          test "$(jq -r .sourceSha release/release-digests.json)" = "$GITHUB_SHA"
+          test "$(jq -r .sourceRef release/release-digests.json)" = "refs/heads/main"
+          test "$(jq -r .repository release/release-digests.json)" = "$GITHUB_REPOSITORY"
+          test "$(jq -r .buildRunId release/release-digests.json)" = "$GITHUB_RUN_ID"
+          test "$(jq -r .buildRunAttempt release/release-digests.json)" = "$GITHUB_RUN_ATTEMPT"
+          for service in adot api web worker; do
+            digest="$(jq -r ".images.${service}.digest" release/release-digests.json)"
+            image="$(jq -r ".images.${service}.image" release/release-digests.json)"
+            subject="oci://${image}@${digest}"
+            gh attestation verify "$subject" \
+              --bundle "release/attestations/${service}-provenance.json" \
+              --repo "$GITHUB_REPOSITORY" \
+              --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/build-attest.yml" \
+              --source-digest "$GITHUB_SHA" \
+              --source-ref "refs/heads/main" \
+              --predicate-type "https://slsa.dev/provenance/v1" \
+              --deny-self-hosted-runners
+            gh attestation verify "$subject" \
+              --bundle "release/attestations/${service}-sbom.json" \
+              --repo "$GITHUB_REPOSITORY" \
+              --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/build-attest.yml" \
+              --source-digest "$GITHUB_SHA" \
+              --source-ref "refs/heads/main" \
+              --predicate-type "https://cyclonedx.org/bom" \
+              --deny-self-hosted-runners
+          done
+
+      - name: Start deployment through the fixed release broker
+        id: start
+        if: ${{ steps.bootstrap-gate.outputs.enabled == 'true' }}
+        run: |
+          node scripts/release/run-release-broker.mjs \
+            --mode DEPLOY_START \
+            --environment staging \
+            --region "$AWS_REGION" \
+            --expected-account-id "${{ vars.AWS_ACCOUNT_ID }}" \
+            --repository "$GITHUB_REPOSITORY" \
+            --manifest release/release-digests.json \
+            --release-id "staging-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --execution-name "staging-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+
+      - name: Wait for the broker and verify its immutable contract
+        id: wait
+        if: ${{ steps.start.outputs.execution_arn != '' }}
+        run: |
+          node scripts/release/run-release-broker.mjs \
+            --mode DEPLOY_WAIT \
+            --environment staging \
+            --region "$AWS_REGION" \
+            --expected-account-id "${{ vars.AWS_ACCOUNT_ID }}" \
+            --repository "$GITHUB_REPOSITORY" \
+            --manifest release/release-digests.json \
+            --release-id "staging-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --execution-name "staging-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --output-contract release/staging-release-contract.json
+
+      - name: Verify Tenant Data Broker ECS runtime identity and health
+        id: broker-runtime
+        if: ${{ steps.wait.outcome == 'success' }}
+        run: |
+          node scripts/smoke/verify-tenant-data-broker-runtime.mjs \
+            --environment staging \
+            --region "$AWS_REGION" \
+            --expected-account-id "${{ vars.AWS_ACCOUNT_ID }}" \
+            --manifest release/release-digests.json \
+            --contract release/staging-release-contract.json \
+            --output release/staging-tenant-data-broker-runtime.json
+
+      - name: Install pnpm for the staging smoke
+        if: ${{ steps.broker-runtime.outcome == 'success' }}
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+        with:
+          version: 11.15.1
+          run_install: false
+
+      - name: Install Node.js for the staging smoke
+        if: ${{ steps.broker-runtime.outcome == 'success' }}
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.15.0
+          cache: pnpm
+
+      - name: Install locked staging-smoke dependencies
+        if: ${{ steps.broker-runtime.outcome == 'success' }}
+        env:
+          AWS_ACCESS_KEY_ID: ''
+          AWS_SECRET_ACCESS_KEY: ''
+          AWS_SESSION_TOKEN: ''
+          AWS_SECURITY_TOKEN: ''
+          AWS_EC2_METADATA_DISABLED: 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Install staging-smoke Chromium
+        if: ${{ steps.broker-runtime.outcome == 'success' }}
+        env:
+          AWS_ACCESS_KEY_ID: ''
+          AWS_SECRET_ACCESS_KEY: ''
+          AWS_SESSION_TOKEN: ''
+          AWS_SECURITY_TOKEN: ''
+          AWS_EC2_METADATA_DISABLED: 'true'
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run blocking synthetic staging smoke
+        id: smoke
+        if: ${{ steps.broker-runtime.outcome == 'success' }}
+        env:
+          AWS_ACCESS_KEY_ID: ''
+          AWS_SECRET_ACCESS_KEY: ''
+          AWS_SESSION_TOKEN: ''
+          AWS_SECURITY_TOKEN: ''
+          AWS_EC2_METADATA_DISABLED: 'true'
+          AEO_STAGING_BASE_URL: ${{ vars.AEO_STAGING_BASE_URL }}
+          AEO_SMOKE_COGNITO_ORIGIN: ${{ vars.AEO_STAGING_COGNITO_ORIGIN }}
+          AEO_SMOKE_COGNITO_USERNAME: ${{ secrets.AEO_STAGING_SMOKE_COGNITO_USERNAME }}
+          AEO_SMOKE_COGNITO_PASSWORD: ${{ secrets.AEO_STAGING_SMOKE_COGNITO_PASSWORD }}
+          AEO_SMOKE_COGNITO_TOTP_SECRET: ${{ secrets.AEO_STAGING_SMOKE_COGNITO_TOTP_SECRET }}
+          AEO_SMOKE_REVIEWER_COGNITO_USERNAME: ${{ secrets.AEO_STAGING_SMOKE_REVIEWER_COGNITO_USERNAME }}
+          AEO_SMOKE_REVIEWER_COGNITO_PASSWORD: ${{ secrets.AEO_STAGING_SMOKE_REVIEWER_COGNITO_PASSWORD }}
+          AEO_SMOKE_REVIEWER_COGNITO_TOTP_SECRET: ${{ secrets.AEO_STAGING_SMOKE_REVIEWER_COGNITO_TOTP_SECRET }}
+          AEO_SMOKE_TENANT_ID: ${{ vars.AEO_STAGING_SMOKE_TENANT_ID }}
+          AEO_SMOKE_WORKSPACE_ID: ${{ vars.AEO_STAGING_SMOKE_WORKSPACE_ID }}
+          AEO_SMOKE_PREREQUISITE_PROFILE_ID: ${{ vars.AEO_STAGING_SMOKE_PREREQUISITE_PROFILE_ID }}
+          AEO_SMOKE_PREREQUISITE_BASELINE_ID: ${{ vars.AEO_STAGING_SMOKE_PREREQUISITE_BASELINE_ID }}
+          AEO_SMOKE_SYNTHETIC_CHANNEL_KEY: ${{ vars.AEO_STAGING_SMOKE_SYNTHETIC_CHANNEL_KEY }}
+          AEO_SMOKE_SYNTHETIC_ADAPTER_VERSION_ID: ${{ vars.AEO_STAGING_SMOKE_SYNTHETIC_ADAPTER_VERSION_ID }}
+          AEO_SMOKE_SYNTHETIC_PUBLICATION_TARGET: ${{ secrets.AEO_STAGING_SMOKE_SYNTHETIC_PUBLICATION_TARGET }}
+          AEO_SMOKE_MANUAL_PROVIDER_KEY: ${{ vars.AEO_STAGING_SMOKE_MANUAL_PROVIDER_KEY }}
+          AEO_SMOKE_MANUAL_SURFACE_KEY: ${{ vars.AEO_STAGING_SMOKE_MANUAL_SURFACE_KEY }}
+          AEO_SMOKE_MANUAL_ADAPTER_VERSION: ${{ vars.AEO_STAGING_SMOKE_MANUAL_ADAPTER_VERSION }}
+          AEO_SMOKE_MANUAL_TERMS_VERSION: ${{ vars.AEO_STAGING_SMOKE_MANUAL_TERMS_VERSION }}
+          AEO_SMOKE_EVIDENCE_PATH: release/staging-smoke.json
+        run: |
+          AEO_IMAGE_DIGEST="$(jq -r .images.api.digest release/release-digests.json)"
+          AEO_WEB_IMAGE_DIGEST="$(jq -r .images.web.digest release/release-digests.json)"
+          export AEO_IMAGE_DIGEST AEO_WEB_IMAGE_DIGEST
+          node scripts/smoke/staging-smoke.mjs
+
+      - name: Bind smoke evidence to the full promoted release
+        id: smoke-envelope
+        if: ${{ steps.smoke.outcome == 'success' }}
+        run: |
+          jq -n \
+            --slurpfile manifest release/release-digests.json \
+            --slurpfile brokerRuntime release/staging-tenant-data-broker-runtime.json \
+            --slurpfile smoke release/staging-smoke.json \
+            '{schemaVersion:"aeostudio.staging-smoke-envelope.v1",sourceSha:$manifest[0].sourceSha,buildRunId:$manifest[0].buildRunId,buildRunAttempt:$manifest[0].buildRunAttempt,digests:{adot:$manifest[0].images.adot.digest,api:$manifest[0].images.api.digest,web:$manifest[0].images.web.digest,worker:$manifest[0].images.worker.digest,tenantDataBroker:$manifest[0].images.worker.digest},brokerRuntime:$brokerRuntime[0],smoke:$smoke[0]}' \
+            > release/staging-smoke-envelope.json
+
+      - name: Finalize the exact release after smoke succeeds
+        id: finalize
+        if: ${{ steps.smoke-envelope.outcome == 'success' }}
+        run: |
+          node scripts/release/run-release-broker.mjs \
+            --mode FINALIZE \
+            --environment staging \
+            --region "$AWS_REGION" \
+            --expected-account-id "${{ vars.AWS_ACCOUNT_ID }}" \
+            --release-id "staging-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --execution-name "staging-finalize-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+
+      - name: Reconcile or roll back any started release that was not finalized
+        if: ${{ always() && steps.bootstrap-gate.outputs.enabled == 'true' && steps.credentials.outcome == 'success' && steps.finalize.outcome != 'success' }}
+        run: |
+          node scripts/release/run-release-broker.mjs \
+            --mode CLEANUP \
+            --environment staging \
+            --region "$AWS_REGION" \
+            --expected-account-id "${{ vars.AWS_ACCOUNT_ID }}" \
+            --release-id "staging-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --deploy-execution-name "staging-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --execution-name "reconcile-staging-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+
+      - name: Upload immutable staging release and smoke evidence
+        if: ${{ always() && steps.wait.outcome == 'success' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: staging-release-contract-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            release/release-digests.json
+            release/staging-release-contract.json
+            release/staging-tenant-data-broker-runtime.json
+            release/staging-smoke.json
+            release/staging-smoke-envelope.json
+          if-no-files-found: error
+          retention-days: 90

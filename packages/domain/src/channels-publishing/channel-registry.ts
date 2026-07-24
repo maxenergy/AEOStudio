@@ -1,0 +1,37 @@
+export const CHANNEL_DEFINITION_STATUSES = ['AVAILABLE', 'UNAVAILABLE', 'DEPRECATED'] as const;
+export type ChannelDefinitionStatus = (typeof CHANNEL_DEFINITION_STATUSES)[number];
+
+export const ADAPTER_TERMS_STATUSES = ['ALLOWED', 'REVIEW_REQUIRED', 'PROHIBITED'] as const;
+export type AdapterTermsStatus = (typeof ADAPTER_TERMS_STATUSES)[number];
+
+export interface ChannelAdapterVersion {
+  id: string;
+  adapterKey: string;
+  adapterVersion: string;
+  /** Version of the remote Provider contract, when that Provider is versioned. */
+  providerApiVersion?: string;
+  /** Exclusive Provider support cutoff for this version, when the Provider publishes one. */
+  providerApiSupportedUntil?: string;
+  enabled: boolean;
+  disabledReason: string | null;
+  capabilities: string[];
+  requiredScopes: string[];
+  termsVersion: string;
+  termsStatus: AdapterTermsStatus;
+  processingRegion: string;
+  retentionPolicy: string;
+  trainingPolicy: string;
+  subprocessors: Array<Record<string, unknown>>;
+  ratePolicy: Record<string, unknown>;
+}
+
+export interface ChannelRegistryEntry {
+  id: string;
+  channelKey: string;
+  displayName: string;
+  status: ChannelDefinitionStatus;
+  unavailableReason: string | null;
+  packageTransformerKey: string;
+  packageSchemaVersion: string;
+  adapterVersions: ChannelAdapterVersion[];
+}

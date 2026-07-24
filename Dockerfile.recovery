@@ -1,0 +1,30 @@
+# syntax=docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e
+
+FROM node:24-alpine@sha256:a0b9bf06e4e6193cf7a0f58816cc935ff8c2a908f81e6f1a95432d679c54fbfd AS runtime
+
+ENV NODE_ENV=production
+WORKDIR /opt/aeostudio
+
+RUN apk add --no-cache ca-certificates
+
+ARG RDS_CA_BUNDLE_SHA256=e5bb2084ccf45087bda1c9bffdea0eb15ee67f0b91646106e466714f9de3c7e3
+RUN mkdir -p /opt/rds \
+    && node --input-type=module --eval "import { writeFile } from 'node:fs/promises'; const response = await fetch('https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem'); if (!response.ok) throw new Error('RDS_CA_DOWNLOAD_HTTP_' + response.status); await writeFile('/opt/rds/global-bundle.pem', Buffer.from(await response.arrayBuffer()));" \
+    && echo "${RDS_CA_BUNDLE_SHA256}  /opt/rds/global-bundle.pem" | sha256sum -c \
+    && test -s /opt/rds/global-bundle.pem
+
+COPY scripts/recovery/package.json scripts/recovery/package-lock.json ./
+RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund
+
+# Package managers are not needed by the restore entrypoint.
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+    && rm -f /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
+      /usr/local/bin/pnpm /usr/local/bin/pnpx /usr/local/bin/yarn /usr/local/bin/yarnpkg
+
+COPY --chown=node:node scripts/recovery ./scripts/recovery
+
+RUN node --input-type=module --eval "await Promise.all(['pg', '@aws-sdk/client-backup', '@aws-sdk/client-rds', '@aws-sdk/client-s3', '@aws-sdk/client-secrets-manager', '@aws-sdk/client-ssm'].map((name) => import(name)))" \
+    && node --version
+
+USER node
+ENTRYPOINT ["node", "scripts/recovery/run-private-restore-task.mjs"]

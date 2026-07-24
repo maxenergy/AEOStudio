@@ -1,0 +1,2 @@
+export const SITE_CRAWL_SERVICE = Symbol('SITE_CRAWL_SERVICE');
+export const SITE_JOB_BUDGET_SERVICE = Symbol('SITE_JOB_BUDGET_SERVICE');

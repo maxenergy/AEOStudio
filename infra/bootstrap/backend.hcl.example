@@ -1,0 +1,5 @@
+bucket       = "replace-with-bootstrap-opentofu-state-bucket"
+key          = "aeostudio/bootstrap/opentofu.tfstate"
+region       = "ap-southeast-1"
+encrypt      = true
+use_lockfile = true

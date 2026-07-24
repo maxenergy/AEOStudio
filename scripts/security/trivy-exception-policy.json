@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "aeostudio.trivy-exception-policy.v1",
+  "maximumLifetimeDays": 366,
+  "exceptions": [
+    {
+      "id": "AWS-0053",
+      "path": "infra/modules/platform/compute.tf",
+      "resource": "aws_lb.main",
+      "expiresOn": "2027-07-24",
+      "rationale": "The tenant application and public verification surfaces are intentionally Internet-facing behind TLS, WAF, and the public application load balancer.",
+      "officialEvidence": "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/introduction.html"
+    },
+    {
+      "id": "AWS-0104",
+      "path": "infra/modules/platform/network.tf",
+      "resource": "aws_vpc_security_group_egress_rule.web_to_https",
+      "expiresOn": "2027-07-24",
+      "rationale": "Server-rendered Web requests use the tenant public API origin; the exception is limited to outbound TCP 443 through redundant NAT gateways.",
+      "officialEvidence": "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html"
+    },
+    {
+      "id": "AWS-0104",
+      "path": "infra/modules/platform/network.tf",
+      "resource": "aws_vpc_security_group_egress_rule.api_to_https",
+      "expiresOn": "2027-07-24",
+      "rationale": "The API must reach tenant-selected OAuth and verification providers with dynamic addresses; the exception is limited to outbound TCP 443.",
+      "officialEvidence": "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html"
+    },
+    {
+      "id": "AWS-0104",
+      "path": "infra/modules/platform/network.tf",
+      "resource": "aws_vpc_security_group_egress_rule.worker_to_https",
+      "expiresOn": "2027-07-24",
+      "rationale": "The Worker must crawl approved tenant URLs and call approved publication providers with dynamic addresses; this rule is limited to outbound TCP 443.",
+      "officialEvidence": "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html"
+    },
+    {
+      "id": "AWS-0104",
+      "path": "infra/modules/platform/network.tf",
+      "resource": "aws_vpc_security_group_egress_rule.worker_to_http",
+      "expiresOn": "2027-07-24",
+      "rationale": "The Worker must crawl approved tenant HTTP URLs before redirect enforcement can be observed; this rule is limited to outbound TCP 80.",
+      "officialEvidence": "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html"
+    },
+    {
+      "id": "AWS-0132",
+      "path": "infra/modules/platform/storage.tf",
+      "resource": "aws_s3_bucket_server_side_encryption_configuration.alb_logs",
+      "expiresOn": "2027-07-24",
+      "rationale": "Application Load Balancer access-log delivery supports only S3-managed encryption keys, so using the platform CMK would break log delivery.",
+      "officialEvidence": "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/enable-access-logging.html"
+    }
+  ]
+}

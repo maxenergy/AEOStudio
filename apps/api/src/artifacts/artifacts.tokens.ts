@@ -1,0 +1,1 @@
+export const ARTIFACT_SERVICE = Symbol('ARTIFACT_SERVICE');

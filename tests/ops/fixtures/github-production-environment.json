@@ -1,0 +1,37 @@
+{
+  "id": 101,
+  "node_id": "EN_kwDOAeostudio",
+  "name": "production",
+  "url": "https://api.github.com/repos/owner/aeostudio/environments/production",
+  "html_url": "https://github.com/owner/aeostudio/deployments/activity_log?environment=production",
+  "created_at": "2026-07-01T00:00:00Z",
+  "updated_at": "2026-07-23T00:00:00Z",
+  "protection_rules": [
+    {
+      "id": 201,
+      "node_id": "GA_kwDOAeostudio_required_reviewers",
+      "type": "required_reviewers",
+      "prevent_self_review": true,
+      "reviewers": [
+        {
+          "type": "Team",
+          "reviewer": {
+            "id": 301,
+            "node_id": "T_kwDOAeostudio_release_approvers",
+            "name": "Release Approvers",
+            "slug": "release-approvers"
+          }
+        }
+      ]
+    },
+    {
+      "id": 202,
+      "node_id": "GA_kwDOAeostudio_branch_policy",
+      "type": "branch_policy"
+    }
+  ],
+  "deployment_branch_policy": {
+    "protected_branches": false,
+    "custom_branch_policies": true
+  }
+}

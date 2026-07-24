@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "aeostudio.container-base-policy.v1",
+  "bases": [
+    {
+      "name": "Official Node.js 24 Alpine base",
+      "reference": "node:24-alpine@sha256:a0b9bf06e4e6193cf7a0f58816cc935ff8c2a908f81e6f1a95432d679c54fbfd",
+      "sourceUrl": "https://github.com/nodejs/docker-node",
+      "licenseDecision": "PROTECTED_EXTERNAL_REVIEW_REQUIRED",
+      "owner": "platform-security-legal",
+      "expiresAt": "2027-01-31",
+      "dockerfiles": [
+        "Dockerfile",
+        "Dockerfile.recovery",
+        "apps/api/Dockerfile",
+        "apps/web/Dockerfile",
+        "apps/worker/Dockerfile"
+      ]
+    }
+  ]
+}

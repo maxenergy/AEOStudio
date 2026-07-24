@@ -1,0 +1,87 @@
+{
+  "schemaVersion": "aeostudio.github-environment-contract.v2",
+  "repository": {
+    "variables": [
+      "AEO_STAGING_BACKEND_BUCKET",
+      "AEO_STAGING_BASE_URL",
+      "AWS_ACCOUNT_ID",
+      "AWS_RELEASE_VERIFY_ROLE_ARN",
+      "AWS_STAGING_BUILD_ROLE_ARN"
+    ],
+    "secrets": []
+  },
+  "environmentExpressions": {
+    "bootstrap-${{ inputs.environment }}": ["bootstrap-production", "bootstrap-staging"]
+  },
+  "environments": {
+    "bootstrap-production": {
+      "variables": ["AEO_BOOTSTRAP_COMPLETE", "AWS_PRODUCTION_BOOTSTRAP_OPERATOR_ROLE_ARN"],
+      "secrets": []
+    },
+    "bootstrap-staging": {
+      "variables": ["AEO_BOOTSTRAP_COMPLETE", "AWS_STAGING_BOOTSTRAP_OPERATOR_ROLE_ARN"],
+      "secrets": []
+    },
+    "production": {
+      "variables": [
+        "AEO_APPROVED_SUPPLY_CHAIN_POLICY_SHA256",
+        "AEO_BOOTSTRAP_COMPLETE",
+        "AEO_LICENSE_APPROVAL_REFERENCE",
+        "AEO_PRODUCTION_BASE_URL",
+        "AWS_PRODUCTION_DEPLOY_ROLE_ARN"
+      ],
+      "secrets": []
+    },
+    "restore-drill-staging": {
+      "variables": [
+        "AEO_STAGING_RESTORE_EVIDENCE_BUCKET",
+        "AWS_STAGING_RESTORE_DRILL_OPERATOR_ROLE_ARN",
+        "AWS_STAGING_RESTORE_DRILL_STATE_MACHINE_ARN"
+      ],
+      "secrets": []
+    },
+    "staging": {
+      "variables": [
+        "AEO_BOOTSTRAP_COMPLETE",
+        "AEO_STAGING_COGNITO_ORIGIN",
+        "AEO_STAGING_SMOKE_MANUAL_ADAPTER_VERSION",
+        "AEO_STAGING_SMOKE_MANUAL_PROVIDER_KEY",
+        "AEO_STAGING_SMOKE_MANUAL_SURFACE_KEY",
+        "AEO_STAGING_SMOKE_MANUAL_TERMS_VERSION",
+        "AEO_STAGING_SMOKE_PREREQUISITE_BASELINE_ID",
+        "AEO_STAGING_SMOKE_PREREQUISITE_PROFILE_ID",
+        "AEO_STAGING_SMOKE_SYNTHETIC_ADAPTER_VERSION_ID",
+        "AEO_STAGING_SMOKE_SYNTHETIC_CHANNEL_KEY",
+        "AEO_STAGING_SMOKE_TENANT_ID",
+        "AEO_STAGING_SMOKE_WORKSPACE_ID",
+        "AWS_STAGING_DEPLOY_ROLE_ARN"
+      ],
+      "secrets": [
+        "AEO_STAGING_SMOKE_COGNITO_PASSWORD",
+        "AEO_STAGING_SMOKE_COGNITO_TOTP_SECRET",
+        "AEO_STAGING_SMOKE_COGNITO_USERNAME",
+        "AEO_STAGING_SMOKE_REVIEWER_COGNITO_PASSWORD",
+        "AEO_STAGING_SMOKE_REVIEWER_COGNITO_TOTP_SECRET",
+        "AEO_STAGING_SMOKE_REVIEWER_COGNITO_USERNAME",
+        "AEO_STAGING_SMOKE_SYNTHETIC_PUBLICATION_TARGET"
+      ]
+    },
+    "staging-acceptance": {
+      "variables": [
+        "AEO_STAGING_APPROVED_HOST",
+        "AEO_SYNTHETIC_FAULT_APPROVED",
+        "AWS_STAGING_ACCEPTANCE_ROLE_ARN"
+      ],
+      "secrets": ["AEO_STAGING_LOAD_TENANTS_JSON"]
+    },
+    "staging-plan": {
+      "variables": ["AWS_STAGING_PLAN_ROLE_ARN"],
+      "secrets": ["AEO_STAGING_BACKEND_HCL", "AEO_STAGING_PLAN_TFVARS_JSON"]
+    }
+  },
+  "missingConfiguration": {
+    "phase": "preflight",
+    "outcome": "FAIL_CLOSED",
+    "externalEvidenceCollection": false
+  }
+}

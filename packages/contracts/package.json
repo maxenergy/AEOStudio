@@ -1,0 +1,109 @@
+{
+  "name": "@aeostudio/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "development": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./artifacts": {
+      "types": "./src/artifacts/index.ts",
+      "development": "./src/artifacts/index.ts",
+      "default": "./dist/artifacts/index.js"
+    },
+    "./channels": {
+      "types": "./src/channels/index.ts",
+      "development": "./src/channels/index.ts",
+      "default": "./dist/channels/index.js"
+    },
+    "./channels/wordpress-draft": {
+      "types": "./src/channels/wordpress-draft.contracts.ts",
+      "development": "./src/channels/wordpress-draft.contracts.ts",
+      "default": "./dist/channels/wordpress-draft.contracts.js"
+    },
+    "./channels/shopify-draft": {
+      "types": "./src/channels/shopify-draft.contracts.ts",
+      "development": "./src/channels/shopify-draft.contracts.ts",
+      "default": "./dist/channels/shopify-draft.contracts.js"
+    },
+    "./channels/signed-webhook": {
+      "types": "./src/channels/signed-webhook.contracts.ts",
+      "development": "./src/channels/signed-webhook.contracts.ts",
+      "default": "./dist/channels/signed-webhook.contracts.js"
+    },
+    "./channels/signed-webhook-target": {
+      "types": "./src/channels/signed-webhook-target.contracts.ts",
+      "development": "./src/channels/signed-webhook-target.contracts.ts",
+      "default": "./dist/channels/signed-webhook-target.contracts.js"
+    },
+    "./auth": {
+      "types": "./src/auth/auth.contracts.ts",
+      "development": "./src/auth/auth.contracts.ts",
+      "default": "./dist/auth/auth.contracts.js"
+    },
+    "./content-planning": {
+      "types": "./src/content-planning/index.ts",
+      "development": "./src/content-planning/index.ts",
+      "default": "./dist/content-planning/index.js"
+    },
+    "./evidence-claims": {
+      "types": "./src/evidence-claims/index.ts",
+      "development": "./src/evidence-claims/index.ts",
+      "default": "./dist/evidence-claims/index.js"
+    },
+    "./experiments": {
+      "types": "./src/experiments/experiment.contracts.ts",
+      "development": "./src/experiments/experiment.contracts.ts",
+      "default": "./dist/experiments/experiment.contracts.js"
+    },
+    "./identity-access": {
+      "types": "./src/identity-access/index.ts",
+      "development": "./src/identity-access/index.ts",
+      "default": "./dist/identity-access/index.js"
+    },
+    "./jobs-budgets": {
+      "types": "./src/jobs-budgets/jobs-budgets.contracts.ts",
+      "development": "./src/jobs-budgets/jobs-budgets.contracts.ts",
+      "default": "./dist/jobs-budgets/jobs-budgets.contracts.js"
+    },
+    "./measurement": {
+      "types": "./src/measurement/measurement.contracts.ts",
+      "development": "./src/measurement/measurement.contracts.ts",
+      "default": "./dist/measurement/measurement.contracts.js"
+    },
+    "./profile-offering": {
+      "types": "./src/profile-offering/index.ts",
+      "development": "./src/profile-offering/index.ts",
+      "default": "./dist/profile-offering/index.js"
+    },
+    "./privacy-audit": {
+      "types": "./src/privacy-audit/privacy-audit.contracts.ts",
+      "development": "./src/privacy-audit/privacy-audit.contracts.ts",
+      "default": "./dist/privacy-audit/privacy-audit.contracts.js"
+    },
+    "./prompt-research": {
+      "types": "./src/prompt-research/index.ts",
+      "development": "./src/prompt-research/index.ts",
+      "default": "./dist/prompt-research/index.js"
+    },
+    "./site-crawl": {
+      "types": "./src/site-crawl/index.ts",
+      "development": "./src/site-crawl/index.ts",
+      "default": "./dist/site-crawl/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3",
+    "vitest": "4.1.10"
+  }
+}

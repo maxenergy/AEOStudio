@@ -1,0 +1,417 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aeostudio.example/contracts/signed-webhook-v1.schema.json",
+  "title": "AEOStudio Signed Webhook v1 contract bundle",
+  "description": "Validate a wire body with the top-level schema, or address Target, Delivery, ReceiptQuery, or Receipt through its $defs fragment.",
+  "oneOf": [
+    { "$ref": "#/$defs/Delivery" },
+    { "$ref": "#/$defs/ReceiptQuery" },
+    { "$ref": "#/$defs/Receipt" }
+  ],
+  "$defs": {
+    "Uuid": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+    },
+    "Sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "PositiveInteger": {
+      "type": "integer",
+      "exclusiveMinimum": 0,
+      "maximum": 9007199254740991
+    },
+    "CanonicalHttpsUrl": {
+      "type": "string",
+      "format": "uri",
+      "maxLength": 2048,
+      "pattern": "^https://",
+      "description": "Normatively: canonical HTTPS, lowercase host, default port, and no userinfo, query, or fragment. Delivery and receipt URLs must share one verified origin."
+    },
+    "Target": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "type": "string",
+          "const": "signed-webhook-target.v1"
+        },
+        "endpointUrl": { "$ref": "#/$defs/CanonicalHttpsUrl" },
+        "receiptUrl": { "$ref": "#/$defs/CanonicalHttpsUrl" },
+        "endpointVerificationId": { "$ref": "#/$defs/Uuid" },
+        "algorithm": {
+          "type": "string",
+          "enum": ["HMAC_SHA256", "ED25519"]
+        },
+        "keyId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "endpointUrl",
+        "receiptUrl",
+        "endpointVerificationId",
+        "algorithm",
+        "keyId"
+      ],
+      "additionalProperties": false
+    },
+    "Artifact": {
+      "type": "object",
+      "properties": {
+        "artifactId": { "$ref": "#/$defs/Uuid" },
+        "artifactRevisionId": { "$ref": "#/$defs/Uuid" },
+        "revision": { "$ref": "#/$defs/PositiveInteger" },
+        "contentHash": { "$ref": "#/$defs/Sha256" },
+        "type": {
+          "type": "string",
+          "enum": ["DEFINITION_PRODUCT", "COMPARISON", "TECHNICAL_EVIDENCE"]
+        },
+        "locale": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 35
+        },
+        "market": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "methodPolicyVersion": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        }
+      },
+      "required": [
+        "artifactId",
+        "artifactRevisionId",
+        "revision",
+        "contentHash",
+        "type",
+        "locale",
+        "market",
+        "methodPolicyVersion"
+      ],
+      "additionalProperties": false
+    },
+    "ManifestFile": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "mediaType": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "sha256": { "$ref": "#/$defs/Sha256" },
+        "byteLength": { "$ref": "#/$defs/PositiveInteger" }
+      },
+      "required": ["path", "mediaType", "sha256", "byteLength"],
+      "additionalProperties": false
+    },
+    "EvidenceReference": {
+      "type": "object",
+      "properties": {
+        "sourceId": { "$ref": "#/$defs/Uuid" },
+        "snapshotId": { "$ref": "#/$defs/Uuid" },
+        "sourceHash": { "$ref": "#/$defs/Sha256" }
+      },
+      "required": ["sourceId", "snapshotId", "sourceHash"],
+      "additionalProperties": false
+    },
+    "ClaimSourceMapEntry": {
+      "type": "object",
+      "properties": {
+        "claimId": { "$ref": "#/$defs/Uuid" },
+        "claimRevisionId": { "$ref": "#/$defs/Uuid" },
+        "claimContentHash": { "$ref": "#/$defs/Sha256" },
+        "evidence": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/EvidenceReference" }
+        }
+      },
+      "required": ["claimId", "claimRevisionId", "claimContentHash", "evidence"],
+      "additionalProperties": false
+    },
+    "Manifest": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "files": {
+          "type": "array",
+          "minItems": 3,
+          "items": { "$ref": "#/$defs/ManifestFile" }
+        },
+        "assetRefs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          }
+        },
+        "claimSourceMap": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ClaimSourceMapEntry" }
+        }
+      },
+      "required": ["schemaVersion", "files", "assetRefs", "claimSourceMap"],
+      "additionalProperties": false
+    },
+    "DeliveredChannelPackage": {
+      "type": "object",
+      "properties": {
+        "tenantId": { "$ref": "#/$defs/Uuid" },
+        "workspaceId": { "$ref": "#/$defs/Uuid" },
+        "id": { "$ref": "#/$defs/Uuid" },
+        "packageRevision": { "$ref": "#/$defs/PositiveInteger" },
+        "packageChecksum": { "$ref": "#/$defs/Sha256" },
+        "packageSchemaVersion": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "channel": {
+          "type": "object",
+          "properties": {
+            "definitionId": { "$ref": "#/$defs/Uuid" },
+            "channelKey": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160
+            }
+          },
+          "required": ["definitionId", "channelKey"],
+          "additionalProperties": false
+        },
+        "transformer": {
+          "type": "object",
+          "properties": {
+            "key": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160
+            },
+            "version": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            }
+          },
+          "required": ["key", "version"],
+          "additionalProperties": false
+        },
+        "artifact": { "$ref": "#/$defs/Artifact" },
+        "manifest": { "$ref": "#/$defs/Manifest" },
+        "files": {
+          "type": "object",
+          "properties": {
+            "content.md": {
+              "type": "string",
+              "minLength": 1
+            },
+            "content.html": {
+              "type": "string",
+              "minLength": 1
+            },
+            "structured-data.json": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": ["content.md", "content.html", "structured-data.json"],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "tenantId",
+        "workspaceId",
+        "id",
+        "packageRevision",
+        "packageChecksum",
+        "packageSchemaVersion",
+        "channel",
+        "transformer",
+        "artifact",
+        "manifest",
+        "files"
+      ],
+      "additionalProperties": false
+    },
+    "Delivery": {
+      "type": "object",
+      "description": "deliveryId MUST equal publicationId; this cross-field equality is normative and is enforced by the runtime contract.",
+      "properties": {
+        "schemaVersion": {
+          "type": "string",
+          "const": "1.0.0"
+        },
+        "eventType": {
+          "type": "string",
+          "const": "channel-package.approved.v1"
+        },
+        "deliveryId": { "$ref": "#/$defs/Uuid" },
+        "publicationId": { "$ref": "#/$defs/Uuid" },
+        "channelPackage": { "$ref": "#/$defs/DeliveredChannelPackage" }
+      },
+      "required": [
+        "schemaVersion",
+        "eventType",
+        "deliveryId",
+        "publicationId",
+        "channelPackage"
+      ],
+      "additionalProperties": false
+    },
+    "ReceiptQuery": {
+      "type": "object",
+      "description": "deliveryId MUST equal publicationId; requestBodySha256 identifies the original canonical Delivery body.",
+      "properties": {
+        "schemaVersion": {
+          "type": "string",
+          "const": "1.0.0"
+        },
+        "queryType": {
+          "type": "string",
+          "const": "channel-package.delivery-receipt.v1"
+        },
+        "deliveryId": { "$ref": "#/$defs/Uuid" },
+        "publicationId": { "$ref": "#/$defs/Uuid" },
+        "channelPackageId": { "$ref": "#/$defs/Uuid" },
+        "packageRevision": { "$ref": "#/$defs/PositiveInteger" },
+        "packageChecksum": { "$ref": "#/$defs/Sha256" },
+        "artifactRevisionId": { "$ref": "#/$defs/Uuid" },
+        "artifactContentHash": { "$ref": "#/$defs/Sha256" },
+        "requestBodySha256": { "$ref": "#/$defs/Sha256" }
+      },
+      "required": [
+        "schemaVersion",
+        "queryType",
+        "deliveryId",
+        "publicationId",
+        "channelPackageId",
+        "packageRevision",
+        "packageChecksum",
+        "artifactRevisionId",
+        "artifactContentHash",
+        "requestBodySha256"
+      ],
+      "additionalProperties": false
+    },
+    "Receipt": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "type": "string",
+          "const": "1.0.0"
+        },
+        "receiptType": {
+          "type": "string",
+          "const": "channel-package.delivery-receipt.v1"
+        },
+        "receiptId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "status": {
+          "type": "string",
+          "enum": ["APPLIED", "ALREADY_APPLIED", "PENDING", "NOT_FOUND", "CONFLICT"]
+        },
+        "deliveryId": { "$ref": "#/$defs/Uuid" },
+        "publicationId": { "$ref": "#/$defs/Uuid" },
+        "channelPackageId": { "$ref": "#/$defs/Uuid" },
+        "packageRevision": { "$ref": "#/$defs/PositiveInteger" },
+        "packageChecksum": { "$ref": "#/$defs/Sha256" },
+        "artifactRevisionId": { "$ref": "#/$defs/Uuid" },
+        "artifactContentHash": { "$ref": "#/$defs/Sha256" },
+        "requestBodySha256": { "$ref": "#/$defs/Sha256" },
+        "receiverEffectId": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "verifiedKeyId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+        },
+        "verifiedAlgorithm": {
+          "type": "string",
+          "enum": ["HMAC_SHA256", "ED25519"]
+        },
+        "receivedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "remoteRef": { "$ref": "#/$defs/CanonicalHttpsUrl" },
+        "isProductionLive": {
+          "type": "boolean",
+          "const": false
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "receiptType",
+        "receiptId",
+        "status",
+        "deliveryId",
+        "publicationId",
+        "channelPackageId",
+        "packageRevision",
+        "packageChecksum",
+        "artifactRevisionId",
+        "artifactContentHash",
+        "requestBodySha256",
+        "receiverEffectId",
+        "verifiedKeyId",
+        "verifiedAlgorithm",
+        "receivedAt",
+        "remoteRef",
+        "isProductionLive"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "enum": ["APPLIED", "ALREADY_APPLIED"]
+              }
+            },
+            "required": ["status"]
+          },
+          "then": {
+            "properties": {
+              "receiverEffectId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "receiverEffectId": { "type": "null" }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    }
+  }
+}

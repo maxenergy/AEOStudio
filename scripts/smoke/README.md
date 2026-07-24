@@ -1,0 +1,24 @@
+# Synthetic staging smoke and rollback
+
+`staging-smoke.mjs` checks the public Singapore staging health and readiness endpoints, signs in dedicated synthetic operator and Reviewer identities through the application's `/api/v1/auth/login` entry point, and creates a new industry-neutral Profile revision-to-Experiment chain. The chain creates an Offering, Evidence and an approved Claim, an approved Prompt Set, a READY Content Plan and approved Brief, an approved Artifact, reviewed manual baseline and remeasurement Runs with MetricSnapshot IDs, a reviewed Channel Package, a non-live Publication through an approved synthetic sandbox receiver, and a new immutable Experiment that is read back before the run passes. A pre-existing Experiment ID is neither accepted nor read.
+
+The application owns each Cognito authorization-code flow, PKCE challenge, state, nonce, and callback; the smoke browser enters credentials only while it is on the exact configured Cognito HTTPS origin. Every identity gets a fresh headless Chromium context. The resulting `__Host-aeo_session` HttpOnly cookies remain inside their respective contexts and are destroyed when the smoke completes. Authenticated JSON calls are same-origin, attach a UUID request ID, use the browser session and an explicit timeout, and include the browser-generated CSRF Origin on mutations. Do not store or inject a pre-established session cookie.
+
+Staging runs in production mode. This smoke does not enable any fake runtime. It requires explicitly reviewed staging prerequisites:
+
+- `AEO_SMOKE_PREREQUISITE_PROFILE_ID` and `AEO_SMOKE_PREREQUISITE_BASELINE_ID`: a Profile aggregate with a completed Site Baseline tied to that same Profile. The smoke creates a new Profile revision and all downstream content.
+- `AEO_SMOKE_REVIEWER_COGNITO_*`: a distinct active Reviewer in the configured Tenant and Workspace.
+- `AEO_SMOKE_MANUAL_PROVIDER_KEY`, `AEO_SMOKE_MANUAL_SURFACE_KEY`, `AEO_SMOKE_MANUAL_ADAPTER_VERSION`, and `AEO_SMOKE_MANUAL_TERMS_VERSION`: an already approved reviewed-manual-import provider policy.
+- `AEO_SMOKE_SYNTHETIC_CHANNEL_KEY`, `AEO_SMOKE_SYNTHETIC_ADAPTER_VERSION_ID`, and `AEO_SMOKE_SYNTHETIC_PUBLICATION_TARGET`: a production publication adapter authorized only for a controlled synthetic sandbox receiver. The runner requires `PUBLISH_READY`, the exact adapter version and authorization, `REMOTE_APPLIED`, and `isProductionLive=false`.
+
+If any prerequisite is absent, disabled, unapproved, or not bound to the configured Workspace, the smoke fails and the deployment evidence remains not checked. The script requires immutable API and Web `sha256:` image digests and writes only redacted timings, state IDs, status codes, and flow properties to `output/staging-smoke.json`; it never emits either synthetic identity, password, TOTP seed/code, authorization code, session cookie, or publication target.
+
+Each manual capture intentionally provides one reviewed PASS slot while retaining the complete approved cohort manifest. The runner requires `expectedSlotCount = prompts × scopes × repetitions` and at least 60 slots, requires `providedSlotCount = 1`, and proves through dashboard result counts and every metric sample that all remaining slots are represented honestly as `NOT_CHECKED`. Evidence records those expected, provided, missing, eligible, excluded, and sample counts. This validates the complete cohort shape without pretending that one recorded answer is a complete baseline.
+
+`REMOTE_APPLIED` means only that the production adapter delivered to the controlled synthetic receiver; the evidence also requires and records `isProductionLive=false` as `NON_LIVE_CONTROLLED_SYNTHETIC_RECEIVER`. The sealed Experiment uses the honest `APPROVED_ARTIFACT` intervention branch. It does not relabel that non-live delivery as a published Artifact intervention.
+
+The evidence enforces two wall-clock gates. Content Plan time is measured from the accepted POST response to the READY read and must be at most 15 minutes. Baseline measurement time is measured from the accepted Run POST response to the COMPLETED read and must be at most two hours. Reviewed-manual evidence approval wait is recorded separately and is not silently folded into either platform-execution duration.
+
+`rollback-staging.mjs` is a separate, explicitly confirmed operation. It accepts exactly four previously captured Web/API/Worker/Tenant Data Broker task-definition ARNs, updates Web, API, Worker, and Tenant Data Broker, and waits for ECS stability. It refuses any region other than `ap-southeast-1` and does not run unless `AEO_ROLLBACK_CONFIRM=staging`.
+
+The deployment workflow must capture the prior task definitions before rollout, run the smoke script after service stability, and invoke rollback only when rollout or smoke fails. Neither script authorizes a production deployment.

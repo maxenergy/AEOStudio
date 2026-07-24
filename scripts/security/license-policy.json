@@ -1,0 +1,196 @@
+{
+  "schemaVersion": "aeostudio.cyclonedx-license-policy.v1",
+  "allowlist": {
+    "name": "AEOStudio approved exact SPDX license allowlist",
+    "licenses": ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC", "0BSD"]
+  },
+  "exceptions": [
+    {
+      "name": "Sharp Windows x64 dynamic libvips runtime",
+      "scope": {
+        "purl": "pkg:npm/%40img/sharp-win32-x64@0.35.0"
+      },
+      "license": "Apache-2.0 AND LGPL-3.0-or-later",
+      "reason": "Sharp dynamically uses the separately redistributed libvips runtime; no LGPL code is statically linked into AEOStudio application code.",
+      "compensatingControl": "Keep the binary unmodified, distribute upstream notices, and preserve the corresponding-source offer in release evidence.",
+      "owner": "platform-security",
+      "expiresAt": "2027-01-31"
+    },
+    {
+      "name": "Sharp Linux x64 dynamic libvips runtime",
+      "scope": {
+        "purl": "pkg:npm/%40img/sharp-linux-x64@0.35.0"
+      },
+      "license": "Apache-2.0 AND LGPL-3.0-or-later",
+      "reason": "Sharp dynamically uses the separately redistributed libvips runtime; no LGPL code is statically linked into AEOStudio application code.",
+      "compensatingControl": "Keep the binary unmodified, distribute upstream notices, and preserve the corresponding-source offer in release evidence.",
+      "owner": "platform-security",
+      "expiresAt": "2027-01-31"
+    },
+    {
+      "name": "Sharp Linux x64 libvips binary",
+      "scope": {
+        "purl": "pkg:npm/%40img/sharp-libvips-linux-x64@1.3.0"
+      },
+      "license": "LGPL-3.0-or-later",
+      "reason": "The unmodified libvips runtime is dynamically loaded and redistributed as a separate component.",
+      "compensatingControl": "Distribute upstream license notices and the corresponding-source offer, and verify the binary remains a separate unmodified component.",
+      "owner": "platform-security",
+      "expiresAt": "2027-01-31"
+    },
+    {
+      "name": "Caniuse browser compatibility metadata",
+      "scope": {
+        "purl": "pkg:npm/caniuse-lite@1.0.30001806"
+      },
+      "license": "CC-BY-4.0",
+      "reason": "Browser compatibility facts are build metadata and are not redistributed as AEOStudio-authored content.",
+      "compensatingControl": "Retain upstream attribution and exclude the dataset from authored customer content and public content generation.",
+      "owner": "platform-security",
+      "expiresAt": "2027-01-31"
+    },
+    {
+      "name": "Jackspeak test tooling transitive dependency",
+      "scope": {
+        "purl": "pkg:npm/jackspeak@3.4.3"
+      },
+      "license": "BlueOak-1.0.0",
+      "reason": "This exact package is present only in the repository tooling dependency graph through testcontainers -> archiver -> archiver-utils -> glob.",
+      "compensatingControl": "Keep the dependency confined to this exact test-only path and version, and verify it is absent from every production runtime image. This exception does not authorize the package in a production runtime image.",
+      "owner": "platform-security",
+      "expiresAt": "2027-01-31"
+    },
+    {
+      "name": "Minimatch development glob dependency",
+      "scope": {
+        "purl": "pkg:npm/minimatch@10.2.5"
+      },
+      "license": "BlueOak-1.0.0",
+      "reason": "This exact package is present only in the repository tooling dependency graph used for development, build, lint, test, or packaging tasks.",
+      "compensatingControl": "API and Worker runtimes are assembled from pnpm deploy --prod --legacy outputs and Web uses Next standalone output; final runtime image evidence must show this package is absent. This exception does not authorize the package in a production runtime image.",
+      "owner": "platform-security",
+      "expiresAt": "2027-01-31"
+    },
+    {
+      "name": "Minipass test tooling transitive dependency",
+      "scope": {
+        "purl": "pkg:npm/minipass@7.1.3"
+      },
+      "license": "BlueOak-1.0.0",
+      "reason": "This exact package is present only in the repository tooling dependency graph through testcontainers -> archiver -> archiver-utils -> glob.",
+      "compensatingControl": "Keep the dependency confined to this exact test-only path and version, and verify it is absent from every production runtime image. This exception does not authorize the package in a production runtime image.",
+      "owner": "platform-security",
+      "expiresAt": "2027-01-31"
+    },
+    {
+      "name": "Package-json-from-dist test tooling transitive dependency",
+      "scope": {
+        "purl": "pkg:npm/package-json-from-dist@1.0.1"
+      },
+      "license": "BlueOak-1.0.0",
+      "reason": "This exact package is present only in the repository tooling dependency graph through testcontainers -> archiver -> archiver-utils -> glob.",
+      "compensatingControl": "Keep the dependency confined to this exact test-only path and version, and verify it is absent from every production runtime image. This exception does not authorize the package in a production runtime image.",
+      "owner": "platform-security",
+      "expiresAt": "2027-01-31"
+    },
+    {
+      "name": "Path-scurry test tooling transitive dependency",
+      "scope": {
+        "purl": "pkg:npm/path-scurry@1.11.1"
+      },
+      "license": "BlueOak-1.0.0",
+      "reason": "This exact package is present only in the repository tooling dependency graph through testcontainers -> archiver -> archiver-utils -> glob.",
+      "compensatingControl": "Keep the dependency confined to this exact test-only path and version, and verify it is absent from every production runtime image. This exception does not authorize the package in a production runtime image.",
+      "owner": "platform-security",
+      "expiresAt": "2027-01-31"
+    },
+    {
+      "name": "Lightning CSS transformer",
+      "scope": {
+        "purl": "pkg:npm/lightningcss@1.32.0"
+      },
+      "license": "MPL-2.0",
+      "reason": "Lightning CSS is an unmodified, separately distributed build-time CSS transformer.",
+      "compensatingControl": "Retain notices and source references, do not modify MPL-covered files, and verify production output contains only transformed assets.",
+      "owner": "platform-security",
+      "expiresAt": "2027-01-31"
+    },
+    {
+      "name": "Lightning CSS Windows x64 binary",
+      "scope": {
+        "purl": "pkg:npm/lightningcss-win32-x64-msvc@1.32.0"
+      },
+      "license": "MPL-2.0",
+      "reason": "The platform binary remains an unmodified separate build-time component.",
+      "compensatingControl": "Retain notices and source references, do not modify MPL-covered files, and exclude the build binary from runtime images.",
+      "owner": "platform-security",
+      "expiresAt": "2027-01-31"
+    },
+    {
+      "name": "Lightning CSS Linux x64 binary",
+      "scope": {
+        "purl": "pkg:npm/lightningcss-linux-x64-gnu@1.32.0"
+      },
+      "license": "MPL-2.0",
+      "reason": "The platform binary remains an unmodified separate build-time component.",
+      "compensatingControl": "Retain notices and source references, do not modify MPL-covered files, and exclude the build binary from runtime images.",
+      "owner": "platform-security",
+      "expiresAt": "2027-01-31"
+    },
+    {
+      "name": "Axe Playwright accessibility tooling",
+      "scope": {
+        "purl": "pkg:npm/%40axe-core/playwright@4.12.1"
+      },
+      "license": "MPL-2.0",
+      "reason": "The package is unmodified development-only accessibility test tooling.",
+      "compensatingControl": "Retain upstream notices and source references and exclude test tooling from all production runtime images.",
+      "owner": "platform-security",
+      "expiresAt": "2027-01-31"
+    },
+    {
+      "name": "Axe Core accessibility engine",
+      "scope": {
+        "purl": "pkg:npm/axe-core@4.12.1"
+      },
+      "license": "MPL-2.0",
+      "reason": "The package is an unmodified development-only accessibility test engine.",
+      "compensatingControl": "Retain upstream notices and source references and exclude test tooling from all production runtime images.",
+      "owner": "platform-security",
+      "expiresAt": "2027-01-31"
+    },
+    {
+      "name": "TweetNaCl public-domain-equivalent dependency",
+      "scope": {
+        "purl": "pkg:npm/tweetnacl@0.14.5"
+      },
+      "license": "Unlicense",
+      "reason": "TweetNaCl is an unmodified cryptographic dependency with public-domain-equivalent terms.",
+      "compensatingControl": "Pin the exact version, preserve upstream notices, and verify its checksum through the lockfile and SBOM.",
+      "owner": "platform-security",
+      "expiresAt": "2027-01-31"
+    },
+    {
+      "name": "Argparse OpenAPI development dependency",
+      "scope": {
+        "purl": "pkg:npm/argparse@2.0.1"
+      },
+      "license": "Python-2.0",
+      "reason": "This exact package is present only in the development dependency graph through openapi-typescript -> @redocly/openapi-core -> js-yaml.",
+      "compensatingControl": "Keep the dependency confined to contract generation and verify it is absent from every production runtime image. Preserve the upstream license notice.",
+      "owner": "platform-security",
+      "expiresAt": "2027-01-31"
+    },
+    {
+      "name": "Type Fest OpenAPI development dependency",
+      "scope": {
+        "purl": "pkg:npm/type-fest@4.41.0"
+      },
+      "license": "(MIT OR CC0-1.0)",
+      "reason": "This exact package is present only in the development dependency graph through openapi-typescript -> parse-json.",
+      "compensatingControl": "Keep the dependency confined to contract generation and verify it is absent from every production runtime image. Preserve the upstream license notice.",
+      "owner": "platform-security",
+      "expiresAt": "2027-01-31"
+    }
+  ]
+}

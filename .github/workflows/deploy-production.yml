@@ -1,0 +1,1082 @@
+name: Promote an attested release to production
+
+on:
+  workflow_dispatch:
+    inputs:
+      build-run-id:
+        description: Successful main-branch Build, attest and deploy staging run ID
+        required: true
+        type: string
+      staging-plan-run-id:
+        description: Successful same-source Verify run with trusted staging OpenTofu plan evidence
+        required: true
+        type: string
+      staging-acceptance-run-id:
+        description: Successful same-source immutable staging acceptance run ID
+        required: true
+        type: string
+      restore-run-id:
+        description: Successful same-source fixed private staging restore drill run ID
+        required: true
+        type: string
+      change-ticket:
+        description: Approved production change ticket
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  attestations: read
+  contents: read
+  deployments: read
+  id-token: write
+
+concurrency:
+  group: production-release
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: ap-southeast-1
+
+jobs:
+  validate-release:
+    name: Validate signed staging release evidence
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      acceptance-attempt: ${{ steps.source-run.outputs.acceptance_attempt }}
+      control-plane-sha256: ${{ steps.source-run.outputs.control_plane_sha256 }}
+      github-environment-evidence-sha256: ${{ steps.github-environment.outputs.evidence_sha256 }}
+      plan-attempt: ${{ steps.source-run.outputs.plan_attempt }}
+      restore-attempt: ${{ steps.source-run.outputs.restore_attempt }}
+      source-sha: ${{ steps.source-run.outputs.source_sha }}
+      run-attempt: ${{ steps.source-run.outputs.run_attempt }}
+    steps:
+      - name: Require a main-branch dispatch and numeric evidence runs
+        env:
+          BUILD_RUN_ID: ${{ inputs.build-run-id }}
+          ACCEPTANCE_RUN_ID: ${{ inputs.staging-acceptance-run-id }}
+          PLAN_RUN_ID: ${{ inputs.staging-plan-run-id }}
+          RESTORE_RUN_ID: ${{ inputs.restore-run-id }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          [[ "$BUILD_RUN_ID" =~ ^[1-9][0-9]*$ ]]
+          [[ "$ACCEPTANCE_RUN_ID" =~ ^[1-9][0-9]*$ ]]
+          [[ "$PLAN_RUN_ID" =~ ^[1-9][0-9]*$ ]]
+          [[ "$RESTORE_RUN_ID" =~ ^[1-9][0-9]*$ ]]
+
+      - name: Check out the current promotion control plane
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Verify the source workflows and every release gate
+        id: source-run
+        env:
+          ACCEPTANCE_RUN_ID: ${{ inputs.staging-acceptance-run-id }}
+          ACCEPTANCE_RUN_PATH: acceptance-run.json
+          ACCEPTANCE_ARTIFACTS_PATH: acceptance-artifacts.json
+          AEO_PROMOTION_CONTROL_PLANE_OUTPUT: output/promotion-control-plane-preapproval.json
+          BUILD_RUN_ID: ${{ inputs.build-run-id }}
+          BUILD_RUN_PATH: build-run.json
+          BUILD_ARTIFACTS_PATH: build-artifacts.json
+          CURRENT_SOURCE_SHA: ${{ github.sha }}
+          GH_TOKEN: ${{ github.token }}
+          PLAN_RUN_ID: ${{ inputs.staging-plan-run-id }}
+          PLAN_RUN_PATH: plan-run.json
+          PLAN_ARTIFACTS_PATH: plan-artifacts.json
+          RESTORE_RUN_ID: ${{ inputs.restore-run-id }}
+          RESTORE_RUN_PATH: restore-run.json
+          RESTORE_ARTIFACTS_PATH: restore-artifacts.json
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN_ID" > build-run.json
+          test "$(jq -r .conclusion build-run.json)" = "success"
+          test "$(jq -r .head_branch build-run.json)" = "main"
+          test "$(jq -r .path build-run.json)" = ".github/workflows/build-attest.yml"
+          test "$(jq -r .name build-run.json)" = "Build, attest and deploy staging"
+          test "$(jq -r .head_repository.full_name build-run.json)" = "$GITHUB_REPOSITORY"
+          source_sha="$(jq -r .head_sha build-run.json)"
+          run_attempt="$(jq -r .run_attempt build-run.json)"
+          [[ "$source_sha" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$run_attempt" =~ ^[1-9][0-9]*$ ]]
+          test "$source_sha" = "$CURRENT_SOURCE_SHA"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN_ID/attempts/$run_attempt/jobs?per_page=100" > build-jobs.json
+          for gate in \
+            "Blocking application and browser verification" \
+            "Blocking policy, dependency, secret and source scans" \
+            "Build images once, scan and attest" \
+            "Deploy exact digests to synthetic staging"; do
+            jq -e --arg gate "$gate" --argjson attempt "$run_attempt" \
+              '[.jobs[] | select(.name == $gate and .conclusion == "success" and .run_attempt == $attempt)] | length == 1' \
+              build-jobs.json > /dev/null
+          done
+
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$PLAN_RUN_ID" > plan-run.json
+          test "$(jq -r .conclusion plan-run.json)" = "success"
+          test "$(jq -r .event plan-run.json)" = "push"
+          test "$(jq -r .head_branch plan-run.json)" = "main"
+          test "$(jq -r .path plan-run.json)" = ".github/workflows/verify.yml"
+          test "$(jq -r .name plan-run.json)" = "Verify"
+          test "$(jq -r .head_repository.full_name plan-run.json)" = "$GITHUB_REPOSITORY"
+          test "$(jq -r .head_sha plan-run.json)" = "$source_sha"
+          plan_attempt="$(jq -r .run_attempt plan-run.json)"
+          [[ "$plan_attempt" =~ ^[1-9][0-9]*$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$PLAN_RUN_ID/attempts/$plan_attempt/jobs?per_page=100" > plan-jobs.json
+          jq -e --argjson attempt "$plan_attempt" \
+            '[.jobs[] | select(.name == "Trusted staging OpenTofu plan evidence" and .conclusion == "success" and .run_attempt == $attempt)] | length == 1' \
+            plan-jobs.json > /dev/null
+
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ACCEPTANCE_RUN_ID" > acceptance-run.json
+          test "$(jq -r .conclusion acceptance-run.json)" = "success"
+          test "$(jq -r .head_branch acceptance-run.json)" = "main"
+          test "$(jq -r .path acceptance-run.json)" = ".github/workflows/staging-acceptance.yml"
+          test "$(jq -r .name acceptance-run.json)" = "Prove immutable staging acceptance"
+          test "$(jq -r .head_repository.full_name acceptance-run.json)" = "$GITHUB_REPOSITORY"
+          test "$(jq -r .head_sha acceptance-run.json)" = "$source_sha"
+          acceptance_attempt="$(jq -r .run_attempt acceptance-run.json)"
+          [[ "$acceptance_attempt" =~ ^[1-9][0-9]*$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ACCEPTANCE_RUN_ID/attempts/$acceptance_attempt/jobs?per_page=100" > acceptance-jobs.json
+          jq -e --argjson attempt "$acceptance_attempt" \
+            '[.jobs[] | select(.name == "Run immutable staging acceptance evidence" and .conclusion == "success" and .run_attempt == $attempt)] | length == 1' \
+            acceptance-jobs.json > /dev/null
+
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RESTORE_RUN_ID" > restore-run.json
+          test "$(jq -r .conclusion restore-run.json)" = "success"
+          test "$(jq -r .head_branch restore-run.json)" = "main"
+          test "$(jq -r .path restore-run.json)" = ".github/workflows/restore-drill.yml"
+          test "$(jq -r .name restore-run.json)" = "Run the fixed private staging restore drill"
+          test "$(jq -r .head_repository.full_name restore-run.json)" = "$GITHUB_REPOSITORY"
+          test "$(jq -r .head_sha restore-run.json)" = "$source_sha"
+          restore_attempt="$(jq -r .run_attempt restore-run.json)"
+          [[ "$restore_attempt" =~ ^[1-9][0-9]*$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RESTORE_RUN_ID/attempts/$restore_attempt/jobs?per_page=100" > restore-jobs.json
+          jq -e --argjson attempt "$restore_attempt" \
+            '[.jobs[] | select(.name == "Run fixed private staging restore task" and .conclusion == "success" and .run_attempt == $attempt)] | length == 1' \
+            restore-jobs.json > /dev/null
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN_ID/artifacts?per_page=100" > build-artifacts.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$PLAN_RUN_ID/artifacts?per_page=100" > plan-artifacts.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ACCEPTANCE_RUN_ID/artifacts?per_page=100" > acceptance-artifacts.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RESTORE_RUN_ID/artifacts?per_page=100" > restore-artifacts.json
+          control_plane="$(node scripts/acceptance/github-promotion-control-plane.mjs)"
+          test "$(jq -r .sourceSha <<< "$control_plane")" = "$CURRENT_SOURCE_SHA"
+          {
+            echo "source_sha=$(jq -r .sourceSha <<< "$control_plane")"
+            echo "run_attempt=$(jq -r .buildAttempt <<< "$control_plane")"
+            echo "plan_attempt=$(jq -r .planAttempt <<< "$control_plane")"
+            echo "acceptance_attempt=$(jq -r .acceptanceAttempt <<< "$control_plane")"
+            echo "restore_attempt=$(jq -r .restoreAttempt <<< "$control_plane")"
+            echo "control_plane_sha256=$(jq -r .controlPlaneSha256 <<< "$control_plane")"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Collect authoritative GitHub environment and deployment evidence
+        id: github-environment
+        env:
+          AEO_GITHUB_ENVIRONMENT_EVIDENCE_OUTPUT: output/github-environment-evidence-preapproval.json
+          AEO_GITHUB_EXPECTED_STAGING_URL: ${{ vars.AEO_STAGING_BASE_URL }}
+          BUILD_RUN_ATTEMPT: ${{ steps.source-run.outputs.run_attempt }}
+          BUILD_RUN_ID: ${{ inputs.build-run-id }}
+          CURRENT_SOURCE_SHA: ${{ steps.source-run.outputs.source_sha }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          node scripts/acceptance/github-environment-evidence.mjs
+          evidence_sha256="$(jq -r .evidenceSha256 output/github-environment-evidence-preapproval.json)"
+          [[ "$evidence_sha256" =~ ^[0-9a-f]{64}$ ]]
+          echo "evidence_sha256=$evidence_sha256" >> "$GITHUB_OUTPUT"
+
+      - name: Download the exact attested manifest
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: release-digests-${{ inputs.build-run-id }}-${{ steps.source-run.outputs.run_attempt }}
+          path: release
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.build-run-id }}
+          github-token: ${{ github.token }}
+
+      - name: Download the exact trusted staging OpenTofu plan evidence
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: staging-opentofu-plan-evidence-${{ inputs.staging-plan-run-id }}-${{ steps.source-run.outputs.plan_attempt }}
+          path: plan
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.staging-plan-run-id }}
+          github-token: ${{ github.token }}
+
+      - name: Download immutable staging contract and smoke evidence
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: staging-release-contract-${{ inputs.build-run-id }}-${{ steps.source-run.outputs.run_attempt }}
+          path: staging
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.build-run-id }}
+          github-token: ${{ github.token }}
+
+      - name: Download the exact staging acceptance evidence
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: staging-acceptance-evidence-${{ inputs.staging-acceptance-run-id }}-${{ steps.source-run.outputs.acceptance_attempt }}
+          path: acceptance
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.staging-acceptance-run-id }}
+          github-token: ${{ github.token }}
+
+      - name: Download the exact restore drill evidence
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: restore-drill-evidence-${{ inputs.restore-run-id }}-${{ steps.source-run.outputs.restore_attempt }}
+          path: restore
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.restore-run-id }}
+          github-token: ${{ github.token }}
+
+      - name: Prove staging used and smoked the exact build-once digests
+        env:
+          BUILD_RUN_ID: ${{ inputs.build-run-id }}
+          BUILD_RUN_ATTEMPT: ${{ steps.source-run.outputs.run_attempt }}
+          ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+          SOURCE_SHA: ${{ steps.source-run.outputs.source_sha }}
+        run: |
+          manifest=release/release-digests.json
+          contract=staging/staging-release-contract.json
+          smoke=staging/staging-smoke-envelope.json
+          test "$(jq -r .schemaVersion "$manifest")" = "aeostudio.release.v1"
+          test "$(jq -r .sourceRef "$manifest")" = "refs/heads/main"
+          test "$(jq -r .repository "$manifest")" = "$GITHUB_REPOSITORY"
+          test "$(jq -r .sourceSha "$manifest")" = "$SOURCE_SHA"
+          test "$(jq -r .buildRunId "$manifest")" = "$BUILD_RUN_ID"
+          test "$(jq -r .buildRunAttempt "$manifest")" = "$BUILD_RUN_ATTEMPT"
+          for service in adot api web worker; do
+            test "$(jq -r ".images.${service}.image" "$manifest")" = "${ACCOUNT_ID}.dkr.ecr.ap-southeast-1.amazonaws.com/aeostudio-${service}"
+            [[ "$(jq -r ".images.${service}.digest" "$manifest")" =~ ^sha256:[0-9a-f]{64}$ ]]
+          done
+          release_id="staging-${BUILD_RUN_ID}-${BUILD_RUN_ATTEMPT}"
+          contract_name="/aeostudio/staging/releases/${release_id}"
+          broker_arn="arn:aws:states:ap-southeast-1:${ACCOUNT_ID}:stateMachine:aeostudio-staging-release"
+          jq -e --slurpfile manifest "$manifest" --arg releaseId "$release_id" --arg contractName "$contract_name" --arg brokerArn "$broker_arn" '
+            .executionStatus == "SUCCEEDED" and
+            .contract.SchemaVersion == "aeostudio.release-contract.v2" and
+            .contract.Environment == "staging" and
+            .contract.ReleaseId == $releaseId and
+            .contract.ContractName == $contractName and
+            .contract.BrokerArn == $brokerArn and
+            .contract.Source.Sha == $manifest[0].sourceSha and
+            (.contract.Source.BuildRunId | tostring) == $manifest[0].buildRunId and
+            (.contract.Source.BuildRunAttempt | tostring) == $manifest[0].buildRunAttempt and
+            .contract.Digests.Adot == $manifest[0].images.adot.digest and
+            .contract.Digests.Api == $manifest[0].images.api.digest and
+            .contract.Digests.Web == $manifest[0].images.web.digest and
+            .contract.Digests.Worker == $manifest[0].images.worker.digest and
+            .contract.Images.Adot == ($manifest[0].images.adot.image + "@" + $manifest[0].images.adot.digest) and
+            .contract.Images.Api == ($manifest[0].images.api.image + "@" + $manifest[0].images.api.digest) and
+            .contract.Images.Web == ($manifest[0].images.web.image + "@" + $manifest[0].images.web.digest) and
+            .contract.Images.Worker == ($manifest[0].images.worker.image + "@" + $manifest[0].images.worker.digest) and
+            .contract.Images.TenantDataBroker == .contract.Images.Worker and
+            (.contract.TaskDefinitions.TenantDataBroker | test("/aeostudio-staging-tenant-data-broker:[1-9][0-9]*$")) and
+            (.contract.Rollback.TenantDataBroker | test("/aeostudio-staging-tenant-data-broker:[1-9][0-9]*$"))
+          ' "$contract" > /dev/null
+          jq -e --slurpfile manifest "$manifest" --slurpfile contract "$contract" --arg accountId "$ACCOUNT_ID" '
+            .brokerRuntime as $brokerRuntime |
+            .schemaVersion == "aeostudio.staging-smoke-envelope.v1" and
+            .sourceSha == $manifest[0].sourceSha and
+            .buildRunId == $manifest[0].buildRunId and
+            .buildRunAttempt == $manifest[0].buildRunAttempt and
+            .digests.adot == $manifest[0].images.adot.digest and
+            .digests.api == $manifest[0].images.api.digest and
+            .digests.web == $manifest[0].images.web.digest and
+            .digests.worker == $manifest[0].images.worker.digest and
+            .digests.tenantDataBroker == $manifest[0].images.worker.digest and
+            .brokerRuntime.schemaVersion == "aeostudio.tenant-data-broker-runtime.v1" and
+            .brokerRuntime.environment == "staging" and
+            .brokerRuntime.region == "ap-southeast-1" and
+            .brokerRuntime.accountId == $accountId and
+            .brokerRuntime.releaseId == $contract[0].contract.ReleaseId and
+            .brokerRuntime.taskDefinitionArn == $contract[0].contract.TaskDefinitions.TenantDataBroker and
+            .brokerRuntime.workerImage == ($manifest[0].images.worker.image + "@" + $manifest[0].images.worker.digest) and
+            .brokerRuntime.adotImage == ($manifest[0].images.adot.image + "@" + $manifest[0].images.adot.digest) and
+            .brokerRuntime.desiredCount >= 2 and
+            .brokerRuntime.runningCount == .brokerRuntime.desiredCount and
+            .brokerRuntime.pendingCount == 0 and
+            .brokerRuntime.healthyTargetCount == .brokerRuntime.desiredCount and
+            (.brokerRuntime.adotRuntimeDigest | test("^sha256:[0-9a-f]{64}$")) and
+            (.brokerRuntime.tasks | type == "array") and
+            (.brokerRuntime.tasks | length) == .brokerRuntime.desiredCount and
+            ([.brokerRuntime.tasks[].taskArn] | unique | length) == .brokerRuntime.desiredCount and
+            [.brokerRuntime.tasks[].taskArn] == ([.brokerRuntime.tasks[].taskArn] | sort) and
+            all($brokerRuntime.tasks[];
+              (keys | sort) == ["adotRuntimeDigest", "brokerRuntimeDigest", "taskArn"] and
+              (.taskArn | test("^arn:aws:ecs:ap-southeast-1:" + $accountId + ":task/aeostudio-staging/[0-9a-f]{32}$")) and
+              .brokerRuntimeDigest == $manifest[0].images.worker.digest and
+              .adotRuntimeDigest == $brokerRuntime.adotRuntimeDigest
+            ) and
+            .smoke.schemaVersion == "aeostudio-staging-smoke.v1" and
+            .smoke.environment == "staging" and
+            .smoke.region == "ap-southeast-1" and
+            (.smoke.endpoint.origin | test("^https://[^/?#]+$")) and
+            .smoke.imageDigest == $manifest[0].images.api.digest and
+            .smoke.traceProbe.operation == "runtimeBuildIdentity" and
+            (.smoke.traceProbe.requestId | test("^[0-9a-f-]{36}$")) and
+            .smoke.runtimeBuildIdentity.schemaVersion == "aeostudio.runtime-build-identity.v1" and
+            .smoke.runtimeBuildIdentity.source == "ecs-container-metadata-v4" and
+            .smoke.runtimeBuildIdentity.service == "api" and
+            .smoke.runtimeBuildIdentity.image == ($manifest[0].images.api.image + "@" + $manifest[0].images.api.digest) and
+            .smoke.runtimeBuildIdentity.imageDigest == $manifest[0].images.api.digest and
+            .smoke.runtimeBuildIdentity.imageId == $manifest[0].images.api.digest and
+            (.smoke.runtimeBuildIdentity.taskArn | test("^arn:aws:ecs:ap-southeast-1:" + $accountId + ":task/aeostudio-staging/[0-9a-f]{32}$")) and
+            .smoke.runtimeBuildIdentity.taskDefinitionArn == $contract[0].contract.TaskDefinitions.Api and
+            .smoke.webRuntimeBuildIdentity.schemaVersion == "aeostudio.runtime-build-identity.v1" and
+            .smoke.webRuntimeBuildIdentity.source == "ecs-container-metadata-v4" and
+            .smoke.webRuntimeBuildIdentity.service == "web" and
+            .smoke.webRuntimeBuildIdentity.image == ($manifest[0].images.web.image + "@" + $manifest[0].images.web.digest) and
+            .smoke.webRuntimeBuildIdentity.imageDigest == $manifest[0].images.web.digest and
+            .smoke.webRuntimeBuildIdentity.imageId == $manifest[0].images.web.digest and
+            (.smoke.webRuntimeBuildIdentity.taskArn | test("^arn:aws:ecs:ap-southeast-1:" + $accountId + ":task/aeostudio-staging/[0-9a-f]{32}$")) and
+            .smoke.webRuntimeBuildIdentity.taskDefinitionArn == $contract[0].contract.TaskDefinitions.Web and
+            .smoke.checks.health.status == 200 and
+            .smoke.checks.readiness.status == 200 and
+            .smoke.checks.syntheticLogin.status == 200 and
+            .smoke.checks.runtimeBuildIdentity.status == 200 and
+            .smoke.checks.webRuntimeBuildIdentity.status == 200 and
+            .smoke.checks.sealedExperiment.status == 200
+          ' "$smoke" > /dev/null
+
+      - name: Verify the exact trusted staging OpenTofu plan evidence
+        env:
+          AEO_PLAN_EXPECTED_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+          AEO_PLAN_EXPECTED_BACKEND_BUCKET: ${{ vars.AEO_STAGING_BACKEND_BUCKET }}
+          AEO_PLAN_EXPECTED_RUN_ATTEMPT: ${{ steps.source-run.outputs.plan_attempt }}
+          AEO_PLAN_EXPECTED_RUN_ID: ${{ inputs.staging-plan-run-id }}
+          AEO_PLAN_EXPECTED_SOURCE_SHA: ${{ steps.source-run.outputs.source_sha }}
+        run: node scripts/infra/staging-plan-evidence.mjs validate --evidence plan/task-18-staging-plan-evidence.json --iac-root infra
+
+      - name: Verify staging acceptance and restore promotion evidence
+        env:
+          AEO_PROMOTION_ACCEPTANCE_ENVELOPE_PATH: acceptance/staging-acceptance-envelope.json
+          AEO_PROMOTION_ACCEPTANCE_RUN_ATTEMPT: ${{ steps.source-run.outputs.acceptance_attempt }}
+          AEO_PROMOTION_ACCEPTANCE_RUN_ID: ${{ inputs.staging-acceptance-run-id }}
+          AEO_PROMOTION_ALARM_EVIDENCE_PATH: acceptance/synthetic-alarm-drill.json
+          AEO_PROMOTION_AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+          AEO_PROMOTION_BUILD_RUN_ATTEMPT: ${{ steps.source-run.outputs.run_attempt }}
+          AEO_PROMOTION_BUILD_RUN_ID: ${{ inputs.build-run-id }}
+          AEO_PROMOTION_LOAD_RAW_EVIDENCE_PATH: acceptance/task-18-load-raw-summary.json
+          AEO_PROMOTION_LOAD_EVIDENCE_PATH: acceptance/task-18-load-evidence.json
+          AEO_PROMOTION_RELEASE_CONTRACT_PATH: staging/staging-release-contract.json
+          AEO_PROMOTION_RELEASE_MANIFEST_PATH: release/release-digests.json
+          AEO_PROMOTION_RESTORE_CHECKSUM_PATH: restore/restore-drill.json.sha256
+          AEO_PROMOTION_RESTORE_EVIDENCE_PATH: restore/restore-drill.json
+          AEO_PROMOTION_RESTORE_MANIFEST_PATH: restore/restore-drill-evidence-manifest.json
+          AEO_PROMOTION_RESTORE_RUN_ATTEMPT: ${{ steps.source-run.outputs.restore_attempt }}
+          AEO_PROMOTION_RESTORE_RUN_ID: ${{ inputs.restore-run-id }}
+          AEO_PROMOTION_SOURCE_SHA: ${{ steps.source-run.outputs.source_sha }}
+          AEO_PROMOTION_TRACE_EVIDENCE_PATH: acceptance/staging-trace-evidence.json
+        run: node scripts/acceptance/validate-production-promotion-evidence.mjs
+
+      - name: Validate the read-only release verification role
+        env:
+          EXPECTED_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+          ROLE_ARN: ${{ vars.AWS_RELEASE_VERIFY_ROLE_ARN }}
+        run: |
+          test -n "$EXPECTED_ACCOUNT_ID"
+          test "$ROLE_ARN" = "arn:aws:iam::${EXPECTED_ACCOUNT_ID}:role/aeostudio-release-verifier"
+
+      - name: Acquire read-only ECR verification credentials
+        uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708
+        with:
+          role-to-assume: ${{ vars.AWS_RELEASE_VERIFY_ROLE_ARN }}
+          role-session-name: aeostudio-verify-${{ github.run_id }}
+          aws-region: ap-southeast-1
+          allowed-account-ids: ${{ vars.AWS_ACCOUNT_ID }}
+          role-duration-seconds: 900
+
+      - name: Log in to private ECR for digest verification
+        uses: aws-actions/amazon-ecr-login@d539f0932e70871a027e9d5a9d8fc38589180a64
+        with:
+          mask-password: true
+
+      - name: Verify signed provenance and CycloneDX attestations for every promoted digest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ steps.source-run.outputs.source_sha }}
+        run: |
+          for service in adot api web worker; do
+            digest="$(jq -r ".images.${service}.digest" release/release-digests.json)"
+            image="$(jq -r ".images.${service}.image" release/release-digests.json)"
+            subject="oci://${image}@${digest}"
+            gh attestation verify "$subject" \
+              --bundle "release/attestations/${service}-provenance.json" \
+              --repo "$GITHUB_REPOSITORY" \
+              --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/build-attest.yml" \
+              --source-digest "$SOURCE_SHA" \
+              --source-ref "refs/heads/main" \
+              --predicate-type "https://slsa.dev/provenance/v1" \
+              --deny-self-hosted-runners
+            gh attestation verify "$subject" \
+              --bundle "release/attestations/${service}-sbom.json" \
+              --repo "$GITHUB_REPOSITORY" \
+              --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/build-attest.yml" \
+              --source-digest "$SOURCE_SHA" \
+              --source-ref "refs/heads/main" \
+              --predicate-type "https://cyclonedx.org/bom" \
+              --deny-self-hosted-runners
+          done
+
+  deploy-production:
+    name: Promote the exact staging digests
+    needs: validate-release
+    if: ${{ always() && needs.validate-release.result == 'success' }}
+    permissions:
+      actions: read
+      contents: read
+      deployments: read
+      id-token: write
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    environment: production
+    steps:
+      - name: Establish bounded production job deadline
+        timeout-minutes: 1
+        run: |
+          set -euo pipefail
+          now_epoch_milliseconds="$(date -u +%s%3N)"
+          deadline_epoch_milliseconds="$((now_epoch_milliseconds + 21000000))"
+          printf 'AEO_PRODUCTION_JOB_DEADLINE_EPOCH_MILLISECONDS=%s\n' "$deadline_epoch_milliseconds" >> "$GITHUB_ENV"
+
+      - name: Check out the exact attested source
+        timeout-minutes: 5
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Revalidate exact promotion evidence after production approval
+        timeout-minutes: 10
+        env:
+          ACCEPTANCE_RUN_ID: ${{ inputs.staging-acceptance-run-id }}
+          ACCEPTANCE_RUN_PATH: acceptance-run.json
+          ACCEPTANCE_ARTIFACTS_PATH: acceptance-artifacts.json
+          AEO_PROMOTION_CONTROL_PLANE_OUTPUT: release/production-promotion-control-plane.json
+          AEO_GITHUB_ENVIRONMENT_EVIDENCE_OUTPUT: release/production-github-environment-evidence.json
+          AEO_GITHUB_EXPECTED_STAGING_URL: ${{ vars.AEO_STAGING_BASE_URL }}
+          BUILD_RUN_ATTEMPT: ${{ needs.validate-release.outputs.run-attempt }}
+          BUILD_RUN_ID: ${{ inputs.build-run-id }}
+          BUILD_RUN_PATH: build-run.json
+          BUILD_ARTIFACTS_PATH: build-artifacts.json
+          CURRENT_SOURCE_SHA: ${{ github.sha }}
+          EXPECTED_CONTROL_PLANE_SHA256: ${{ needs.validate-release.outputs.control-plane-sha256 }}
+          EXPECTED_GITHUB_ENVIRONMENT_EVIDENCE_SHA256: ${{ needs.validate-release.outputs.github-environment-evidence-sha256 }}
+          GH_TOKEN: ${{ github.token }}
+          PLAN_RUN_ID: ${{ inputs.staging-plan-run-id }}
+          PLAN_RUN_PATH: plan-run.json
+          PLAN_ARTIFACTS_PATH: plan-artifacts.json
+          RESTORE_RUN_ID: ${{ inputs.restore-run-id }}
+          RESTORE_RUN_PATH: restore-run.json
+          RESTORE_ARTIFACTS_PATH: restore-artifacts.json
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN_ID" > build-run.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$PLAN_RUN_ID" > plan-run.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ACCEPTANCE_RUN_ID" > acceptance-run.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RESTORE_RUN_ID" > restore-run.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN_ID/artifacts?per_page=100" > build-artifacts.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$PLAN_RUN_ID/artifacts?per_page=100" > plan-artifacts.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ACCEPTANCE_RUN_ID/artifacts?per_page=100" > acceptance-artifacts.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RESTORE_RUN_ID/artifacts?per_page=100" > restore-artifacts.json
+          node scripts/acceptance/github-promotion-control-plane.mjs
+          node scripts/acceptance/github-environment-evidence.mjs
+
+      - name: Download the exact promoted manifest
+        timeout-minutes: 5
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: release-digests-${{ inputs.build-run-id }}-${{ needs.validate-release.outputs.run-attempt }}
+          path: release
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.build-run-id }}
+          github-token: ${{ github.token }}
+
+      - name: Validate protected production approval and deploy role
+        timeout-minutes: 5
+        env:
+          AEO_BOOTSTRAP_COMPLETE: ${{ vars.AEO_BOOTSTRAP_COMPLETE }}
+          APPROVED_SUPPLY_CHAIN_POLICY_SHA256: ${{ vars.AEO_APPROVED_SUPPLY_CHAIN_POLICY_SHA256 }}
+          CHANGE_TICKET: ${{ inputs.change-ticket }}
+          EXPECTED_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+          LICENSE_APPROVAL_REFERENCE: ${{ vars.AEO_LICENSE_APPROVAL_REFERENCE }}
+          ROLE_ARN: ${{ vars.AWS_PRODUCTION_DEPLOY_ROLE_ARN }}
+        run: |
+          test "$AEO_BOOTSTRAP_COMPLETE" = "true"
+          test -n "$CHANGE_TICKET"
+          test -n "$EXPECTED_ACCOUNT_ID"
+          test -n "$LICENSE_APPROVAL_REFERENCE"
+          [[ "$APPROVED_SUPPLY_CHAIN_POLICY_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          umask 077
+          container_base_policy_sha256="$(sha256sum scripts/security/container-base-policy.json | cut -d ' ' -f 1)"
+          actual_license_policy_sha256="$(sha256sum scripts/security/license-policy.json | cut -d ' ' -f 1)"
+          supply_chain_policy_manifest="$RUNNER_TEMP/aeostudio-supply-chain-policy.sha256"
+          printf '%s  scripts/security/container-base-policy.json\n%s  scripts/security/license-policy.json\n' \
+            "$container_base_policy_sha256" \
+            "$actual_license_policy_sha256" \
+            > "$supply_chain_policy_manifest"
+          actual_supply_chain_policy_sha256="$(sha256sum "$supply_chain_policy_manifest" | cut -d ' ' -f 1)"
+          test "$actual_supply_chain_policy_sha256" = "$APPROVED_SUPPLY_CHAIN_POLICY_SHA256"
+          test "$ROLE_ARN" = "arn:aws:iam::${EXPECTED_ACCOUNT_ID}:role/aeostudio-production-deployer"
+          printf 'Promoting attested build run %s under change %s and license approval %s\n' '${{ inputs.build-run-id }}' "$CHANGE_TICKET" "$LICENSE_APPROVAL_REFERENCE"
+
+      - name: Acquire production release-broker credentials
+        id: credentials
+        timeout-minutes: 5
+        uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708
+        with:
+          role-to-assume: ${{ vars.AWS_PRODUCTION_DEPLOY_ROLE_ARN }}
+          role-session-name: aeostudio-production-${{ github.run_id }}
+          aws-region: ap-southeast-1
+          allowed-account-ids: ${{ vars.AWS_ACCOUNT_ID }}
+          role-duration-seconds: 21600
+
+      - name: Start deployment through the fixed release broker
+        id: start
+        timeout-minutes: 5
+        run: |
+          node scripts/release/run-release-broker.mjs \
+            --mode DEPLOY_START \
+            --environment production \
+            --region "$AWS_REGION" \
+            --expected-account-id "${{ vars.AWS_ACCOUNT_ID }}" \
+            --repository "$GITHUB_REPOSITORY" \
+            --manifest release/release-digests.json \
+            --release-id "production-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --execution-name "production-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+
+      - name: Wait for the broker and verify its immutable contract
+        id: wait
+        if: ${{ steps.start.outputs.execution_arn != '' }}
+        timeout-minutes: 75
+        run: |
+          node scripts/release/run-release-broker.mjs \
+            --mode DEPLOY_WAIT \
+            --environment production \
+            --region "$AWS_REGION" \
+            --expected-account-id "${{ vars.AWS_ACCOUNT_ID }}" \
+            --repository "$GITHUB_REPOSITORY" \
+            --manifest release/release-digests.json \
+            --release-id "production-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --execution-name "production-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --output-contract release/production-release-contract.json
+
+      - name: Verify production Tenant Data Broker ECS runtime identity and health
+        id: broker-runtime
+        if: ${{ steps.wait.outcome == 'success' }}
+        timeout-minutes: 5
+        run: |
+          node scripts/smoke/verify-tenant-data-broker-runtime.mjs \
+            --environment production \
+            --region "$AWS_REGION" \
+            --expected-account-id "${{ vars.AWS_ACCOUNT_ID }}" \
+            --manifest release/release-digests.json \
+            --contract release/production-release-contract.json \
+            --output release/production-tenant-data-broker-runtime.json
+
+      - name: Verify exact production API and Web ECS runtime identity
+        id: api-web-runtime
+        if: ${{ steps.broker-runtime.outcome == 'success' }}
+        timeout-minutes: 5
+        env:
+          PRODUCTION_BASE_URL: ${{ vars.AEO_PRODUCTION_BASE_URL }}
+        run: |
+          node scripts/smoke/verify-production-api-web-runtime.mjs \
+            --environment production \
+            --region "$AWS_REGION" \
+            --expected-account-id "${{ vars.AWS_ACCOUNT_ID }}" \
+            --manifest release/release-digests.json \
+            --contract release/production-release-contract.json \
+            --origin "$PRODUCTION_BASE_URL" \
+            --output release/production-api-web-runtime.json
+
+      - name: Smoke production health and exact runtime identity
+        id: smoke
+        if: ${{ steps.api-web-runtime.outcome == 'success' }}
+        timeout-minutes: 10
+        env:
+          PRODUCTION_BASE_URL: ${{ vars.AEO_PRODUCTION_BASE_URL }}
+        run: |
+          set -euo pipefail
+          [[ "$PRODUCTION_BASE_URL" =~ ^https://[a-z0-9][a-z0-9.-]*[a-z0-9]$ ]]
+          [[ "${PRODUCTION_BASE_URL#https://}" == *.* ]]
+          health_probe="$(curl --fail --silent --show-error --ipv4 --proto '=https' --proto-redir '=https' --max-redirs 0 --connect-timeout 5 --max-time 20 --retry 3 --retry-delay 2 --retry-max-time 60 --retry-all-errors --output release/production-health.json --write-out $'%{http_code}\\t%{url_effective}\\t%{remote_ip}\\t%{ssl_verify_result}' "$PRODUCTION_BASE_URL/health")"
+          readiness_probe="$(curl --fail --silent --show-error --ipv4 --proto '=https' --proto-redir '=https' --max-redirs 0 --connect-timeout 5 --max-time 20 --retry 3 --retry-delay 2 --retry-max-time 60 --retry-all-errors --output release/production-ready.json --write-out $'%{http_code}\\t%{url_effective}\\t%{remote_ip}\\t%{ssl_verify_result}' "$PRODUCTION_BASE_URL/ready")"
+          IFS=$'\t' read -r health_status health_effective_url health_remote_ip health_tls_verify_result <<< "$health_probe"
+          IFS=$'\t' read -r readiness_status readiness_effective_url readiness_remote_ip readiness_tls_verify_result <<< "$readiness_probe"
+          test "$health_status" = "200"
+          test "$readiness_status" = "200"
+          test "$health_effective_url" = "$PRODUCTION_BASE_URL/health"
+          test "$readiness_effective_url" = "$PRODUCTION_BASE_URL/ready"
+          test "$health_tls_verify_result" = "0"
+          test "$readiness_tls_verify_result" = "0"
+          test -n "$health_remote_ip"
+          test -n "$readiness_remote_ip"
+          test "$(jq -r .data.status release/production-health.json)" = "alive"
+          test "$(jq -r .data.status release/production-ready.json)" = "ready"
+          health_sha256="$(sha256sum release/production-health.json | cut -d ' ' -f 1)"
+          readiness_sha256="$(sha256sum release/production-ready.json | cut -d ' ' -f 1)"
+          jq -n \
+            --slurpfile manifest release/release-digests.json \
+            --slurpfile brokerRuntime release/production-tenant-data-broker-runtime.json \
+            --slurpfile apiWebRuntime release/production-api-web-runtime.json \
+            --arg accountId "${{ vars.AWS_ACCOUNT_ID }}" \
+            --arg region "$AWS_REGION" \
+            --arg repository "$GITHUB_REPOSITORY" \
+            --arg releaseId "production-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --arg origin "$PRODUCTION_BASE_URL" \
+            --arg healthStatus "$health_status" \
+            --arg healthSha256 "$health_sha256" \
+            --arg healthEffectiveUrl "$health_effective_url" \
+            --arg healthRemoteIp "$health_remote_ip" \
+            --arg healthTlsVerifyResult "$health_tls_verify_result" \
+            --arg readinessStatus "$readiness_status" \
+            --arg readinessSha256 "$readiness_sha256" \
+            --arg readinessEffectiveUrl "$readiness_effective_url" \
+            --arg readinessRemoteIp "$readiness_remote_ip" \
+            --arg readinessTlsVerifyResult "$readiness_tls_verify_result" \
+            --arg completedAt "$(date -u +%Y-%m-%dT%H:%M:%S.000Z)" \
+            '{schemaVersion:"aeostudio.production-smoke-envelope.v2",environment:"production",region:$region,accountId:$accountId,repository:$repository,sourceSha:$manifest[0].sourceSha,buildRunId:$manifest[0].buildRunId,buildRunAttempt:$manifest[0].buildRunAttempt,releaseId:$releaseId,endpoint:{origin:$origin},digests:{adot:$manifest[0].images.adot.digest,api:$manifest[0].images.api.digest,web:$manifest[0].images.web.digest,worker:$manifest[0].images.worker.digest,tenantDataBroker:$manifest[0].images.worker.digest},apiWebRuntime:$apiWebRuntime[0],brokerRuntime:$brokerRuntime[0],completedAt:$completedAt,checks:{health:{status:($healthStatus|tonumber),responseSha256:$healthSha256,effectiveUrl:$healthEffectiveUrl,remoteIp:$healthRemoteIp,tlsVerifyResult:($healthTlsVerifyResult|tonumber)},readiness:{status:($readinessStatus|tonumber),responseSha256:$readinessSha256,effectiveUrl:$readinessEffectiveUrl,remoteIp:$readinessRemoteIp,tlsVerifyResult:($readinessTlsVerifyResult|tonumber)},apiRuntimeIdentity:"PASSED",webRuntimeIdentity:"PASSED"}}' \
+            > release/production-smoke-envelope.json
+
+      - name: Revalidate live promotion evidence immediately before finalization
+        id: pre-finalize-live-evidence
+        if: ${{ steps.smoke.outcome == 'success' }}
+        timeout-minutes: 10
+        env:
+          ACCEPTANCE_RUN_ID: ${{ inputs.staging-acceptance-run-id }}
+          ACCEPTANCE_RUN_PATH: acceptance-run-pre-finalize.json
+          ACCEPTANCE_ARTIFACTS_PATH: acceptance-artifacts-pre-finalize.json
+          AEO_PROMOTION_CONTROL_PLANE_OUTPUT: release/production-promotion-control-plane-pre-finalize.json
+          AEO_GITHUB_ENVIRONMENT_EVIDENCE_OUTPUT: release/production-github-environment-evidence-pre-finalize.json
+          AEO_GITHUB_EXPECTED_STAGING_URL: ${{ vars.AEO_STAGING_BASE_URL }}
+          BUILD_RUN_ATTEMPT: ${{ needs.validate-release.outputs.run-attempt }}
+          BUILD_RUN_ID: ${{ inputs.build-run-id }}
+          BUILD_RUN_PATH: build-run-pre-finalize.json
+          BUILD_ARTIFACTS_PATH: build-artifacts-pre-finalize.json
+          CURRENT_SOURCE_SHA: ${{ github.sha }}
+          EXPECTED_CONTROL_PLANE_SHA256: ${{ needs.validate-release.outputs.control-plane-sha256 }}
+          EXPECTED_GITHUB_ENVIRONMENT_EVIDENCE_SHA256: ${{ needs.validate-release.outputs.github-environment-evidence-sha256 }}
+          GH_TOKEN: ${{ github.token }}
+          PLAN_RUN_ID: ${{ inputs.staging-plan-run-id }}
+          PLAN_RUN_PATH: plan-run-pre-finalize.json
+          PLAN_ARTIFACTS_PATH: plan-artifacts-pre-finalize.json
+          RESTORE_RUN_ID: ${{ inputs.restore-run-id }}
+          RESTORE_RUN_PATH: restore-run-pre-finalize.json
+          RESTORE_ARTIFACTS_PATH: restore-artifacts-pre-finalize.json
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN_ID" > "$BUILD_RUN_PATH"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$PLAN_RUN_ID" > "$PLAN_RUN_PATH"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ACCEPTANCE_RUN_ID" > "$ACCEPTANCE_RUN_PATH"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RESTORE_RUN_ID" > "$RESTORE_RUN_PATH"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN_ID/artifacts?per_page=100" > "$BUILD_ARTIFACTS_PATH"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$PLAN_RUN_ID/artifacts?per_page=100" > "$PLAN_ARTIFACTS_PATH"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ACCEPTANCE_RUN_ID/artifacts?per_page=100" > "$ACCEPTANCE_ARTIFACTS_PATH"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RESTORE_RUN_ID/artifacts?per_page=100" > "$RESTORE_ARTIFACTS_PATH"
+          node scripts/acceptance/github-promotion-control-plane.mjs
+          node scripts/acceptance/github-environment-evidence.mjs
+
+      - name: Validate exact production evidence before finalization
+        id: final-evidence
+        if: ${{ steps.pre-finalize-live-evidence.outcome == 'success' }}
+        timeout-minutes: 5
+        env:
+          AEO_PRODUCTION_API_WEB_RUNTIME_PATH: release/production-api-web-runtime.json
+          AEO_PRODUCTION_AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+          AEO_PRODUCTION_BROKER_RUNTIME_PATH: release/production-tenant-data-broker-runtime.json
+          AEO_PRODUCTION_BUILD_RUN_ATTEMPT: ${{ needs.validate-release.outputs.run-attempt }}
+          AEO_PRODUCTION_BUILD_RUN_ID: ${{ inputs.build-run-id }}
+          AEO_PRODUCTION_EXPECTED_GITHUB_ENVIRONMENT_EVIDENCE_SHA256: ${{ needs.validate-release.outputs.github-environment-evidence-sha256 }}
+          AEO_PRODUCTION_EXPECTED_PROMOTION_CONTROL_PLANE_EVIDENCE_SHA256: ${{ needs.validate-release.outputs.control-plane-sha256 }}
+          AEO_PRODUCTION_FINALIZATION_EVIDENCE_OUTPUT: release/production-finalization-evidence.json
+          AEO_PRODUCTION_GITHUB_ENVIRONMENT_EVIDENCE_PATH: release/production-github-environment-evidence-pre-finalize.json
+          AEO_PRODUCTION_HEALTH_PATH: release/production-health.json
+          AEO_PRODUCTION_ORIGIN: ${{ vars.AEO_PRODUCTION_BASE_URL }}
+          AEO_PRODUCTION_PROMOTION_CONTROL_PLANE_EVIDENCE_PATH: release/production-promotion-control-plane-pre-finalize.json
+          AEO_PRODUCTION_READINESS_PATH: release/production-ready.json
+          AEO_PRODUCTION_RELEASE_CONTRACT_PATH: release/production-release-contract.json
+          AEO_PRODUCTION_RELEASE_ID: production-${{ github.run_id }}-${{ github.run_attempt }}
+          AEO_PRODUCTION_RELEASE_MANIFEST_PATH: release/release-digests.json
+          AEO_PRODUCTION_SMOKE_PATH: release/production-smoke-envelope.json
+          AEO_PRODUCTION_SOURCE_SHA: ${{ github.sha }}
+        run: node scripts/acceptance/validate-production-finalization-evidence.mjs
+
+      - name: Upload immutable production finalization candidate
+        id: persist-finalization-candidate
+        if: ${{ steps.final-evidence.outcome == 'success' }}
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: production-finalization-candidate-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            release/release-digests.json
+            release/production-github-environment-evidence-pre-finalize.json
+            release/production-promotion-control-plane-pre-finalize.json
+            release/production-release-contract.json
+            release/production-tenant-data-broker-runtime.json
+            release/production-api-web-runtime.json
+            release/production-health.json
+            release/production-ready.json
+            release/production-smoke-envelope.json
+            release/production-finalization-evidence.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Revalidate live promotion evidence after candidate upload
+        id: post-candidate-live-evidence
+        if: ${{ steps.persist-finalization-candidate.outcome == 'success' }}
+        timeout-minutes: 5
+        env:
+          ACCEPTANCE_RUN_ID: ${{ inputs.staging-acceptance-run-id }}
+          ACCEPTANCE_RUN_PATH: acceptance-run-post-candidate.json
+          ACCEPTANCE_ARTIFACTS_PATH: acceptance-artifacts-post-candidate.json
+          AEO_PROMOTION_CONTROL_PLANE_OUTPUT: release/production-promotion-control-plane-post-candidate.json
+          AEO_GITHUB_ENVIRONMENT_EVIDENCE_OUTPUT: release/production-github-environment-evidence-post-candidate.json
+          AEO_GITHUB_EXPECTED_STAGING_URL: ${{ vars.AEO_STAGING_BASE_URL }}
+          BUILD_RUN_ATTEMPT: ${{ needs.validate-release.outputs.run-attempt }}
+          BUILD_RUN_ID: ${{ inputs.build-run-id }}
+          BUILD_RUN_PATH: build-run-post-candidate.json
+          BUILD_ARTIFACTS_PATH: build-artifacts-post-candidate.json
+          CANDIDATE_ARTIFACT_DIGEST: ${{ steps.persist-finalization-candidate.outputs.artifact-digest }}
+          CANDIDATE_ARTIFACT_ID: ${{ steps.persist-finalization-candidate.outputs.artifact-id }}
+          CANDIDATE_ARTIFACT_NAME: production-finalization-candidate-${{ github.run_id }}-${{ github.run_attempt }}
+          CURRENT_SOURCE_SHA: ${{ github.sha }}
+          EXPECTED_CONTROL_PLANE_SHA256: ${{ needs.validate-release.outputs.control-plane-sha256 }}
+          EXPECTED_GITHUB_ENVIRONMENT_EVIDENCE_SHA256: ${{ needs.validate-release.outputs.github-environment-evidence-sha256 }}
+          GH_TOKEN: ${{ github.token }}
+          PLAN_RUN_ID: ${{ inputs.staging-plan-run-id }}
+          PLAN_RUN_PATH: plan-run-post-candidate.json
+          PLAN_ARTIFACTS_PATH: plan-artifacts-post-candidate.json
+          RESTORE_RUN_ID: ${{ inputs.restore-run-id }}
+          RESTORE_RUN_PATH: restore-run-post-candidate.json
+          RESTORE_ARTIFACTS_PATH: restore-artifacts-post-candidate.json
+        run: |
+          set -euo pipefail
+          candidate_inventory="$RUNNER_TEMP/production-finalization-candidate.json"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=$CANDIDATE_ARTIFACT_NAME&per_page=100" > "$candidate_inventory"
+          jq -e \
+            --arg artifactDigest "sha256:$CANDIDATE_ARTIFACT_DIGEST" \
+            --arg artifactId "$CANDIDATE_ARTIFACT_ID" \
+            --arg artifactName "$CANDIDATE_ARTIFACT_NAME" \
+            --arg runId "$GITHUB_RUN_ID" \
+            --arg sourceSha "$GITHUB_SHA" \
+            '.total_count == 1 and (.artifacts | length) == 1 and
+             (.artifacts[0].id | tostring) == $artifactId and
+             .artifacts[0].name == $artifactName and
+             .artifacts[0].expired == false and
+             (.artifacts[0].workflow_run.id | tostring) == $runId and
+             .artifacts[0].workflow_run.head_sha == $sourceSha and
+             .artifacts[0].digest == $artifactDigest' \
+            "$candidate_inventory" > /dev/null
+          candidate_archive="$RUNNER_TEMP/production-finalization-candidate.zip"
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$CANDIDATE_ARTIFACT_ID/zip" > "$candidate_archive"
+          [[ "$(sha256sum "$candidate_archive" | cut -d ' ' -f 1)" == "$CANDIDATE_ARTIFACT_DIGEST" ]]
+          candidate_extract_dir="$(mktemp -d "$RUNNER_TEMP/aeostudio-finalization-candidate.XXXXXX")"
+          unzip -qq "$candidate_archive" -d "$candidate_extract_dir"
+          candidate_files=(
+            release-digests.json
+            production-github-environment-evidence-pre-finalize.json
+            production-promotion-control-plane-pre-finalize.json
+            production-release-contract.json
+            production-tenant-data-broker-runtime.json
+            production-api-web-runtime.json
+            production-health.json
+            production-ready.json
+            production-smoke-envelope.json
+            production-finalization-evidence.json
+          )
+          actual_candidate_files="$(find "$candidate_extract_dir" -type f -printf '%P\n' | LC_ALL=C sort)"
+          expected_candidate_files="$(printf '%s\n' "${candidate_files[@]}" | LC_ALL=C sort)"
+          [[ "$actual_candidate_files" == "$expected_candidate_files" ]]
+          for candidate_file in "${candidate_files[@]}"; do
+            cmp --silent "$candidate_extract_dir/$candidate_file" "release/$candidate_file"
+          done
+          jq -n \
+            --arg repository "$GITHUB_REPOSITORY" \
+            --arg sourceSha "$GITHUB_SHA" \
+            --arg runId "$GITHUB_RUN_ID" \
+            --arg artifactName "$CANDIDATE_ARTIFACT_NAME" \
+            --arg artifactId "$CANDIDATE_ARTIFACT_ID" \
+            --arg artifactDigest "$CANDIDATE_ARTIFACT_DIGEST" \
+            --arg artifactUrl "https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts/$CANDIDATE_ARTIFACT_ID" \
+            --arg verifiedAt "$(date -u +'%Y-%m-%dT%H:%M:%S.%3NZ')" \
+            '{schemaVersion:"aeostudio.production-finalization-candidate-verification.v1",repository:$repository,sourceSha:$sourceSha,runId:$runId,artifact:{name:$artifactName,id:$artifactId,digest:$artifactDigest,url:$artifactUrl},verifiedAt:$verifiedAt}' \
+            > release/production-finalization-candidate-verification.json
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN_ID" > "$BUILD_RUN_PATH"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$PLAN_RUN_ID" > "$PLAN_RUN_PATH"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ACCEPTANCE_RUN_ID" > "$ACCEPTANCE_RUN_PATH"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RESTORE_RUN_ID" > "$RESTORE_RUN_PATH"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN_ID/artifacts?per_page=100" > "$BUILD_ARTIFACTS_PATH"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$PLAN_RUN_ID/artifacts?per_page=100" > "$PLAN_ARTIFACTS_PATH"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ACCEPTANCE_RUN_ID/artifacts?per_page=100" > "$ACCEPTANCE_ARTIFACTS_PATH"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RESTORE_RUN_ID/artifacts?per_page=100" > "$RESTORE_ARTIFACTS_PATH"
+          node scripts/acceptance/github-promotion-control-plane.mjs
+          node scripts/acceptance/github-environment-evidence.mjs
+
+      - name: Authorize FINALIZE within the remaining production job budget
+        id: finalization-budget
+        timeout-minutes: 1
+        env:
+          AEO_PRODUCTION_JOB_DEADLINE_EPOCH_MILLISECONDS: ${{ env.AEO_PRODUCTION_JOB_DEADLINE_EPOCH_MILLISECONDS }}
+        run: node scripts/acceptance/production-finalization-budget.mjs
+
+      - name: Finalize the exact production release
+        id: finalize
+        if: ${{ steps.post-candidate-live-evidence.outcome == 'success' && steps.finalization-budget.outcome == 'success' && steps.finalization-budget.outputs.finalize_authorized == 'true' }}
+        timeout-minutes: 75
+        run: |
+          set -euo pipefail
+          production_finalization_evidence_sha256="${{ steps.final-evidence.outputs.evidence_sha256 }}"
+          github_environment_evidence_sha256="${{ needs.validate-release.outputs.github-environment-evidence-sha256 }}"
+          promotion_control_plane_evidence_sha256="${{ needs.validate-release.outputs.control-plane-sha256 }}"
+          [[ "$production_finalization_evidence_sha256" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$github_environment_evidence_sha256" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$promotion_control_plane_evidence_sha256" =~ ^[0-9a-f]{64}$ ]]
+          node scripts/release/run-release-broker.mjs \
+            --mode FINALIZE \
+            --environment production \
+            --region "$AWS_REGION" \
+            --expected-account-id "${{ vars.AWS_ACCOUNT_ID }}" \
+            --release-id "production-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --production-finalization-evidence-sha256 "$production_finalization_evidence_sha256" \
+            --github-environment-evidence-sha256 "$github_environment_evidence_sha256" \
+            --promotion-control-plane-evidence-sha256 "$promotion_control_plane_evidence_sha256" \
+            --execution-name "production-finalize-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+
+      - name: Reconcile or roll back any started release that was not finalized
+        id: reconcile
+        if: ${{ always() && steps.credentials.outcome == 'success' && steps.finalize.outcome != 'success' }}
+        timeout-minutes: 150
+        env:
+          EXPECTED_FINALIZATION_EVIDENCE_SHA256: ${{ steps.final-evidence.outputs.evidence_sha256 }}
+          EXPECTED_GITHUB_ENVIRONMENT_EVIDENCE_SHA256: ${{ needs.validate-release.outputs.github-environment-evidence-sha256 }}
+          EXPECTED_PROMOTION_CONTROL_PLANE_EVIDENCE_SHA256: ${{ needs.validate-release.outputs.control-plane-sha256 }}
+        run: |
+          set -euo pipefail
+          finalization_authorization=()
+          if [[ -n "$EXPECTED_FINALIZATION_EVIDENCE_SHA256" ]]; then
+            [[ "$EXPECTED_FINALIZATION_EVIDENCE_SHA256" =~ ^[0-9a-f]{64}$ ]]
+            [[ "$EXPECTED_GITHUB_ENVIRONMENT_EVIDENCE_SHA256" =~ ^[0-9a-f]{64}$ ]]
+            [[ "$EXPECTED_PROMOTION_CONTROL_PLANE_EVIDENCE_SHA256" =~ ^[0-9a-f]{64}$ ]]
+            finalization_authorization=(
+              --finalize-execution-name "production-finalize-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+              --production-finalization-evidence-sha256 "$EXPECTED_FINALIZATION_EVIDENCE_SHA256"
+              --github-environment-evidence-sha256 "$EXPECTED_GITHUB_ENVIRONMENT_EVIDENCE_SHA256"
+              --promotion-control-plane-evidence-sha256 "$EXPECTED_PROMOTION_CONTROL_PLANE_EVIDENCE_SHA256"
+            )
+          fi
+          node scripts/release/run-release-broker.mjs \
+            --mode CLEANUP \
+            --environment production \
+            --region "$AWS_REGION" \
+            --expected-account-id "${{ vars.AWS_ACCOUNT_ID }}" \
+            --release-id "production-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --deploy-execution-name "production-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --execution-name "reconcile-production-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            "${finalization_authorization[@]}"
+
+      - name: Select exact deployed production terminal
+        id: terminal-release
+        if: ${{ always() && steps.final-evidence.outputs.evidence_sha256 != '' }}
+        timeout-minutes: 5
+        env:
+          AEO_FINALIZE_FINALIZE_EXECUTION_ARN: ${{ steps.finalize.outputs.finalize_execution_arn }}
+          AEO_FINALIZE_GITHUB_ENVIRONMENT_EVIDENCE_SHA256: ${{ steps.finalize.outputs.github_environment_evidence_sha256 }}
+          AEO_FINALIZE_PRODUCTION_FINALIZATION_EVIDENCE_SHA256: ${{ steps.finalize.outputs.production_finalization_evidence_sha256 }}
+          AEO_FINALIZE_PROMOTION_CONTROL_PLANE_EVIDENCE_SHA256: ${{ steps.finalize.outputs.promotion_control_plane_evidence_sha256 }}
+          AEO_FINALIZE_TERMINAL_EXECUTION_ARN: ${{ steps.finalize.outputs.terminal_execution_arn }}
+          AEO_FINALIZE_TERMINAL_STATUS: ${{ steps.finalize.outputs.terminal_status }}
+          AEO_PRODUCTION_AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+          AEO_PRODUCTION_EXPECTED_FINALIZATION_EVIDENCE_SHA256: ${{ steps.final-evidence.outputs.evidence_sha256 }}
+          AEO_PRODUCTION_EXPECTED_GITHUB_ENVIRONMENT_EVIDENCE_SHA256: ${{ needs.validate-release.outputs.github-environment-evidence-sha256 }}
+          AEO_PRODUCTION_EXPECTED_PROMOTION_CONTROL_PLANE_EVIDENCE_SHA256: ${{ needs.validate-release.outputs.control-plane-sha256 }}
+          AEO_PRODUCTION_RELEASE_ID: production-${{ github.run_id }}-${{ github.run_attempt }}
+          AEO_RECONCILE_FINALIZE_EXECUTION_ARN: ${{ steps.reconcile.outputs.finalize_execution_arn }}
+          AEO_RECONCILE_GITHUB_ENVIRONMENT_EVIDENCE_SHA256: ${{ steps.reconcile.outputs.github_environment_evidence_sha256 }}
+          AEO_RECONCILE_PRODUCTION_FINALIZATION_EVIDENCE_SHA256: ${{ steps.reconcile.outputs.production_finalization_evidence_sha256 }}
+          AEO_RECONCILE_PROMOTION_CONTROL_PLANE_EVIDENCE_SHA256: ${{ steps.reconcile.outputs.promotion_control_plane_evidence_sha256 }}
+          AEO_RECONCILE_TERMINAL_EXECUTION_ARN: ${{ steps.reconcile.outputs.terminal_execution_arn }}
+          AEO_RECONCILE_TERMINAL_STATUS: ${{ steps.reconcile.outputs.terminal_status }}
+        run: node scripts/acceptance/select-production-terminal-release.mjs
+
+      - name: Generate finalized production release receipt
+        id: finalized-receipt
+        if: ${{ always() && steps.terminal-release.outputs.terminal_deployed == 'true' }}
+        timeout-minutes: 5
+        env:
+          AEO_CANDIDATE_ARTIFACT_NAME: production-finalization-candidate-${{ github.run_id }}-${{ github.run_attempt }}
+          AEO_CANDIDATE_ARTIFACT_ID: ${{ steps.persist-finalization-candidate.outputs.artifact-id }}
+          AEO_CANDIDATE_ARTIFACT_URL: ${{ steps.persist-finalization-candidate.outputs.artifact-url }}
+          AEO_CANDIDATE_ARTIFACT_DIGEST: ${{ steps.persist-finalization-candidate.outputs.artifact-digest }}
+          AEO_FINALIZE_EXECUTION_ARN: ${{ steps.terminal-release.outputs.finalize_execution_arn }}
+          AEO_POST_CANDIDATE_GITHUB_ENVIRONMENT_EVIDENCE_PATH: release/production-github-environment-evidence-post-candidate.json
+          AEO_POST_CANDIDATE_PROMOTION_CONTROL_PLANE_EVIDENCE_PATH: release/production-promotion-control-plane-post-candidate.json
+          AEO_PRODUCTION_AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+          AEO_PRODUCTION_EXPECTED_GITHUB_ENVIRONMENT_EVIDENCE_SHA256: ${{ steps.terminal-release.outputs.github_environment_evidence_sha256 }}
+          AEO_PRODUCTION_EXPECTED_PROMOTION_CONTROL_PLANE_EVIDENCE_SHA256: ${{ steps.terminal-release.outputs.promotion_control_plane_evidence_sha256 }}
+          AEO_PRODUCTION_FINALIZATION_EVIDENCE_SHA256: ${{ steps.terminal-release.outputs.production_finalization_evidence_sha256 }}
+          AEO_PRODUCTION_FINALIZATION_RECEIPT_OUTPUT: release/production-finalization-receipt.json
+          AEO_PRODUCTION_RELEASE_ID: production-${{ github.run_id }}-${{ github.run_attempt }}
+          AEO_PRODUCTION_SOURCE_SHA: ${{ github.sha }}
+          AEO_TERMINAL_EXECUTION_ARN: ${{ steps.terminal-release.outputs.terminal_execution_arn }}
+          AEO_TERMINAL_STATUS: ${{ steps.terminal-release.outputs.terminal_status }}
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            if node scripts/acceptance/create-production-finalization-receipt.mjs; then
+              exit 0
+            fi
+            if [[ "$attempt" -lt 3 ]]; then
+              sleep "$((attempt * 2))"
+            fi
+          done
+          exit 1
+
+      - name: Upload immutable finalized production release receipt
+        id: persist-finalized-receipt
+        if: ${{ always() && steps.finalized-receipt.outcome == 'success' }}
+        continue-on-error: true
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: production-release-finalized-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            release/release-digests.json
+            release/production-github-environment-evidence-pre-finalize.json
+            release/production-promotion-control-plane-pre-finalize.json
+            release/production-release-contract.json
+            release/production-tenant-data-broker-runtime.json
+            release/production-api-web-runtime.json
+            release/production-health.json
+            release/production-ready.json
+            release/production-smoke-envelope.json
+            release/production-finalization-evidence.json
+            release/production-finalization-candidate-verification.json
+            release/production-finalization-receipt.json
+            release/production-github-environment-evidence-post-candidate.json
+            release/production-promotion-control-plane-post-candidate.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Retry immutable finalized production release receipt upload
+        id: retry-finalized-receipt
+        if: ${{ always() && steps.finalized-receipt.outcome == 'success' && steps.persist-finalized-receipt.outcome != 'success' }}
+        continue-on-error: true
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: production-release-finalized-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            release/release-digests.json
+            release/production-github-environment-evidence-pre-finalize.json
+            release/production-promotion-control-plane-pre-finalize.json
+            release/production-release-contract.json
+            release/production-tenant-data-broker-runtime.json
+            release/production-api-web-runtime.json
+            release/production-health.json
+            release/production-ready.json
+            release/production-smoke-envelope.json
+            release/production-finalization-evidence.json
+            release/production-finalization-candidate-verification.json
+            release/production-finalization-receipt.json
+            release/production-github-environment-evidence-post-candidate.json
+            release/production-promotion-control-plane-post-candidate.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Verify immutable finalized production release receipt artifact
+        id: verify-finalized-receipt
+        if: ${{ always() && steps.finalized-receipt.outcome == 'success' }}
+        timeout-minutes: 5
+        env:
+          FINALIZED_ARTIFACT_NAME: production-release-finalized-${{ github.run_id }}-${{ github.run_attempt }}
+          GH_TOKEN: ${{ github.token }}
+          INITIAL_ARTIFACT_DIGEST: ${{ steps.persist-finalized-receipt.outputs.artifact-digest }}
+          INITIAL_ARTIFACT_ID: ${{ steps.persist-finalized-receipt.outputs.artifact-id }}
+          INITIAL_UPLOAD_OUTCOME: ${{ steps.persist-finalized-receipt.outcome }}
+          RETRY_ARTIFACT_DIGEST: ${{ steps.retry-finalized-receipt.outputs.artifact-digest }}
+          RETRY_ARTIFACT_ID: ${{ steps.retry-finalized-receipt.outputs.artifact-id }}
+          RETRY_UPLOAD_OUTCOME: ${{ steps.retry-finalized-receipt.outcome }}
+        run: |
+          set -euo pipefail
+          inventory="$RUNNER_TEMP/production-finalized-artifacts.json"
+          inventory_attempt="$RUNNER_TEMP/production-finalized-artifacts-attempt.json"
+          for attempt in 1 2 3 4 5; do
+            if gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=$FINALIZED_ARTIFACT_NAME&per_page=100" > "$inventory_attempt"; then
+              mv "$inventory_attempt" "$inventory"
+              break
+            fi
+            if [[ "$attempt" -lt 5 ]]; then
+              sleep "$((attempt * 2))"
+            fi
+          done
+          test -s "$inventory"
+          jq -e \
+            --arg artifactName "$FINALIZED_ARTIFACT_NAME" \
+            --arg runId "$GITHUB_RUN_ID" \
+            --arg sourceSha "$GITHUB_SHA" \
+            '.total_count == 1 and (.artifacts | length) == 1 and
+             .artifacts[0].name == $artifactName and
+             .artifacts[0].expired == false and
+             (.artifacts[0].id | type) == "number" and
+             .artifacts[0].id > 0 and
+             (.artifacts[0].workflow_run.id | tostring) == $runId and
+             .artifacts[0].workflow_run.head_sha == $sourceSha and
+             (.artifacts[0].digest | test("^sha256:[0-9a-f]{64}$"))' \
+            "$inventory" > /dev/null
+          artifact_id="$(jq -r '.artifacts[0].id | tostring' "$inventory")"
+          artifact_digest="$(jq -r '.artifacts[0].digest' "$inventory")"
+          if [[ "$INITIAL_UPLOAD_OUTCOME" == "success" ]]; then
+            [[ "$INITIAL_ARTIFACT_ID" == "$artifact_id" ]]
+            [[ "sha256:$INITIAL_ARTIFACT_DIGEST" == "$artifact_digest" ]]
+          fi
+          if [[ "$RETRY_UPLOAD_OUTCOME" == "success" ]]; then
+            [[ "$RETRY_ARTIFACT_ID" == "$artifact_id" ]]
+            [[ "sha256:$RETRY_ARTIFACT_DIGEST" == "$artifact_digest" ]]
+          fi
+          archive="$RUNNER_TEMP/production-finalized-receipt.zip"
+          archive_attempt="$RUNNER_TEMP/production-finalized-receipt-attempt.zip"
+          for attempt in 1 2 3 4 5; do
+            if gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact_id/zip" > "$archive_attempt"; then
+              mv "$archive_attempt" "$archive"
+              break
+            fi
+            if [[ "$attempt" -lt 5 ]]; then
+              sleep "$((attempt * 2))"
+            fi
+          done
+          [[ "$(sha256sum "$archive" | cut -d ' ' -f 1)" == "${artifact_digest#sha256:}" ]]
+          extract_dir="$(mktemp -d "$RUNNER_TEMP/aeostudio-finalized-receipt.XXXXXX")"
+          unzip -qq "$archive" -d "$extract_dir"
+          actual_files="$(find "$extract_dir" -type f -printf '%P\n' | LC_ALL=C sort)"
+          finalized_files=(
+            release-digests.json
+            production-github-environment-evidence-pre-finalize.json
+            production-promotion-control-plane-pre-finalize.json
+            production-release-contract.json
+            production-tenant-data-broker-runtime.json
+            production-api-web-runtime.json
+            production-health.json
+            production-ready.json
+            production-smoke-envelope.json
+            production-finalization-evidence.json
+            production-finalization-candidate-verification.json
+            production-finalization-receipt.json
+            production-github-environment-evidence-post-candidate.json
+            production-promotion-control-plane-post-candidate.json
+          )
+          expected_files="$(printf '%s\n' "${finalized_files[@]}" | LC_ALL=C sort)"
+          [[ "$actual_files" == "$expected_files" ]]
+          for finalized_file in "${finalized_files[@]}"; do
+            cmp --silent "$extract_dir/$finalized_file" "release/$finalized_file"
+          done
+          {
+            printf 'artifact_id=%s\n' "$artifact_id"
+            printf 'artifact_digest=%s\n' "${artifact_digest#sha256:}"
+            printf 'artifact_url=https://github.com/%s/actions/runs/%s/artifacts/%s\n' "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" "$artifact_id"
+          } >> "$GITHUB_OUTPUT"

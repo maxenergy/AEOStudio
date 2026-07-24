@@ -1,0 +1,35 @@
+{
+  "name": "@aeostudio/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsx watch --conditions=development src/main.ts",
+    "start": "node dist/main.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@aeostudio/application": "workspace:*",
+    "@aeostudio/adapters": "workspace:*",
+    "@aeostudio/contracts": "workspace:*",
+    "@aeostudio/db": "workspace:*",
+    "@aeostudio/domain": "workspace:*",
+    "@fastify/cookie": "11.1.2",
+    "@nestjs/common": "11.1.28",
+    "@nestjs/core": "11.1.28",
+    "@nestjs/platform-fastify": "11.1.28",
+    "@opentelemetry/api": "1.9.1",
+    "fastify": "5.10.0",
+    "pino": "10.3.1",
+    "pg": "8.22.0",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2",
+    "uuid": "14.0.1"
+  },
+  "devDependencies": {
+    "@types/pg": "8.20.0",
+    "tsx": "4.23.1",
+    "typescript": "6.0.3"
+  }
+}

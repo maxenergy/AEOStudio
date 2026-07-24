@@ -1,0 +1,32 @@
+{
+  "name": "@aeostudio/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "development": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "start": "tsx --conditions=development src/main.ts",
+    "start:production": "node dist/production-main.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@aeostudio/adapters": "workspace:*",
+    "@aeostudio/application": "workspace:*",
+    "@aeostudio/db": "workspace:*",
+    "@aeostudio/domain": "workspace:*",
+    "pg": "8.22.0",
+    "uuid": "14.0.1"
+  },
+  "devDependencies": {
+    "@types/pg": "8.20.0",
+    "tsx": "4.23.1",
+    "typescript": "6.0.3"
+  }
+}
