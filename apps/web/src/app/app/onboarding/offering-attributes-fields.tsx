@@ -5,6 +5,16 @@ import { useState } from 'react';
 
 type OfferingAttribute = OfferingEnvelope['data']['offering']['attributes'][number];
 
+/** 结构化业务字段已单独编辑，从通用维度编辑器中排除 */
+const EXCLUDED_KEYS = new Set([
+  'industry',
+  'company_size',
+  'competitors',
+  'aeo_target_keywords',
+  'geo_target_engines',
+  'optimization_goals',
+]);
+
 interface AttributeRow {
   id: number;
   key: string;
@@ -19,10 +29,11 @@ function editableValue(attribute: OfferingAttribute): string {
 }
 
 function initialRows(attributes: readonly OfferingAttribute[]): AttributeRow[] {
-  if (attributes.length === 0) {
+  const filtered = attributes.filter((attribute) => !EXCLUDED_KEYS.has(attribute.key));
+  if (filtered.length === 0) {
     return [{ id: 0, key: '', label: '', valueType: 'text', value: '' }];
   }
-  return attributes.map((attribute, index) => ({
+  return filtered.map((attribute, index) => ({
     id: index,
     key: attribute.key,
     label: attribute.label,
@@ -66,14 +77,12 @@ export function OfferingAttributesFields({
               id={`attribute-key-${row.id}`}
               name="attributeKey"
               pattern="[a-z][a-z0-9_]*"
-              required
             />
             <label htmlFor={`attribute-label-${row.id}`}>自定义维度名称{suffix}</label>
             <input
               defaultValue={row.label}
               id={`attribute-label-${row.id}`}
               name="attributeLabel"
-              required
             />
             <label htmlFor={`attribute-type-${row.id}`}>自定义维度类型{suffix}</label>
             <select
@@ -92,7 +101,6 @@ export function OfferingAttributesFields({
               defaultValue={row.value}
               id={`attribute-value-${row.id}`}
               name="attributeValue"
-              required
             />
             {rows.length === 1 ? null : (
               <button className="secondary-button" onClick={() => removeRow(row.id)} type="button">

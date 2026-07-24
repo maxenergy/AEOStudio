@@ -105,32 +105,135 @@ function dynamicValue(valueType: string, rawValue: string): unknown {
   return rawValue;
 }
 
-function requiredTextList(formData: FormData, name: string): string[] {
-  const values = formData.getAll(name);
-  if (values.length === 0) throw new Error(`INVALID_${name.toUpperCase()}`);
-  return values.map((value) => {
-    if (typeof value !== 'string' || value.trim().length === 0) {
-      throw new Error(`INVALID_${name.toUpperCase()}`);
-    }
-    return value.trim();
-  });
-}
-
 function dynamicAttributes(formData: FormData) {
-  const keys = requiredTextList(formData, 'attributeKey');
-  const labels = requiredTextList(formData, 'attributeLabel');
-  const types = requiredTextList(formData, 'attributeType');
-  const values = requiredTextList(formData, 'attributeValue');
+  const keys = formData.getAll('attributeKey');
+  const labels = formData.getAll('attributeLabel');
+  const types = formData.getAll('attributeType');
+  const values = formData.getAll('attributeValue');
   if (new Set([keys.length, labels.length, types.length, values.length]).size !== 1) {
     throw new Error('INVALID_ATTRIBUTE_ROWS');
   }
-  return keys.map((key, index) => ({
-    key,
-    label: labels[index],
-    valueType: types[index],
-    required: false,
-    value: dynamicValue(types[index] ?? '', values[index] ?? ''),
-  }));
+  const result: {
+    key: string;
+    label: string;
+    valueType: string;
+    required: boolean;
+    value: unknown;
+  }[] = [];
+  for (let index = 0; index < keys.length; index += 1) {
+    const key = typeof keys[index] === 'string' ? (keys[index] as string).trim() : '';
+    const label = typeof labels[index] === 'string' ? (labels[index] as string).trim() : '';
+    const valueType = typeof types[index] === 'string' ? (types[index] as string).trim() : 'text';
+    const rawValue = typeof values[index] === 'string' ? (values[index] as string).trim() : '';
+    if (key.length === 0 && label.length === 0 && rawValue.length === 0) continue;
+    if (key.length === 0 || label.length === 0 || rawValue.length === 0) {
+      throw new Error('INVALID_ATTRIBUTE_ROWS');
+    }
+    result.push({
+      key,
+      label,
+      valueType,
+      required: false,
+      value: dynamicValue(valueType, rawValue),
+    });
+  }
+  return result;
+}
+
+/** 结构化业务字段对应的标准 attribute key，存入 Offering attributes */
+export const BUSINESS_ATTRIBUTE_KEYS = [
+  'industry',
+  'company_size',
+  'competitors',
+  'aeo_target_keywords',
+  'geo_target_engines',
+  'optimization_goals',
+] as const;
+
+function optionalText(formData: FormData, name: string): string | undefined {
+  const value = formData.get(name);
+  if (typeof value !== 'string' || value.trim().length === 0) return undefined;
+  return value.trim();
+}
+
+function optionalList(formData: FormData, name: string): string[] {
+  const value = formData.get(name);
+  if (typeof value !== 'string') return [];
+  return value
+    .split(/[\n,，]/)
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+}
+
+function businessAttributes(formData: FormData) {
+  const result: {
+    key: string;
+    label: string;
+    valueType: string;
+    required: boolean;
+    value: unknown;
+  }[] = [];
+  const industry = optionalText(formData, 'industry');
+  if (industry !== undefined) {
+    result.push({
+      key: 'industry',
+      label: '行业',
+      valueType: 'text',
+      required: false,
+      value: industry,
+    });
+  }
+  const companySize = optionalText(formData, 'companySize');
+  if (companySize !== undefined) {
+    result.push({
+      key: 'company_size',
+      label: '公司规模',
+      valueType: 'text',
+      required: false,
+      value: companySize,
+    });
+  }
+  const competitors = optionalList(formData, 'competitors');
+  if (competitors.length > 0) {
+    result.push({
+      key: 'competitors',
+      label: '主要竞品',
+      valueType: 'string_list',
+      required: false,
+      value: competitors,
+    });
+  }
+  const aeoKeywords = optionalList(formData, 'aeoKeywords');
+  if (aeoKeywords.length > 0) {
+    result.push({
+      key: 'aeo_target_keywords',
+      label: 'AEO 目标关键词',
+      valueType: 'string_list',
+      required: false,
+      value: aeoKeywords,
+    });
+  }
+  const geoEngines = optionalList(formData, 'geoEngines');
+  if (geoEngines.length > 0) {
+    result.push({
+      key: 'geo_target_engines',
+      label: 'GEO 目标引擎',
+      valueType: 'string_list',
+      required: false,
+      value: geoEngines,
+    });
+  }
+  const goals = optionalList(formData, 'optimizationGoals');
+  if (goals.length > 0) {
+    result.push({
+      key: 'optimization_goals',
+      label: '优化目标',
+      valueType: 'string_list',
+      required: false,
+      value: goals,
+    });
+  }
+  return result;
 }
 
 async function saveOffering(formData: FormData): Promise<never> {
@@ -175,6 +278,9 @@ async function saveOffering(formData: FormData): Promise<never> {
     typeof rawOfferingId === 'string' && rawOfferingId.trim().length > 0
       ? rawOfferingId.trim()
       : undefined;
+  const structured = businessAttributes(formData);
+  const structuredKeys = new Set(structured.map((entry) => entry.key));
+  const custom = dynamicAttributes(formData).filter((entry) => !structuredKeys.has(entry.key));
   const endpoint =
     offeringId === undefined
       ? `${apiOrigin()}/api/v1/tenants/${encodeURIComponent(tenantId)}/workspaces/${encodeURIComponent(workspaceId)}/profiles/${encodeURIComponent(profileId)}/offerings`
@@ -200,7 +306,7 @@ async function saveOffering(formData: FormData): Promise<never> {
       applicationScenarios: lines(formData.get('applicationScenarios')),
       compatibility: lines(formData.get('compatibility')),
       evidenceHints: lines(formData.get('evidenceHints')),
-      attributes: dynamicAttributes(formData),
+      attributes: [...structured, ...custom],
     }),
   });
   if (!response.ok) {
@@ -212,6 +318,15 @@ async function saveOffering(formData: FormData): Promise<never> {
   redirect(
     `/app/onboarding?tenant=${tenantId}&workspace=${workspaceId}&profile=${profileId}&profileRevision=${profileRevision}&offering=${result.data.offering.offeringId}&revision=${result.data.offering.revision}&notice=saved`,
   );
+}
+
+type OfferingData = OfferingEnvelope['data']['offering'];
+
+function attrValue(offering: OfferingData | undefined, key: string): string {
+  const attribute = offering?.attributes.find((entry) => entry.key === key);
+  if (attribute === undefined) return '';
+  if (Array.isArray(attribute.value)) return attribute.value.join('\n');
+  return String(attribute.value);
 }
 
 interface OnboardingPageProps {
@@ -304,6 +419,50 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
           </p>
           <h2>{offering.name}</h2>
           <p>Revision {offering.revision}</p>
+          {attrValue(offering, 'industry') === '' &&
+          attrValue(offering, 'company_size') === '' &&
+          attrValue(offering, 'competitors') === '' ? null : (
+            <>
+              <h3>企业与行业</h3>
+              <ul>
+                {attrValue(offering, 'industry') === '' ? null : (
+                  <li>行业：{attrValue(offering, 'industry')}</li>
+                )}
+                {attrValue(offering, 'company_size') === '' ? null : (
+                  <li>公司规模：{attrValue(offering, 'company_size')}</li>
+                )}
+                {attrValue(offering, 'competitors') === '' ? null : (
+                  <li>主要竞品：{attrValue(offering, 'competitors').replace(/\n/g, '、')}</li>
+                )}
+              </ul>
+            </>
+          )}
+          {attrValue(offering, 'aeo_target_keywords') === '' &&
+          attrValue(offering, 'geo_target_engines') === '' &&
+          attrValue(offering, 'optimization_goals') === '' ? null : (
+            <>
+              <h3>AEO / GEO 优化配置</h3>
+              <ul>
+                {attrValue(offering, 'aeo_target_keywords') === '' ? null : (
+                  <li>
+                    AEO 目标关键词：
+                    {attrValue(offering, 'aeo_target_keywords').replace(/\n/g, '、')}
+                  </li>
+                )}
+                {attrValue(offering, 'geo_target_engines') === '' ? null : (
+                  <li>
+                    GEO 目标引擎：
+                    {attrValue(offering, 'geo_target_engines').replace(/\n/g, '、')}
+                  </li>
+                )}
+                {attrValue(offering, 'optimization_goals') === '' ? null : (
+                  <li>
+                    优化目标：{attrValue(offering, 'optimization_goals').replace(/\n/g, '、')}
+                  </li>
+                )}
+              </ul>
+            </>
+          )}
           <h3>规格</h3>
           <ul>
             {offering.specifications.map((specification) => (
@@ -315,14 +474,28 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
           </ul>
           <h3>自定义维度</h3>
           <ul>
-            {offering.attributes.map((attribute) => (
-              <li key={attribute.key}>
-                {attribute.label}：
-                {Array.isArray(attribute.value)
-                  ? attribute.value.join('、')
-                  : String(attribute.value)}
-              </li>
-            ))}
+            {offering.attributes
+              .filter(
+                (attribute) =>
+                  !(
+                    [
+                      'industry',
+                      'company_size',
+                      'competitors',
+                      'aeo_target_keywords',
+                      'geo_target_engines',
+                      'optimization_goals',
+                    ] as readonly string[]
+                  ).includes(attribute.key),
+              )
+              .map((attribute) => (
+                <li key={attribute.key}>
+                  {attribute.label}：
+                  {Array.isArray(attribute.value)
+                    ? attribute.value.join('、')
+                    : String(attribute.value)}
+                </li>
+              ))}
           </ul>
           <p>完整度 {offering.completeness.percent}%</p>
           <p>内容哈希：{offering.contentHash}</p>
@@ -451,6 +624,52 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
             <input defaultValue={offering?.kind} id="offering-kind" name="kind" required />
             <label htmlFor="offering-name">Offering 名称</label>
             <input defaultValue={offering?.name} id="offering-name" name="name" required />
+            <h3>企业与行业信息</h3>
+            <label htmlFor="offering-industry">行业</label>
+            <select
+              defaultValue={attrValue(offering, 'industry')}
+              id="offering-industry"
+              name="industry"
+            >
+              <option value="">请选择行业（可选）</option>
+              <option value="software">软件 / SaaS</option>
+              <option value="ai">人工智能 / 大模型</option>
+              <option value="hardware">硬件 / 智能制造</option>
+              <option value="ecommerce">电商 / 零售</option>
+              <option value="finance">金融 / 保险</option>
+              <option value="healthcare">医疗 / 健康</option>
+              <option value="education">教育 / 培训</option>
+              <option value="manufacturing">制造业</option>
+              <option value="logistics">物流 / 供应链</option>
+              <option value="energy">能源 / 环保</option>
+              <option value="media">媒体 / 文娱</option>
+              <option value="food">餐饮 / 食品</option>
+              <option value="realestate">房地产 / 建筑</option>
+              <option value="legal">法律 / 咨询</option>
+              <option value="other">其他</option>
+            </select>
+            <label htmlFor="offering-company-size">公司规模</label>
+            <select
+              defaultValue={attrValue(offering, 'company_size')}
+              id="offering-company-size"
+              name="companySize"
+            >
+              <option value="">请选择规模（可选）</option>
+              <option value="1-10">1–10 人</option>
+              <option value="11-50">11–50 人</option>
+              <option value="51-200">51–200 人</option>
+              <option value="201-500">201–500 人</option>
+              <option value="501-1000">501–1000 人</option>
+              <option value="1000+">1000 人以上</option>
+            </select>
+            <label htmlFor="offering-competitors">主要竞品（每行一个，或逗号分隔）</label>
+            <textarea
+              defaultValue={attrValue(offering, 'competitors')}
+              id="offering-competitors"
+              name="competitors"
+              placeholder={'例如：\nCompetitorA\nCompetitorB'}
+              rows={3}
+            />
             <label htmlFor="offering-principle">原理</label>
             <textarea
               defaultValue={offering?.principle}
@@ -518,6 +737,37 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
               defaultValue={offering?.evidenceHints.join('\n')}
               id="offering-evidence"
               name="evidenceHints"
+              rows={3}
+            />
+            <h3>AEO / GEO 优化配置</h3>
+            <p className="field-help">
+              AEO（Answer Engine Optimization）关注 AI 回答中的可见度；GEO（Generative Engine
+              Optimization）关注生成式引擎的引用与推荐。
+            </p>
+            <label htmlFor="offering-aeo-keywords">AEO 目标关键词 / 问题（每行一个）</label>
+            <textarea
+              defaultValue={attrValue(offering, 'aeo_target_keywords')}
+              id="offering-aeo-keywords"
+              name="aeoKeywords"
+              placeholder={'例如：\n最好的企业AI平台是哪个\nAIBOX 和竞品对比如何'}
+              rows={3}
+            />
+            <label htmlFor="offering-geo-engines">GEO 目标引擎（每行一个）</label>
+            <textarea
+              defaultValue={attrValue(offering, 'geo_target_engines')}
+              id="offering-geo-engines"
+              name="geoEngines"
+              placeholder={'例如：\nChatGPT\nClaude\nGemini\nPerplexity\n豆包\nKimi'}
+              rows={3}
+            />
+            <label htmlFor="offering-goals">优化目标（每行一个）</label>
+            <textarea
+              defaultValue={attrValue(offering, 'optimization_goals')}
+              id="offering-goals"
+              name="optimizationGoals"
+              placeholder={
+                '例如：\n提升品牌在AI回答中的引用率\n增加官网自然流量\n建立行业权威内容资产'
+              }
               rows={3}
             />
             <OfferingAttributesFields

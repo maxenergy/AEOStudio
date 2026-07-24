@@ -7,8 +7,6 @@ import type {
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-import { WorkspaceSwitcher } from './workspace-switcher';
-
 const ROLE_LABELS = {
   OWNER: 'Owner',
   ADMIN: 'Admin',
@@ -179,10 +177,6 @@ export default async function ApplicationPage({ searchParams }: ApplicationPageP
         </section>
       ) : null}
 
-      {workspaceList.data.workspaces.length > 0 && current !== undefined ? (
-        <WorkspaceSwitcher workspaces={workspaceList.data.workspaces} current={current} />
-      ) : null}
-
       <section aria-labelledby="workspace-heading" className="shell-card">
         {current === undefined ? (
           <>
@@ -194,76 +188,7 @@ export default async function ApplicationPage({ searchParams }: ApplicationPageP
             <p className="eyebrow">{current.tenant.name}</p>
             <h2 id="workspace-heading">{current.workspace.name}</h2>
             <p>当前角色：{ROLE_LABELS[current.activeRole]}</p>
-            {['OWNER', 'ADMIN', 'EDITOR'].includes(current.activeRole) ? (
-              <>
-                <a
-                  className="secondary-action"
-                  href={`/app/onboarding?tenant=${current.tenant.id}&workspace=${current.workspace.id}`}
-                >
-                  开始业务资料 Onboarding
-                </a>
-                <a
-                  className="secondary-action"
-                  href={`/app/claims?tenant=${current.tenant.id}&workspace=${current.workspace.id}`}
-                >
-                  Evidence / Claim Ledger
-                </a>
-              </>
-            ) : null}
-            {current.activeRole === 'REVIEWER' ? (
-              <a
-                className="secondary-action"
-                href={`/app/claims?tenant=${current.tenant.id}&workspace=${current.workspace.id}`}
-              >
-                Evidence / Claim Ledger
-              </a>
-            ) : null}
-            {['OWNER', 'ADMIN', 'EDITOR', 'REVIEWER', 'ANALYST'].includes(current.activeRole) ? (
-              <a
-                className="secondary-action"
-                href={`/app/prompts?tenant=${current.tenant.id}&workspace=${current.workspace.id}`}
-              >
-                Prompt / Scenario Lab
-              </a>
-            ) : null}
-            {['OWNER', 'ADMIN', 'EDITOR', 'REVIEWER'].includes(current.activeRole) ? (
-              <a
-                className="secondary-action"
-                href={`/app/plans?tenant=${current.tenant.id}&workspace=${current.workspace.id}`}
-              >
-                Content Plan / Briefs
-              </a>
-            ) : null}
-            {['OWNER', 'ADMIN', 'EDITOR', 'REVIEWER', 'PUBLISHER', 'VIEWER'].includes(
-              current.activeRole,
-            ) ? (
-              <a
-                className="secondary-action"
-                href={`/app/artifacts?tenant=${current.tenant.id}&workspace=${current.workspace.id}`}
-              >
-                Artifact Studio
-              </a>
-            ) : null}
-            <a
-              className="secondary-action"
-              href={`/app/channels?tenant=${current.tenant.id}&workspace=${current.workspace.id}`}
-            >
-              Channel Packages / Publications
-            </a>
-            <a
-              className="secondary-action"
-              href={`/app/experiments?tenant=${current.tenant.id}&workspace=${current.workspace.id}`}
-            >
-              Experiment Comparison
-            </a>
-            {current.activeRole === 'OWNER' ? (
-              <a
-                className="secondary-action"
-                href={`/app/privacy?tenant=${current.tenant.id}&workspace=${current.workspace.id}`}
-              >
-                Privacy &amp; Audit
-              </a>
-            ) : null}
+            <p>使用左侧导航栏进入各功能模块。</p>
             {query.notice === 'invited' ? (
               <>
                 <p className="success-message" role="status">
