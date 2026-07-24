@@ -1,4 +1,5 @@
 import type { ArtifactType } from '../artifacts/index.js';
+import type { ChannelProfile } from './channel-registry.js';
 
 export interface ChannelPackageFile {
   path: string;
@@ -23,6 +24,7 @@ export interface ChannelPackageManifest {
   files: ChannelPackageFile[];
   assetRefs: string[];
   claimSourceMap: ChannelPackageClaimSourceMapEntry[];
+  channelProfile?: ChannelProfile;
 }
 
 export interface ChannelPackagePreview {
@@ -67,7 +69,7 @@ export interface ChannelPackageRecord extends Omit<ChannelPackageDocument, 'prev
 }
 
 export interface ChannelPackagePayload {
-  files: {
+  files: Record<string, string> & {
     'content.md': string;
     'content.html': string;
     'structured-data.json': string;

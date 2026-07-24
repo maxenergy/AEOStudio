@@ -25,6 +25,26 @@ export interface ChannelAdapterVersion {
   ratePolicy: Record<string, unknown>;
 }
 
+export interface ChannelProfileFieldRequirement {
+  field: string;
+  sourcePointer: string;
+  required: boolean;
+  minLength: number | null;
+  maxLength: number | null;
+  format: string;
+}
+
+/**
+ * Immutable, versioned destination requirements. `channel` and `format` remain open strings:
+ * adding a destination is Registry data, not a business-logic enum or release.
+ */
+export interface ChannelProfile {
+  channel: string;
+  profileVersion: string;
+  profileHash: string;
+  fieldRequirements: ChannelProfileFieldRequirement[];
+}
+
 export interface ChannelRegistryEntry {
   id: string;
   channelKey: string;
@@ -33,5 +53,6 @@ export interface ChannelRegistryEntry {
   unavailableReason: string | null;
   packageTransformerKey: string;
   packageSchemaVersion: string;
+  channelProfile?: ChannelProfile | null;
   adapterVersions: ChannelAdapterVersion[];
 }

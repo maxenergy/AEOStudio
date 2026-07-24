@@ -2,6 +2,7 @@ import type { ChannelRegistryStore } from '@aeostudio/application/channels-publi
 import type {
   AdapterTermsStatus,
   ChannelDefinitionStatus,
+  ChannelProfileFieldRequirement,
   ChannelRegistryEntry,
 } from '@aeostudio/domain/channels-publishing';
 import type { Pool } from 'pg';
@@ -16,6 +17,10 @@ interface ChannelRegistryRow {
   unavailable_reason: string | null;
   package_transformer_key: string;
   package_schema_version: string;
+  profile_channel: string | null;
+  profile_version: string | null;
+  profile_hash: string | null;
+  profile_field_requirements: ChannelProfileFieldRequirement[] | null;
   adapter_id: string | null;
   adapter_key: string | null;
   adapter_version: string | null;
@@ -52,6 +57,10 @@ export class PostgresChannelRegistryStore implements ChannelRegistryStore {
            channel.unavailable_reason,
            channel.package_transformer_key,
            channel.package_schema_version,
+           profile.channel AS profile_channel,
+           profile.profile_version,
+           profile.profile_hash,
+           profile.field_requirements AS profile_field_requirements,
            adapter.id AS adapter_id,
            adapter.adapter_key,
            adapter.adapter_version,
@@ -69,6 +78,9 @@ export class PostgresChannelRegistryStore implements ChannelRegistryStore {
            adapter.subprocessors,
            adapter.rate_policy
          FROM channel_definitions channel
+         LEFT JOIN channel_profiles profile
+           ON profile.id = channel.current_channel_profile_id
+          AND profile.channel_definition_id = channel.id
          LEFT JOIN adapter_versions adapter
            ON adapter.channel_definition_id = channel.id
          ORDER BY channel.channel_key, adapter.adapter_key, adapter.adapter_version`,
@@ -86,6 +98,18 @@ export class PostgresChannelRegistryStore implements ChannelRegistryStore {
             unavailableReason: row.unavailable_reason,
             packageTransformerKey: row.package_transformer_key,
             packageSchemaVersion: row.package_schema_version,
+            channelProfile:
+              row.profile_channel === null ||
+              row.profile_version === null ||
+              row.profile_hash === null ||
+              row.profile_field_requirements === null
+                ? null
+                : {
+                    channel: row.profile_channel,
+                    profileVersion: row.profile_version,
+                    profileHash: row.profile_hash,
+                    fieldRequirements: row.profile_field_requirements,
+                  },
             adapterVersions: [],
           };
           entries.set(row.channel_id, entry);

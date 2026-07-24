@@ -1,4 +1,5 @@
 export * from './channel-registry-service.js';
+export * from './channel-profile.js';
 export * from './channel-authorization-service.js';
 export * from './channel-package-service.js';
 export * from './generic-web-package-transformer.js';

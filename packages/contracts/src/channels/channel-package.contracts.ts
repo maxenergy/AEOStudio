@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { SCHEMA_VERSION } from '../auth/auth.contracts.js';
+import { ChannelProfileSchema } from './channel-registry.contracts.js';
 
 const UuidSchema = z.uuid();
 const Sha256Schema = z.string().regex(/^[a-f0-9]{64}$/);
@@ -25,7 +26,7 @@ export const ChannelPackageFileSchema = z
     path: z.string().min(1).max(500),
     mediaType: z.string().min(1).max(160),
     sha256: Sha256Schema,
-    byteLength: z.number().int().positive(),
+    byteLength: z.number().int().nonnegative(),
   })
   .strict();
 
@@ -52,6 +53,7 @@ export const ChannelPackageManifestSchema = z
     files: z.array(ChannelPackageFileSchema).min(3),
     assetRefs: z.array(z.string().trim().min(1).max(2_048)),
     claimSourceMap: z.array(ChannelPackageClaimSourceMapEntrySchema),
+    channelProfile: ChannelProfileSchema.optional(),
   })
   .strict();
 
@@ -119,7 +121,7 @@ export const ChannelPackageExportSchema = z
         'content.html': z.string().min(1),
         'structured-data.json': z.string().min(1),
       })
-      .strict(),
+      .catchall(z.string()),
   })
   .strict();
 

@@ -27,6 +27,7 @@ import type {
   ChannelRegistryStore,
 } from './ports.js';
 import type { ChannelPackageTransformerRegistry } from './generic-web-package-transformer.js';
+import { channelProfileIsValid } from './channel-profile.js';
 
 export type BuildChannelPackageOutcome =
   | { outcome: 'SUCCEEDED'; package: ChannelPackageDocument; created: boolean }
@@ -39,6 +40,7 @@ export type BuildChannelPackageOutcome =
         | 'HASH_MISMATCH'
         | 'PAYLOAD_INTEGRITY_INVALID'
         | 'CHANNEL_UNAVAILABLE'
+        | 'CHANNEL_PROFILE_INVALID'
         | 'TRANSFORMER_UNAVAILABLE';
     };
 
@@ -80,6 +82,10 @@ export class ChannelPackageService {
     );
     if (channel === undefined) return { outcome: 'NOT_FOUND' };
     if (channel.status !== 'AVAILABLE') return { outcome: 'CHANNEL_UNAVAILABLE' };
+    const channelProfile = channel.channelProfile ?? null;
+    if (channelProfile !== null && !channelProfileIsValid(channelProfile, channel.channelKey)) {
+      return { outcome: 'CHANNEL_PROFILE_INVALID' };
+    }
     const transformer = this.transformers.resolve(channel.packageTransformerKey);
     if (transformer === null) return { outcome: 'TRANSFORMER_UNAVAILABLE' };
 
@@ -146,7 +152,11 @@ export class ChannelPackageService {
       return { outcome: 'PAYLOAD_INTEGRITY_INVALID' };
     }
 
-    const payload = transformer.transform({ revision, payload: artifactPayload });
+    const payload = transformer.transform({
+      revision,
+      payload: artifactPayload,
+      channelProfile,
+    });
     const artifact: ChannelPackageRecord['artifact'] = {
       artifactId: input.artifactId,
       artifactRevisionId: revision.id,
@@ -159,7 +169,12 @@ export class ChannelPackageService {
     };
     const channelSnapshot = { definitionId: channel.id, channelKey: channel.channelKey };
     const transformerSnapshot = { key: transformer.key, version: transformer.version };
-    const manifest = createManifest(channel.packageSchemaVersion, revision.claimBindings, payload);
+    const manifest = createManifest(
+      channel.packageSchemaVersion,
+      revision.claimBindings,
+      payload,
+      channelProfile,
+    );
     const packageChecksum = hashChannelPackage({
       packageSchemaVersion: channel.packageSchemaVersion,
       channel: channelSnapshot,
@@ -397,20 +412,18 @@ function createManifest(
   schemaVersion: string,
   claimBindings: Parameters<typeof validateArtifactPayload>[1],
   payload: ChannelPackagePayload,
+  channelProfile: ChannelPackageManifest['channelProfile'] | null,
 ): ChannelPackageManifest {
   return {
     schemaVersion,
-    files: Object.entries(payload.files).map(([path, content]) => ({
-      path,
-      mediaType:
-        path === 'content.md'
-          ? 'text/markdown'
-          : path === 'content.html'
-            ? 'text/html'
-            : 'application/ld+json',
-      sha256: sha256(content),
-      byteLength: Buffer.byteLength(content, 'utf8'),
-    })),
+    files: Object.entries(payload.files)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([path, content]) => ({
+        path,
+        mediaType: channelPackageMediaType(path),
+        sha256: sha256(content),
+        byteLength: Buffer.byteLength(content, 'utf8'),
+      })),
     assetRefs: [],
     claimSourceMap: [...claimBindings]
       .sort((left, right) => left.claimRevisionId.localeCompare(right.claimRevisionId))
@@ -424,6 +437,9 @@ function createManifest(
           ),
         ),
       })),
+    ...(channelProfile === undefined || channelProfile === null
+      ? {}
+      : { channelProfile: structuredClone(channelProfile) }),
   };
 }
 
@@ -432,17 +448,25 @@ export function verifyChannelPackagePayload(
   payload: ChannelPackagePayload,
 ): ChannelPackageDocument | null {
   const expectedFiles = new Map(record.manifest.files.map((file) => [file.path, file]));
+  const actualFiles = Object.entries(payload.files);
+  const requiredCoreFiles = ['content.md', 'content.html', 'structured-data.json'] as const;
+  const requiredProfileFiles = ['post.txt', 'fields.json', 'submission-checklist.md'] as const;
   if (
-    expectedFiles.size !== 3 ||
-    !(['content.md', 'content.html', 'structured-data.json'] as const).every((path) => {
-      const content = payload.files[path];
+    expectedFiles.size !== record.manifest.files.length ||
+    expectedFiles.size !== actualFiles.length ||
+    !requiredCoreFiles.every((path) => typeof payload.files[path] === 'string') ||
+    !actualFiles.every(([path, content]) => {
       const file = expectedFiles.get(path);
       return (
+        typeof content === 'string' &&
         file !== undefined &&
         file.sha256 === sha256(content) &&
         file.byteLength === Buffer.byteLength(content, 'utf8')
       );
-    })
+    }) ||
+    (record.manifest.channelProfile !== undefined &&
+      (!channelProfileIsValid(record.manifest.channelProfile, record.channel.channelKey) ||
+        !requiredProfileFiles.every((path) => typeof payload.files[path] === 'string')))
   ) {
     return null;
   }
@@ -492,4 +516,13 @@ function hashChannelPackage(input: {
 
 function sha256(value: string): string {
   return createHash('sha256').update(value, 'utf8').digest('hex');
+}
+
+function channelPackageMediaType(path: string): string {
+  if (path.endsWith('.md')) return 'text/markdown';
+  if (path.endsWith('.html')) return 'text/html';
+  if (path.endsWith('.txt')) return 'text/plain';
+  if (path === 'structured-data.json') return 'application/ld+json';
+  if (path.endsWith('.json')) return 'application/json';
+  return 'application/octet-stream';
 }

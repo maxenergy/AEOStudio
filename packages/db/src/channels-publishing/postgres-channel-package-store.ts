@@ -19,6 +19,7 @@ interface ChannelPackageRow {
   transformer_key: string;
   transformer_version: string;
   package_schema_version: string;
+  channel_profile_hash: string | null;
   artifact_id: string;
   artifact_revision_id: string;
   artifact_revision: number;
@@ -36,7 +37,7 @@ interface ChannelPackageRow {
 
 const SELECT_COLUMNS = `id, tenant_id, workspace_id, package_revision,
   channel_definition_id, channel_key, transformer_key, transformer_version,
-  package_schema_version, artifact_id, artifact_revision_id, artifact_revision,
+  package_schema_version, channel_profile_hash, artifact_id, artifact_revision_id, artifact_revision,
   artifact_content_hash, artifact_type, artifact_locale, artifact_market,
   artifact_method_policy_version, manifest, package_checksum, payload_object_ref,
   created_by_user_id, created_at`;
@@ -81,16 +82,17 @@ export class PostgresChannelPackageStore implements ChannelPackageStore {
       const inserted = await client.query<ChannelPackageRow>(
         `INSERT INTO channel_packages
           (id, tenant_id, workspace_id, package_revision, channel_definition_id, channel_key,
-            transformer_key, transformer_version, package_schema_version, artifact_id,
+            transformer_key, transformer_version, package_schema_version, channel_profile_hash, artifact_id,
             artifact_revision_id, artifact_revision, artifact_content_hash, artifact_type,
             artifact_locale, artifact_market, artifact_method_policy_version, manifest,
             package_checksum, payload_object_ref, created_by_user_id, created_at)
          VALUES
           ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
-            $17, $18::jsonb, $19, $20, $21, $22)
+            $17, $18, $19::jsonb, $20, $21, $22, $23)
          ON CONFLICT
           (tenant_id, workspace_id, artifact_revision_id, artifact_content_hash,
-            channel_definition_id, transformer_key, transformer_version, package_schema_version)
+            channel_definition_id, transformer_key, transformer_version, package_schema_version,
+            channel_profile_hash)
          DO NOTHING
          RETURNING ${SELECT_COLUMNS}`,
         [
@@ -103,6 +105,7 @@ export class PostgresChannelPackageStore implements ChannelPackageStore {
           input.transformer.key,
           input.transformer.version,
           input.packageSchemaVersion,
+          input.manifest.channelProfile?.profileHash ?? null,
           input.artifact.artifactId,
           input.artifact.artifactRevisionId,
           input.artifact.revision,
@@ -132,7 +135,8 @@ export class PostgresChannelPackageStore implements ChannelPackageStore {
                'artifactContentHash', $9::text,
                'channelDefinitionId', $10::uuid,
                'channelKey', $11::text,
-               'packageChecksum', $12::text), $13)`,
+               'packageChecksum', $12::text,
+               'channelProfileHash', $13::text), $14)`,
           [
             input.auditEventId,
             input.context.tenantId,
@@ -146,6 +150,7 @@ export class PostgresChannelPackageStore implements ChannelPackageStore {
             input.channel.definitionId,
             input.channel.channelKey,
             input.packageChecksum,
+            input.manifest.channelProfile?.profileHash ?? null,
             input.createdAt,
           ],
         );
@@ -160,7 +165,8 @@ export class PostgresChannelPackageStore implements ChannelPackageStore {
            AND channel_definition_id = $4
            AND transformer_key = $5
            AND transformer_version = $6
-           AND package_schema_version = $7`,
+           AND package_schema_version = $7
+           AND channel_profile_hash IS NOT DISTINCT FROM $8`,
         [
           input.context.workspaceId,
           input.artifact.artifactRevisionId,
@@ -169,6 +175,7 @@ export class PostgresChannelPackageStore implements ChannelPackageStore {
           input.transformer.key,
           input.transformer.version,
           input.packageSchemaVersion,
+          input.manifest.channelProfile?.profileHash ?? null,
         ],
       );
       const row = existing.rows[0];

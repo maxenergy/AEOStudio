@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { SCHEMA_VERSION } from '../auth/auth.contracts.js';
 
 const UuidSchema = z.uuid();
+const Sha256Schema = z.string().regex(/^[a-f0-9]{64}$/);
 const OpenMetadataSchema = z.record(z.string(), z.unknown());
 
 export const ChannelAdapterVersionSchema = z
@@ -26,6 +27,48 @@ export const ChannelAdapterVersionSchema = z
   })
   .strict();
 
+export const ChannelProfileFieldRequirementSchema = z
+  .object({
+    field: z.string().trim().min(1).max(160),
+    sourcePointer: z.string().min(1).max(500).startsWith('/'),
+    required: z.boolean(),
+    minLength: z.number().int().nonnegative().max(1_000_000).nullable(),
+    maxLength: z.number().int().nonnegative().max(1_000_000).nullable(),
+    format: z.string().trim().min(1).max(160),
+  })
+  .strict()
+  .superRefine((value, context) => {
+    if (value.minLength !== null && value.maxLength !== null && value.minLength > value.maxLength) {
+      context.addIssue({
+        code: 'custom',
+        path: ['maxLength'],
+        message: 'maxLength must be greater than or equal to minLength',
+      });
+    }
+  });
+
+export const ChannelProfileSchema = z
+  .object({
+    channel: z.string().trim().min(1).max(160),
+    profileVersion: z.string().trim().min(1).max(80),
+    profileHash: Sha256Schema,
+    fieldRequirements: z.array(ChannelProfileFieldRequirementSchema).min(1).max(100),
+  })
+  .strict()
+  .superRefine((value, context) => {
+    const fields = new Set<string>();
+    for (const [index, requirement] of value.fieldRequirements.entries()) {
+      if (fields.has(requirement.field)) {
+        context.addIssue({
+          code: 'custom',
+          path: ['fieldRequirements', index, 'field'],
+          message: 'field requirements must be unique',
+        });
+      }
+      fields.add(requirement.field);
+    }
+  });
+
 export const ChannelRegistryEntrySchema = z
   .object({
     id: UuidSchema,
@@ -35,6 +78,7 @@ export const ChannelRegistryEntrySchema = z
     unavailableReason: z.string().trim().min(1).max(500).nullable(),
     packageTransformerKey: z.string().trim().min(1).max(160),
     packageSchemaVersion: z.string().trim().min(1).max(80),
+    channelProfile: ChannelProfileSchema.nullable().optional(),
     adapterVersions: z.array(ChannelAdapterVersionSchema),
   })
   .strict();
