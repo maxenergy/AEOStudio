@@ -181,8 +181,31 @@ export const PromptApprovalIssueSchema = z
   })
   .strict();
 
+export const ApprovedPromptSetListEnvelopeSchema = z
+  .object({
+    data: z
+      .object({
+        promptSets: z.array(
+          z
+            .object({
+              promptSetId: UuidSchema,
+              revisionId: UuidSchema,
+              revision: z.number().int().positive(),
+              title: z.string(),
+              subject: z.string(),
+              contentHash: HashSchema,
+            })
+            .strict(),
+        ),
+      })
+      .strict(),
+    meta: MetaSchema,
+  })
+  .strict();
+
 export type ProposePromptSetRequest = z.infer<typeof ProposePromptSetRequestSchema>;
 export type CreatePromptRevisionRequest = z.infer<typeof CreatePromptRevisionRequestSchema>;
 export type MeasurementScenarioInputContract = z.infer<typeof MeasurementScenarioInputSchema>;
 export type PromptBundleEnvelope = z.infer<typeof PromptBundleEnvelopeSchema>;
 export type PromptRegistryEnvelope = z.infer<typeof PromptRegistryEnvelopeSchema>;
+export type ApprovedPromptSetListEnvelope = z.infer<typeof ApprovedPromptSetListEnvelopeSchema>;

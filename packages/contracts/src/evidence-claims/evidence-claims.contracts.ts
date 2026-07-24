@@ -208,9 +208,33 @@ export const ClaimCurrentStateEnvelopeSchema = z
   })
   .strict();
 
+export const ApprovedClaimListEnvelopeSchema = z
+  .object({
+    data: z
+      .object({
+        claims: z.array(
+          z
+            .object({
+              claimId: z.uuid(),
+              revisionId: z.uuid(),
+              revision: z.number().int().positive(),
+              statement: z.string(),
+              contentHash: z.string().regex(/^[a-f0-9]{64}$/),
+            })
+            .strict(),
+        ),
+      })
+      .strict(),
+    meta: z
+      .object({ requestId: z.string().min(1), schemaVersion: z.literal(SCHEMA_VERSION) })
+      .strict(),
+  })
+  .strict();
+
 export type EvidenceSourceEnvelope = z.infer<typeof EvidenceSourceEnvelopeSchema>;
 export type EvidenceSnapshotEnvelope = z.infer<typeof EvidenceSnapshotEnvelopeSchema>;
 export type ClaimEnvelope = z.infer<typeof ClaimEnvelopeSchema>;
 export type ClaimReviewEnvelope = z.infer<typeof ClaimReviewEnvelopeSchema>;
 export type ClaimEvidenceDrillDownEnvelope = z.infer<typeof ClaimEvidenceDrillDownEnvelopeSchema>;
 export type ClaimCurrentStateEnvelope = z.infer<typeof ClaimCurrentStateEnvelopeSchema>;
+export type ApprovedClaimListEnvelope = z.infer<typeof ApprovedClaimListEnvelopeSchema>;

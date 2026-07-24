@@ -151,7 +151,57 @@ export const OfferingEnvelopeSchema = z
   })
   .strict();
 
+export const ProfileListEnvelopeSchema = z
+  .object({
+    data: z
+      .object({
+        profiles: z.array(
+          z
+            .object({
+              id: z.uuid(),
+              displayName: z.string(),
+              currentRevision: z.number().int().positive(),
+              completeness: CompletenessSummarySchema,
+            })
+            .strict(),
+        ),
+      })
+      .strict(),
+    meta: z
+      .object({ requestId: z.string().min(1), schemaVersion: z.literal(SCHEMA_VERSION) })
+      .strict(),
+  })
+  .strict();
+
+export const OfferingListEnvelopeSchema = z
+  .object({
+    data: z
+      .object({
+        offerings: z.array(
+          z
+            .object({
+              id: z.uuid(),
+              profileId: z.uuid(),
+              kind: z.string(),
+              name: z.string(),
+              locale: z.string(),
+              market: z.string(),
+              currentRevision: z.number().int().positive(),
+              completeness: CompletenessSummarySchema,
+            })
+            .strict(),
+        ),
+      })
+      .strict(),
+    meta: z
+      .object({ requestId: z.string().min(1), schemaVersion: z.literal(SCHEMA_VERSION) })
+      .strict(),
+  })
+  .strict();
+
 export type ProfileInput = z.infer<typeof ProfileInputSchema>;
 export type ProfileEnvelope = z.infer<typeof ProfileEnvelopeSchema>;
+export type ProfileListEnvelope = z.infer<typeof ProfileListEnvelopeSchema>;
 export type OfferingInput = z.infer<typeof OfferingInputSchema>;
 export type OfferingEnvelope = z.infer<typeof OfferingEnvelopeSchema>;
+export type OfferingListEnvelope = z.infer<typeof OfferingListEnvelopeSchema>;

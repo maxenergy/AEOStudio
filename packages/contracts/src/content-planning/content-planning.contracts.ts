@@ -175,8 +175,31 @@ export const BriefReviewEnvelopeSchema = z
   })
   .strict();
 
+export const ApprovedBriefListEnvelopeSchema = z
+  .object({
+    data: z
+      .object({
+        briefs: z.array(
+          z
+            .object({
+              briefId: UuidSchema,
+              planId: UuidSchema,
+              assetKind: z.string(),
+              title: z.string(),
+              contentHash: HashSchema,
+              status: z.string(),
+            })
+            .strict(),
+        ),
+      })
+      .strict(),
+    meta: MetaSchema,
+  })
+  .strict();
+
 export type StartContentPlanRequest = z.infer<typeof StartContentPlanRequestSchema>;
 export type StartContentPlanEnvelope = z.infer<typeof StartContentPlanEnvelopeSchema>;
 export type ContentPlanBundleEnvelope = z.infer<typeof ContentPlanBundleEnvelopeSchema>;
 export type ReviewBriefRequest = z.infer<typeof ReviewBriefRequestSchema>;
 export type BriefReviewEnvelope = z.infer<typeof BriefReviewEnvelopeSchema>;
+export type ApprovedBriefListEnvelope = z.infer<typeof ApprovedBriefListEnvelopeSchema>;

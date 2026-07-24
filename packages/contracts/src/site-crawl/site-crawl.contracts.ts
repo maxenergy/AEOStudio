@@ -124,6 +124,30 @@ export const SiteBaselineEnvelopeSchema = z
   })
   .strict();
 
+export const SiteBaselineListEnvelopeSchema = z
+  .object({
+    data: z
+      .object({
+        baselines: z.array(
+          z
+            .object({
+              id: z.uuid(),
+              siteId: z.uuid(),
+              status: z.enum(['COMPLETE', 'PARTIAL', 'FAILED_TERMINAL']),
+              pageCount: z.number().int().min(0),
+              completedAt: z.string(),
+            })
+            .strict(),
+        ),
+      })
+      .strict(),
+    meta: z
+      .object({ requestId: z.string().min(1), schemaVersion: z.literal(SCHEMA_VERSION) })
+      .strict(),
+  })
+  .strict();
+
 export type SiteEnvelope = z.infer<typeof SiteEnvelopeSchema>;
 export type SiteVerificationEnvelope = z.infer<typeof SiteVerificationEnvelopeSchema>;
 export type SiteBaselineEnvelope = z.infer<typeof SiteBaselineEnvelopeSchema>;
+export type SiteBaselineListEnvelope = z.infer<typeof SiteBaselineListEnvelopeSchema>;
