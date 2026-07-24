@@ -68,6 +68,11 @@
       "types": "./src/observability/telemetry-runtime.ts",
       "development": "./src/observability/telemetry-runtime.ts",
       "default": "./dist/observability/telemetry-runtime.js"
+    },
+    "./measurement": {
+      "types": "./src/measurement/index.ts",
+      "development": "./src/measurement/index.ts",
+      "default": "./dist/measurement/index.js"
     }
   },
   "scripts": {

@@ -9,3 +9,4 @@ export * from './secrets/index.js';
 export * from './observability/index.js';
 export * from './backup/index.js';
 export * from './runtime/index.js';
+export * from './measurement/index.js';

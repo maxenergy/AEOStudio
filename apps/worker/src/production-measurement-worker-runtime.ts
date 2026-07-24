@@ -3,6 +3,7 @@ import {
   MeasurementExecutionHandler,
   type MeasurementSurfaceAdapterRegistry,
 } from '@aeostudio/application/measurement';
+import { createProductionMeasurementAdapterRegistry } from '@aeostudio/adapters/measurement';
 import { JobWorkerCoordinator } from '@aeostudio/application/jobs-budgets';
 import {
   AesGcmSessionCipher,
@@ -86,10 +87,13 @@ export function resolveProductionMeasurementWorkerRuntime(input: {
     manualImportStore,
     clock,
   );
+  // Production adapters (GSC, Bing) that fail closed without credentials
+  const productionAdapters = createProductionMeasurementAdapterRegistry();
   const adapters: MeasurementSurfaceAdapterRegistry = {
     resolve(providerKey, surfaceKey, adapterVersion) {
       return (
         input.configuredAdapters?.resolve(providerKey, surfaceKey, adapterVersion) ??
+        productionAdapters.resolve(providerKey, surfaceKey, adapterVersion) ??
         manualAdapters.resolve(providerKey, surfaceKey, adapterVersion)
       );
     },
