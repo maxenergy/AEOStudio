@@ -182,9 +182,9 @@ async function seedPlanningFixture(
     );
     await client.query(
       `INSERT INTO evidence_snapshots
-        (id, tenant_id, workspace_id, source_id, content_hash, object_ref, content_type,
-          size_bytes, captured_at)
-       VALUES ($1, $2, $3, $4, $5, 'fixture://primary', 'text/plain', 128, $6)`,
+        (id, tenant_id, workspace_id, source_id, content_hash, object_ref, object_version_id,
+          content_type, size_bytes, captured_at)
+       VALUES ($1, $2, $3, $4, $5, 'fixture://primary', 'fixture-v1', 'text/plain', 128, $6)`,
       [primarySnapshotId, scope.tenant.id, scope.workspace.id, primarySourceId, hash('3'), now],
     );
     await client.query(`UPDATE evidence_sources SET current_snapshot_id = $1 WHERE id = $2`, [
@@ -241,9 +241,9 @@ async function seedPlanningFixture(
         );
         await client.query(
           `INSERT INTO evidence_snapshots
-            (id, tenant_id, workspace_id, source_id, content_hash, object_ref, content_type,
-              size_bytes, captured_at)
-           VALUES ($1, $2, $3, $4, $5, 'fixture://comparison', 'text/plain', 128, $6)`,
+            (id, tenant_id, workspace_id, source_id, content_hash, object_ref, object_version_id,
+              content_type, size_bytes, captured_at)
+           VALUES ($1, $2, $3, $4, $5, 'fixture://comparison', 'fixture-v1', 'text/plain', 128, $6)`,
           [
             comparisonSnapshotId,
             scope.tenant.id,

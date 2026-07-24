@@ -30,3 +30,12 @@ CREATE POLICY generation_start_intent_isolation ON generation_start_intents
   WITH CHECK (tenant_id = aeostudio_current_tenant_id());
 
 GRANT SELECT, INSERT ON generation_start_intents TO aeostudio_runtime;
+
+DO $owner_policy$
+BEGIN
+  EXECUTE format(
+    'CREATE POLICY aeostudio_migration_owner_all_tenants ON public.generation_start_intents AS PERMISSIVE FOR ALL TO %I USING (true) WITH CHECK (true)',
+    current_user
+  );
+END
+$owner_policy$;

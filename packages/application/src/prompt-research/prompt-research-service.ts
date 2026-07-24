@@ -10,6 +10,11 @@ import {
 
 import type { IdentityIdGenerator, TenancyStore } from '../identity-access/index.js';
 import type { PromptResearchStore } from './ports.js';
+import type {
+  PromptResearchGenerator,
+  PromptResearchGeneratorInput,
+  PromptGenerationMetadata,
+} from './prompt-research-generator.js';
 
 function canonicalJson(value: unknown): string {
   if (value === null || typeof value !== 'object') return JSON.stringify(value);
@@ -39,6 +44,7 @@ export class PromptResearchService {
     private readonly tenancy: Pick<TenancyStore, 'resolveTenantContext' | 'appendDeniedAudit'>,
     private readonly ids: IdentityIdGenerator,
     private readonly clock: { now(): Date },
+    private readonly generator?: PromptResearchGenerator,
   ) {}
 
   async listRegistry(input: { actorSubject: string; tenantId: string; workspaceId: string }) {
@@ -56,6 +62,7 @@ export class PromptResearchService {
     sourceContext: PromptSourceContext;
     scopes: PromptScopeRecord[];
     scenario: MeasurementScenarioInput;
+    generatorInput?: PromptResearchGeneratorInput;
   }) {
     const context = await this.tenancy.resolveTenantContext(input);
     if (context === null) return { outcome: 'NOT_FOUND' as const };
@@ -68,7 +75,26 @@ export class PromptResearchService {
       });
       return { outcome: 'FORBIDDEN' as const };
     }
-    const prompts = generateDeterministicPromptSkeleton(input.subject, () => this.ids.next());
+
+    let prompts: PromptDraftRecord[];
+    let generationMetadata: PromptGenerationMetadata | undefined;
+
+    if (this.generator && input.generatorInput) {
+      const result = this.generator.generate(input.generatorInput, () => this.ids.next());
+      prompts = result.prompts.map((p) => ({
+        id: p.id,
+        text: p.text,
+        persona: p.persona,
+        journeyStage: p.journeyStage,
+        queryType: p.queryType,
+        taxonomyCategory: p.taxonomyCategory,
+        locale: p.locale,
+      }));
+      generationMetadata = result.metadata;
+    } else {
+      prompts = generateDeterministicPromptSkeleton(input.subject, () => this.ids.next());
+    }
+
     const promptHash = contentHash({
       title: input.title,
       subject: input.subject,
@@ -95,7 +121,7 @@ export class PromptResearchService {
     });
     return bundle === null
       ? { outcome: 'NOT_FOUND' as const }
-      : { outcome: 'SUCCEEDED' as const, bundle };
+      : { outcome: 'SUCCEEDED' as const, bundle, generationMetadata };
   }
 
   async revise(input: {

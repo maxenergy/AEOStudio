@@ -461,6 +461,11 @@ describe('Task 2 Tenant/Workspace isolation and RBAC', () => {
       { table_name: 'evidence_tasks', row_security: true, force_row_security: true },
       { table_name: 'experiment_snapshot_links', row_security: true, force_row_security: true },
       { table_name: 'experiments', row_security: true, force_row_security: true },
+      {
+        table_name: 'generation_start_intents',
+        row_security: true,
+        force_row_security: true,
+      },
       { table_name: 'inbox_messages', row_security: true, force_row_security: true },
       { table_name: 'job_events', row_security: true, force_row_security: true },
       { table_name: 'jobs', row_security: true, force_row_security: true },

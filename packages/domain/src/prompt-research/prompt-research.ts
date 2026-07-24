@@ -10,6 +10,8 @@ export interface PromptDraftRecord {
   persona: string;
   journeyStage: string;
   queryType: string;
+  taxonomyCategory?: string;
+  locale?: string;
 }
 
 export interface PromptScopeRecord {
@@ -120,6 +122,41 @@ export interface PromptApprovalIssue {
   path: string;
   message: string;
 }
+
+export type PromptTaxonomyCategory =
+  | 'branded'
+  | 'non-branded'
+  | 'definition'
+  | 'problem-solution'
+  | 'how-to'
+  | 'use-case'
+  | 'specification'
+  | 'evidence-trust'
+  | 'comparison-alternative'
+  | 'purchase-adoption'
+  | 'troubleshooting'
+  | 'local-region'
+  | 'persona'
+  | 'journey-stage'
+  | 'query-intent';
+
+export const PROMPT_TAXONOMY_CATEGORIES: readonly PromptTaxonomyCategory[] = [
+  'branded',
+  'non-branded',
+  'definition',
+  'problem-solution',
+  'how-to',
+  'use-case',
+  'specification',
+  'evidence-trust',
+  'comparison-alternative',
+  'purchase-adoption',
+  'troubleshooting',
+  'local-region',
+  'persona',
+  'journey-stage',
+  'query-intent',
+] as const;
 
 const PROMPT_PATTERNS = [
   {

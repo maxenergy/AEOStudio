@@ -237,9 +237,9 @@ async function seedApprovedBrief(
     );
     await client.query(
       `INSERT INTO evidence_snapshots
-        (id, tenant_id, workspace_id, source_id, content_hash, object_ref, content_type,
-          size_bytes, captured_at)
-       VALUES ($1, $2, $3, $4, $5, 'fixture://artifact-evidence', 'text/plain', 128, $6)`,
+        (id, tenant_id, workspace_id, source_id, content_hash, object_ref, object_version_id,
+          content_type, size_bytes, captured_at)
+       VALUES ($1, $2, $3, $4, $5, 'fixture://artifact-evidence', 'fixture-v1', 'text/plain', 128, $6)`,
       [snapshotId, scope.tenant.id, scope.workspace.id, sourceId, hash('a'), now],
     );
     await client.query(`UPDATE evidence_sources SET current_snapshot_id = $1 WHERE id = $2`, [
