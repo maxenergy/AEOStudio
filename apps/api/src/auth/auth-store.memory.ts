@@ -53,7 +53,8 @@ export class InMemoryAuthStore implements AuthStore {
       return Promise.resolve(null);
     }
     this.sessions.set(tokenDigest, { ...session, lastSeenAt: now });
-    const { lastSeenAt: _, ...publicSession } = session;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- destructuring to omit lastSeenAt
+    const { lastSeenAt: _lastSeenAt, ...publicSession } = session;
     return Promise.resolve(structuredClone(publicSession));
   }
 

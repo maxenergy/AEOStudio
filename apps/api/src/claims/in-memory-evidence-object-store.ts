@@ -56,7 +56,8 @@ export class InMemoryEvidenceObjectStore implements EvidenceObjectStore {
   }
 
   private withoutBody(input: StoredEvidenceObject): EvidenceObjectRecord {
-    const { body: _, ...record } = input;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- destructuring to omit body
+    const { body: _body, ...record } = input;
     return record;
   }
 }

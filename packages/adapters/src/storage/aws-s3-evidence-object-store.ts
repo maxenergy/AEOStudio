@@ -249,7 +249,13 @@ function normalizeContentType(value: string): string {
 }
 
 function readVersionId(value: string | undefined): string {
-  if (value === undefined || value.length < 1 || value.length > 1024 || /[\u0000-\u001f\u007f]/u.test(value)) {
+  if (
+    value === undefined ||
+    value.length < 1 ||
+    value.length > 1024 ||
+    // eslint-disable-next-line no-control-regex -- intentional control character validation
+    /[\u0000-\u001f\u007f]/u.test(value)
+  ) {
     throw new Error('EVIDENCE_OBJECT_VERSION_ID_REQUIRED');
   }
   return value;

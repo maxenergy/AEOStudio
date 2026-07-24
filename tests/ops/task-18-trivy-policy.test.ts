@@ -10,8 +10,9 @@ import { verifyTrivyExceptionPolicy } from '../../scripts/security/trivy-excepti
 const root = resolve(import.meta.dirname, '../..');
 
 describe('Task 18 Trivy exception and network-egress policy', () => {
-  test('keeps only an exact, justified and unexpired ALB log-delivery exception', async () => {
+  test('keeps only an exact, justified and unexpired ALB log-delivery exception', () => {
     expect(() =>
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call -- untyped ESM import
       verifyTrivyExceptionPolicy({
         repositoryRoot: root,
         now: new Date('2026-07-24T00:00:00.000Z'),
@@ -50,6 +51,7 @@ describe('Task 18 Trivy exception and network-egress policy', () => {
     );
 
     expect(() =>
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call -- untyped ESM import
       verifyTrivyExceptionPolicy({
         repositoryRoot: fixtureRoot,
         now: new Date('2026-07-24T00:00:00.000Z'),

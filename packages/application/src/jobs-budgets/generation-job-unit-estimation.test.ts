@@ -55,9 +55,20 @@ function capturingJobs() {
   const submitJob = vi.fn((input: Parameters<JobBudgetStore['submitJob']>[0]) =>
     Promise.resolve(jobFrom(input)),
   );
+  const reserveGenerationStart = vi.fn(
+    (input: Parameters<JobBudgetStore['reserveGenerationStart']>[0]) =>
+      Promise.resolve({
+        outcome: 'RESERVED' as const,
+        aggregateId: input.aggregateId,
+        jobId: input.jobId,
+        estimatedUnits: input.estimatedUnits,
+        requestedAt: input.requestedAt,
+      }),
+  );
   return {
     submitJob,
-    store: { submitJob } as unknown as JobBudgetStore,
+    reserveGenerationStart,
+    store: { submitJob, reserveGenerationStart } as unknown as JobBudgetStore,
   };
 }
 

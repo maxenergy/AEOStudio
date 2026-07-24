@@ -1,3 +1,4 @@
+/* global URL */
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { extname, join, relative, resolve, sep } from 'node:path';
 
@@ -103,10 +104,7 @@ function validateDeclaration(exception, maximumLifetimeDays, now) {
   }
   const lifetimeDays = (expiresAt.getTime() - today.getTime()) / 86_400_000;
   if (lifetimeDays > maximumLifetimeDays) {
-    fail(
-      'TRIVY_EXCEPTION_TOO_LONG',
-      `${exception.path}:${exception.id}:${String(lifetimeDays)}d`,
-    );
+    fail('TRIVY_EXCEPTION_TOO_LONG', `${exception.path}:${exception.id}:${String(lifetimeDays)}d`);
   }
 }
 
@@ -123,8 +121,7 @@ function observedInlineExceptions(repositoryRoot) {
         fail('TRIVY_EXCEPTION_WILDCARD', `${repositoryPath(repositoryRoot, path)}:${id}`);
       }
       const after = contents.slice((match.index ?? 0) + match[0].length);
-      const resourceMatch =
-        /^\s*\r?\n\s*resource\s+"([a-z0-9_]+)"\s+"([a-z0-9_]+)"/u.exec(after);
+      const resourceMatch = /^\s*\r?\n\s*resource\s+"([a-z0-9_]+)"\s+"([a-z0-9_]+)"/u.exec(after);
       if (!resourceMatch) {
         fail(
           'TRIVY_EXCEPTION_UNBOUND',
@@ -141,9 +138,7 @@ function observedInlineExceptions(repositoryRoot) {
 
     const allIgnoreMarkers = [...contents.matchAll(/trivy:ignore:/gu)].length;
     const exactIgnoreMarkers = [
-      ...contents.matchAll(
-        /(?:#|\/\/)\s*trivy:ignore:[A-Za-z0-9_*-]+:exp:\d{4}-\d{2}-\d{2}/gu,
-      ),
+      ...contents.matchAll(/(?:#|\/\/)\s*trivy:ignore:[A-Za-z0-9_*-]+:exp:\d{4}-\d{2}-\d{2}/gu),
     ].length;
     if (allIgnoreMarkers !== exactIgnoreMarkers) {
       fail('TRIVY_EXCEPTION_UNDECLARED', repositoryPath(repositoryRoot, path));
