@@ -6,20 +6,14 @@ import type {
   StartContentPlanEnvelope,
   WorkspaceListEnvelope,
 } from '@aeostudio/contracts';
+import type { ProfileListEnvelope, OfferingListEnvelope } from '@aeostudio/contracts/profile-offering';
+import type { ApprovedPromptSetListEnvelope } from '@aeostudio/contracts/prompt-research';
+import type { ApprovedClaimListEnvelope } from '@aeostudio/contracts/evidence-claims';
+import type { SiteBaselineListEnvelope } from '@aeostudio/contracts/site-crawl';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import { JobPoller } from '../jobs/job-poller';
-
-const FIXTURES = {
-  profileId: '00000000-0000-7000-8000-000000000810',
-  offeringId: '00000000-0000-7000-8000-000000000811',
-  promptSetId: '00000000-0000-7000-8000-000000000812',
-  promptRevisionId: '00000000-0000-7000-8000-000000000813',
-  primaryClaimId: '00000000-0000-7000-8000-000000000814',
-  comparisonClaimId: '00000000-0000-7000-8000-000000000815',
-  baselineId: '00000000-0000-7000-8000-000000000816',
-} as const;
 
 function apiOrigin(): string {
   return process.env.API_INTERNAL_ORIGIN ?? 'http://127.0.0.1:3200';
@@ -188,6 +182,28 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
   const mayStart = ['OWNER', 'ADMIN', 'EDITOR'].includes(membership.activeRole);
   const mayReview = membership.activeRole === 'REVIEWER';
 
+  const base = `${apiOrigin()}/api/v1/tenants/${tenantId}/workspaces/${workspaceId}`;
+  const headers = { cookie };
+  let profiles: ProfileListEnvelope['data']['profiles'] = [];
+  let offerings: OfferingListEnvelope['data']['offerings'] = [];
+  let promptSets: ApprovedPromptSetListEnvelope['data']['promptSets'] = [];
+  let claims: ApprovedClaimListEnvelope['data']['claims'] = [];
+  let baselines: SiteBaselineListEnvelope['data']['baselines'] = [];
+  if (mayStart && planId === undefined) {
+    const [profilesRes, offeringsRes, promptSetsRes, claimsRes, baselinesRes] = await Promise.all([
+      fetch(`${base}/profiles`, { cache: 'no-store', headers }),
+      fetch(`${base}/offerings`, { cache: 'no-store', headers }),
+      fetch(`${base}/prompt-sets/approved`, { cache: 'no-store', headers }),
+      fetch(`${base}/claims/approved`, { cache: 'no-store', headers }),
+      fetch(`${base}/sites/baselines`, { cache: 'no-store', headers }),
+    ]);
+    if (profilesRes.ok) profiles = ((await profilesRes.json()) as ProfileListEnvelope).data.profiles;
+    if (offeringsRes.ok) offerings = ((await offeringsRes.json()) as OfferingListEnvelope).data.offerings;
+    if (promptSetsRes.ok) promptSets = ((await promptSetsRes.json()) as ApprovedPromptSetListEnvelope).data.promptSets;
+    if (claimsRes.ok) claims = ((await claimsRes.json()) as ApprovedClaimListEnvelope).data.claims;
+    if (baselinesRes.ok) baselines = ((await baselinesRes.json()) as SiteBaselineListEnvelope).data.baselines;
+  }
+
   return (
     <main>
       <p className="eyebrow">AEO Studio</p>
@@ -217,51 +233,63 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
         <section className="shell-card">
           <h2>冻结计划输入</h2>
           <p>所有 ID 都会作为 input artifact revision snapshot 保存，生成过程不调用真实 LLM。</p>
+          {profiles.length === 0 && promptSets.length === 0 ? (
+            <p role="alert">尚无可用资源。请先完成 Profile/Offering 创建、Prompt Set 审批、Claim 审批和 Site Baseline 爬取。</p>
+          ) : (
           <form action={startPlan} className="stacked-form">
             <input name="tenantId" type="hidden" value={tenantId} />
             <input name="workspaceId" type="hidden" value={workspaceId} />
-            <label htmlFor="plan-profile">Profile ID</label>
-            <input defaultValue={FIXTURES.profileId} id="plan-profile" name="profileId" required />
+            <label htmlFor="plan-profile">Profile</label>
+            <select id="plan-profile" name="profileId" required>
+              {profiles.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.displayName} (rev {p.currentRevision})
+                </option>
+              ))}
+            </select>
             <label htmlFor="plan-profile-revision">Profile revision</label>
             <input
-              defaultValue="1"
+              defaultValue={profiles[0]?.currentRevision ?? 1}
               id="plan-profile-revision"
               min="1"
               name="profileRevision"
               type="number"
             />
-            <label htmlFor="plan-offering">Offering ID</label>
-            <input
-              defaultValue={FIXTURES.offeringId}
-              id="plan-offering"
-              name="offeringId"
-              required
-            />
+            <label htmlFor="plan-offering">Offering</label>
+            <select id="plan-offering" name="offeringId" required>
+              {offerings.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.name} [{o.kind}] (rev {o.currentRevision})
+                </option>
+              ))}
+            </select>
             <label htmlFor="plan-offering-revision">Offering revision</label>
             <input
-              defaultValue="1"
+              defaultValue={offerings[0]?.currentRevision ?? 1}
               id="plan-offering-revision"
               min="1"
               name="offeringRevision"
               type="number"
             />
-            <label htmlFor="plan-prompt-set">Approved Prompt Set ID</label>
-            <input
-              defaultValue={FIXTURES.promptSetId}
-              id="plan-prompt-set"
-              name="promptSetId"
-              required
-            />
+            <label htmlFor="plan-prompt-set">Approved Prompt Set</label>
+            <select id="plan-prompt-set" name="promptSetId" required>
+              {promptSets.map((ps) => (
+                <option key={ps.promptSetId} value={ps.promptSetId}>
+                  {ps.title} (rev {ps.revision})
+                </option>
+              ))}
+            </select>
             <label htmlFor="plan-prompt-revision">Approved Prompt revision ID</label>
-            <input
-              defaultValue={FIXTURES.promptRevisionId}
-              id="plan-prompt-revision"
-              name="promptRevisionId"
-              required
-            />
+            <select id="plan-prompt-revision" name="promptRevisionId" required>
+              {promptSets.map((ps) => (
+                <option key={ps.revisionId} value={ps.revisionId}>
+                  {ps.title} rev {ps.revision}
+                </option>
+              ))}
+            </select>
             <label htmlFor="plan-primary-claims">Approved primary Claim revision IDs</label>
             <textarea
-              defaultValue={FIXTURES.primaryClaimId}
+              defaultValue={claims.map((c) => c.revisionId).join('\n')}
               id="plan-primary-claims"
               name="primaryClaimRevisionIds"
             />
@@ -269,21 +297,23 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
               Independently evidenced comparison Claim revision IDs
             </label>
             <textarea
-              defaultValue={FIXTURES.comparisonClaimId}
+              defaultValue=""
               id="plan-comparison-claims"
               name="comparisonClaimRevisionIds"
             />
-            <label htmlFor="plan-baseline">Site baseline ID</label>
-            <input
-              defaultValue={FIXTURES.baselineId}
-              id="plan-baseline"
-              name="baselineId"
-              required
-            />
+            <label htmlFor="plan-baseline">Site baseline</label>
+            <select id="plan-baseline" name="baselineId" required>
+              {baselines.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.status} · {b.pageCount} pages · {b.completedAt}
+                </option>
+              ))}
+            </select>
             <button className="primary-action" type="submit">
               启动 Content Plan
             </button>
           </form>
+          )}
         </section>
       ) : null}
 

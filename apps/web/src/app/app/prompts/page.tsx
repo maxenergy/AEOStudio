@@ -566,7 +566,7 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
               ))}
             </select>
             <label htmlFor="scenario-model">Model</label>
-            <input defaultValue="fixture-search-model" id="scenario-model" name="model" required />
+            <input id="scenario-model" name="model" placeholder="e.g. gpt-4o" required />
             <label htmlFor="scenario-model-version">Model version</label>
             <input
               defaultValue="2026-07"
@@ -576,9 +576,9 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
             />
             <label htmlFor="scenario-account">Account</label>
             <input
-              defaultValue="workspace-fixture-account"
               id="scenario-account"
               name="account"
+              placeholder="e.g. workspace account"
               required
             />
             <label htmlFor="scenario-repetitions">Repetitions</label>
