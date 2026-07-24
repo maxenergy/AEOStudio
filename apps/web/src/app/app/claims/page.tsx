@@ -60,7 +60,16 @@ async function createAndSubmitClaim(formData: FormData): Promise<never> {
   const base = ledgerLocation({ tenantId, workspaceId });
   if (!sourceResponse.ok) redirect(`${base}&error=source`);
   const source = ((await sourceResponse.json()) as EvidenceSourceEnvelope).data.source;
-  const contentHash = requiredText(formData, 'contentHash');
+
+  // Read uploaded file and convert to base64 — server computes hash/objectRef
+  const file = formData.get('evidenceFile');
+  if (!(file instanceof File) || file.size === 0) {
+    redirect(`${base}&error=file`);
+  }
+  const fileBuffer = Buffer.from(await file.arrayBuffer());
+  const contentBase64 = fileBuffer.toString('base64');
+  const contentType = file.type || 'application/octet-stream';
+
   const snapshotResponse = await fetch(
     `${apiOrigin()}/api/v1/tenants/${tenantId}/workspaces/${workspaceId}/evidence-sources/${source.id}/snapshots`,
     {
@@ -68,15 +77,14 @@ async function createAndSubmitClaim(formData: FormData): Promise<never> {
       cache: 'no-store',
       headers,
       body: JSON.stringify({
-        contentHash,
-        objectRef: requiredText(formData, 'objectRef'),
-        contentType: 'text/plain',
-        sizeBytes: 128,
+        contentBase64,
+        contentType,
       }),
     },
   );
   if (!snapshotResponse.ok) redirect(`${base}&error=snapshot`);
   const snapshot = ((await snapshotResponse.json()) as EvidenceSnapshotEnvelope).data.snapshot;
+
   const numericText = optionalText(formData, 'numericValue');
   const unitText = optionalText(formData, 'unit');
   const expiryDate = requiredText(formData, 'expiresAt');
@@ -99,7 +107,6 @@ async function createAndSubmitClaim(formData: FormData): Promise<never> {
         evidence: [
           {
             snapshotId: snapshot.id,
-            sourceHash: contentHash,
             snippet: requiredText(formData, 'snippet'),
           },
         ],
@@ -261,10 +268,18 @@ export default async function ClaimsPage({ searchParams }: ClaimsPageProps) {
               <option value="PRIVATE">Private</option>
               <option value="RESTRICTED">Restricted</option>
             </select>
-            <label htmlFor="snapshot-hash">Snapshot SHA-256</label>
-            <input id="snapshot-hash" minLength={64} maxLength={64} name="contentHash" required />
-            <label htmlFor="object-ref">对象引用</label>
-            <input id="object-ref" name="objectRef" required />
+            <label htmlFor="evidence-file">Evidence 文件（服务端计算 SHA-256 和 objectRef）</label>
+            <input
+              accept=".txt,.md,.pdf,.csv,.png,.jpg,.jpeg,.webp,text/plain,text/markdown,application/pdf,text/csv,image/*"
+              id="evidence-file"
+              name="evidenceFile"
+              required
+              type="file"
+            />
+            <p className="field-help">
+              支持文本、Markdown、PDF、CSV 和常见图片。上传后由服务端计算 hash 和 objectRef，浏览器不提交自称可信的
+              hash。
+            </p>
             <label htmlFor="claim-statement">Claim statement</label>
             <textarea id="claim-statement" name="statement" required />
             <label htmlFor="numeric-value">数值</label>
