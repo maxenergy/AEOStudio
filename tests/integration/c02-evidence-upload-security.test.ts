@@ -6,10 +6,7 @@ import type {
   ExchangeCodeInput,
   OidcClient,
 } from '@aeostudio/application/auth';
-import {
-  EvidenceSnapshotEnvelopeSchema,
-  EvidenceSourceEnvelopeSchema,
-} from '@aeostudio/contracts/evidence-claims';
+import { EvidenceSnapshotEnvelopeSchema } from '@aeostudio/contracts/evidence-claims';
 import {
   AesGcmSessionCipher,
   PostgresAuthStore,

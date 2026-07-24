@@ -5,6 +5,7 @@ import {
   AnswerReadinessAnalyzerV1,
   ContentEvidenceAnalyzerV1,
   IndexabilityAnalyzerV1,
+  InternalLinkGraphAnalyzerV1,
   StructuredDataAnalyzerV1,
   TechnicalHtmlAnalyzerV1,
   createDefaultRegistry,
@@ -50,12 +51,13 @@ describe('C03 Site Analyzers', () => {
     it('lists all analyzers', () => {
       const registry = createDefaultRegistry();
       const analyzers = registry.list();
-      expect(analyzers.length).toBe(5);
+      expect(analyzers.length).toBe(6);
       expect(analyzers.map((a) => a.id)).toContain('technical-html');
       expect(analyzers.map((a) => a.id)).toContain('indexability');
       expect(analyzers.map((a) => a.id)).toContain('structured-data');
       expect(analyzers.map((a) => a.id)).toContain('content-evidence');
       expect(analyzers.map((a) => a.id)).toContain('answer-readiness');
+      expect(analyzers.map((a) => a.id)).toContain('internal-link-graph');
     });
 
     it('analyzeAll returns findings with analyzer metadata', () => {
@@ -83,7 +85,9 @@ describe('C03 Site Analyzers', () => {
 
     it('detects valid title', () => {
       const findings = analyzer.analyze(
-        createContext('<html><head><title>Valid Page Title Here</title></head><body></body></html>'),
+        createContext(
+          '<html><head><title>Valid Page Title Here</title></head><body></body></html>',
+        ),
       );
       expect(findings.some((f) => f.findingType === 'TITLE_MISSING')).toBe(false);
     });
@@ -119,7 +123,9 @@ describe('C03 Site Analyzers', () => {
     });
 
     it('detects missing H1', () => {
-      const findings = analyzer.analyze(createContext('<html><body><p>No heading</p></body></html>'));
+      const findings = analyzer.analyze(
+        createContext('<html><body><p>No heading</p></body></html>'),
+      );
       expect(findings.some((f) => f.findingType === 'H1_MISSING')).toBe(true);
     });
 
@@ -136,7 +142,9 @@ describe('C03 Site Analyzers', () => {
 
     it('detects noindex directive', () => {
       const findings = analyzer.analyze(
-        createContext('<html><head><meta name="robots" content="noindex"></head><body></body></html>'),
+        createContext(
+          '<html><head><meta name="robots" content="noindex"></head><body></body></html>',
+        ),
       );
       expect(findings.some((f) => f.findingType === 'META_ROBOTS_NOINDEX')).toBe(true);
     });
@@ -174,9 +182,15 @@ describe('C03 Site Analyzers', () => {
     });
 
     it('detects valid JSON-LD', () => {
-      const jsonLd = JSON.stringify({ '@type': 'Organization', name: 'Test', url: 'https://test.com' });
+      const jsonLd = JSON.stringify({
+        '@type': 'Organization',
+        name: 'Test',
+        url: 'https://test.com',
+      });
       const findings = analyzer.analyze(
-        createContext(`<html><head><script type="application/ld+json">${jsonLd}</script></head><body></body></html>`),
+        createContext(
+          `<html><head><script type="application/ld+json">${jsonLd}</script></head><body></body></html>`,
+        ),
       );
       expect(findings.some((f) => f.findingType === 'JSONLD_VALID')).toBe(true);
       expect(findings.some((f) => f.findingType === 'JSONLD_MISSING')).toBe(false);
@@ -184,7 +198,9 @@ describe('C03 Site Analyzers', () => {
 
     it('detects invalid JSON-LD', () => {
       const findings = analyzer.analyze(
-        createContext('<html><head><script type="application/ld+json">{invalid}</script></head><body></body></html>'),
+        createContext(
+          '<html><head><script type="application/ld+json">{invalid}</script></head><body></body></html>',
+        ),
       );
       expect(findings.some((f) => f.findingType === 'JSONLD_PARSE_ERROR')).toBe(true);
     });
@@ -192,7 +208,9 @@ describe('C03 Site Analyzers', () => {
     it('detects missing required properties', () => {
       const jsonLd = JSON.stringify({ '@type': 'Organization' });
       const findings = analyzer.analyze(
-        createContext(`<html><head><script type="application/ld+json">${jsonLd}</script></head><body></body></html>`),
+        createContext(
+          `<html><head><script type="application/ld+json">${jsonLd}</script></head><body></body></html>`,
+        ),
       );
       expect(findings.some((f) => f.findingType === 'JSONLD_MISSING_PROPERTY')).toBe(true);
     });
@@ -203,7 +221,9 @@ describe('C03 Site Analyzers', () => {
 
     it('detects FAQ structure', () => {
       const findings = analyzer.analyze(
-        createContext('<html><body><details><summary>Question?</summary><p>Answer</p></details></body></html>'),
+        createContext(
+          '<html><body><details><summary>Question?</summary><p>Answer</p></details></body></html>',
+        ),
       );
       expect(findings.some((f) => f.findingType === 'FAQ_STRUCTURE_PRESENT')).toBe(true);
     });
@@ -249,13 +269,80 @@ describe('C03 Site Analyzers', () => {
   describe('Determinism', () => {
     it('same input produces same findings', () => {
       const registry = createDefaultRegistry();
-      const html = '<html lang="en"><head><title>Test Page</title></head><body><h1>Hello</h1></body></html>';
+      const html =
+        '<html lang="en"><head><title>Test Page</title></head><body><h1>Hello</h1></body></html>';
       const context = createContext(html);
 
       const findings1 = registry.analyzeAll(context);
       const findings2 = registry.analyzeAll(context);
 
       expect(findings1).toEqual(findings2);
+    });
+  });
+
+  describe('InternalLinkGraphAnalyzerV1', () => {
+    const analyzer = new InternalLinkGraphAnalyzerV1();
+
+    it('detects no internal links (orphan page)', () => {
+      const findings = analyzer.analyze(
+        createContext('<html><body><p>No links here</p></body></html>'),
+      );
+      expect(findings.some((f) => f.findingType === 'NO_INTERNAL_LINKS')).toBe(true);
+    });
+
+    it('detects internal links and reports count', () => {
+      const findings = analyzer.analyze(
+        createContext(
+          '<html><body><a href="https://example.test/about">About</a><a href="https://example.test/contact">Contact</a></body></html>',
+        ),
+      );
+      expect(findings.some((f) => f.findingType === 'INTERNAL_LINKS_COUNT')).toBe(true);
+      expect(findings.some((f) => f.findingType === 'NO_INTERNAL_LINKS')).toBe(false);
+    });
+
+    it('detects empty anchor text', () => {
+      const findings = analyzer.analyze(
+        createContext(
+          '<html><body><a href="https://example.test/page"><img src="icon.png"></a></body></html>',
+        ),
+      );
+      expect(findings.some((f) => f.findingType === 'EMPTY_ANCHOR_TEXT')).toBe(true);
+    });
+
+    it('detects internal nofollow links', () => {
+      const findings = analyzer.analyze(
+        createContext(
+          '<html><body><a href="https://example.test/private" rel="nofollow">Private</a></body></html>',
+        ),
+      );
+      expect(findings.some((f) => f.findingType === 'INTERNAL_NOFOLLOW')).toBe(true);
+    });
+
+    it('detects external links without noopener', () => {
+      const findings = analyzer.analyze(
+        createContext(
+          '<html><body><a href="https://external.test/page">External</a></body></html>',
+        ),
+      );
+      expect(findings.some((f) => f.findingType === 'EXTERNAL_LINK_NO_NOOPENER')).toBe(true);
+    });
+
+    it('passes external links with noopener', () => {
+      const findings = analyzer.analyze(
+        createContext(
+          '<html><body><a href="https://external.test/page" rel="noopener noreferrer">External</a></body></html>',
+        ),
+      );
+      expect(findings.some((f) => f.findingType === 'EXTERNAL_LINK_NO_NOOPENER')).toBe(false);
+    });
+
+    it('skips fragment and javascript links', () => {
+      const findings = analyzer.analyze(
+        createContext(
+          '<html><body><a href="#section">Jump</a><a href="javascript:void(0)">JS</a><a href="mailto:a@b.c">Mail</a></body></html>',
+        ),
+      );
+      expect(findings.some((f) => f.findingType === 'NO_INTERNAL_LINKS')).toBe(true);
     });
   });
 });

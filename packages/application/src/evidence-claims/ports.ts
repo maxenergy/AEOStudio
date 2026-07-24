@@ -127,6 +127,12 @@ export interface EvidenceClaimStore {
     auditEventId: string;
   }): Promise<ClaimCurrentState | null>;
   listApprovedClaims(input: { context: TenantContext }): Promise<
-    { claimId: string; revisionId: string; revision: number; statement: string; contentHash: string }[]
+    {
+      claimId: string;
+      revisionId: string;
+      revision: number;
+      statement: string;
+      contentHash: string;
+    }[]
   >;
 }

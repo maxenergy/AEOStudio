@@ -365,9 +365,23 @@ export class InMemoryContentPlanningStore implements ContentPlanningStore {
   }
 
   listApprovedBriefs(input: { context: { tenantId: string; workspaceId: string } }): Promise<
-    { briefId: string; planId: string; assetKind: string; title: string; contentHash: string; status: string }[]
+    {
+      briefId: string;
+      planId: string;
+      assetKind: string;
+      title: string;
+      contentHash: string;
+      status: string;
+    }[]
   > {
-    const results: { briefId: string; planId: string; assetKind: string; title: string; contentHash: string; status: string }[] = [];
+    const results: {
+      briefId: string;
+      planId: string;
+      assetKind: string;
+      title: string;
+      contentHash: string;
+      status: string;
+    }[] = [];
     for (const [key, bundle] of this.bundles) {
       if (!key.startsWith(`${input.context.tenantId}:${input.context.workspaceId}:`)) continue;
       for (const brief of bundle.briefs) {

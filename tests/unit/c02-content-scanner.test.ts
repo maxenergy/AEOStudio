@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  scanContentForRisks,
-  scanEvidenceContent,
-} from '@aeostudio/application/evidence-claims';
+import { scanContentForRisks, scanEvidenceContent } from '@aeostudio/application/evidence-claims';
 
 describe('C02 PII/Secret content scanner', () => {
   describe('scanContentForRisks', () => {
@@ -18,10 +15,7 @@ describe('C02 PII/Secret content scanner', () => {
     });
 
     it('detects AWS access keys', () => {
-      const result = scanContentForRisks(
-        'Config: AKIAIOSFODNN7EXAMPLE is the key.',
-        'text/plain',
-      );
+      const result = scanContentForRisks('Config: AKIAIOSFODNN7EXAMPLE is the key.', 'text/plain');
       expect(result.clean).toBe(false);
       expect(result.findings.some((f) => f.category === 'AWS_ACCESS_KEY')).toBe(true);
       expect(result.blocksExternalEgress).toBe(true);

@@ -192,11 +192,7 @@ export class SiteCrawlService {
     return this.store.findBaseline({ context, siteId: input.siteId });
   }
 
-  async listBaselines(input: {
-    actorSubject: string;
-    tenantId: string;
-    workspaceId: string;
-  }) {
+  async listBaselines(input: { actorSubject: string; tenantId: string; workspaceId: string }) {
     const context = await this.tenancy.resolveTenantContext(input);
     if (context === null || !roleAllows(context.role, 'WORKSPACE_READ')) return null;
     return this.store.listBaselines({ context });

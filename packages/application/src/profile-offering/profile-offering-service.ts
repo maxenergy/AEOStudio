@@ -208,7 +208,20 @@ export class ProfileOfferingService {
     tenantId: string;
     workspaceId: string;
   }): Promise<
-    | { outcome: 'SUCCEEDED'; profiles: { id: string; displayName: string; currentRevision: number; completeness: { completedFields: number; totalFields: number; percent: number; missingFields: string[] } }[] }
+    | {
+        outcome: 'SUCCEEDED';
+        profiles: {
+          id: string;
+          displayName: string;
+          currentRevision: number;
+          completeness: {
+            completedFields: number;
+            totalFields: number;
+            percent: number;
+            missingFields: string[];
+          };
+        }[];
+      }
     | { outcome: 'NOT_FOUND' }
   > {
     const context = await this.tenancy.resolveTenantContext(input);
@@ -224,7 +237,24 @@ export class ProfileOfferingService {
     tenantId: string;
     workspaceId: string;
   }): Promise<
-    | { outcome: 'SUCCEEDED'; offerings: { id: string; profileId: string; kind: string; name: string; locale: string; market: string; currentRevision: number; completeness: { completedFields: number; totalFields: number; percent: number; missingFields: string[] } }[] }
+    | {
+        outcome: 'SUCCEEDED';
+        offerings: {
+          id: string;
+          profileId: string;
+          kind: string;
+          name: string;
+          locale: string;
+          market: string;
+          currentRevision: number;
+          completeness: {
+            completedFields: number;
+            totalFields: number;
+            percent: number;
+            missingFields: string[];
+          };
+        }[];
+      }
     | { outcome: 'NOT_FOUND' }
   > {
     const context = await this.tenancy.resolveTenantContext(input);

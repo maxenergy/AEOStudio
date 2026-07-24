@@ -892,7 +892,13 @@ export class PostgresEvidenceClaimStore implements EvidenceClaimStore {
   }
 
   listApprovedClaims(input: { context: TenantContext }): Promise<
-    { claimId: string; revisionId: string; revision: number; statement: string; contentHash: string }[]
+    {
+      claimId: string;
+      revisionId: string;
+      revision: number;
+      statement: string;
+      contentHash: string;
+    }[]
   > {
     return this.contexts.run(input.context, async (client) => {
       const result = await client.query<{

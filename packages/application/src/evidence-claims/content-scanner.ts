@@ -29,9 +29,16 @@ const SECRET_PATTERNS: { category: string; pattern: RegExp }[] = [
   // AWS Access Key ID (starts with AKIA)
   { category: 'AWS_ACCESS_KEY', pattern: /\bAKIA[0-9A-Z]{16}\b/g },
   // AWS Secret Access Key (40 char base64-like)
-  { category: 'AWS_SECRET_KEY', pattern: /\b(?:aws_secret_access_key|AWS_SECRET_ACCESS_KEY)\s*[=:]\s*['"]?[A-Za-z0-9/+=]{40}['"]?/g },
+  {
+    category: 'AWS_SECRET_KEY',
+    pattern:
+      /\b(?:aws_secret_access_key|AWS_SECRET_ACCESS_KEY)\s*[=:]\s*['"]?[A-Za-z0-9/+=]{40}['"]?/g,
+  },
   // Generic API key patterns
-  { category: 'API_KEY', pattern: /\b(?:api[_-]?key|apikey|api[_-]?secret)\s*[=:]\s*['"]?[A-Za-z0-9_\-]{20,}['"]?/gi },
+  {
+    category: 'API_KEY',
+    pattern: /\b(?:api[_-]?key|apikey|api[_-]?secret)\s*[=:]\s*['"]?[A-Za-z0-9_-]{20,}['"]?/gi,
+  },
   // Bearer tokens
   { category: 'BEARER_TOKEN', pattern: /\bBearer\s+[A-Za-z0-9\-._~+/]+=*\b/g },
   // Private key blocks
@@ -39,11 +46,20 @@ const SECRET_PATTERNS: { category: string; pattern: RegExp }[] = [
   // GitHub tokens
   { category: 'GITHUB_TOKEN', pattern: /\bgh[pousr]_[A-Za-z0-9]{36,255}\b/g },
   // Slack tokens
-  { category: 'SLACK_TOKEN', pattern: /\bxox[baprs]-[0-9]{10,13}-[0-9]{10,13}-[a-zA-Z0-9]{24,32}\b/g },
+  {
+    category: 'SLACK_TOKEN',
+    pattern: /\bxox[baprs]-[0-9]{10,13}-[0-9]{10,13}-[a-zA-Z0-9]{24,32}\b/g,
+  },
   // Connection strings with credentials
-  { category: 'CONNECTION_STRING', pattern: /\b(?:postgres|postgresql|mysql|mongodb|redis):\/\/[^:\s]+:[^@\s]+@/gi },
+  {
+    category: 'CONNECTION_STRING',
+    pattern: /\b(?:postgres|postgresql|mysql|mongodb|redis):\/\/[^:\s]+:[^@\s]+@/gi,
+  },
   // JWT tokens
-  { category: 'JWT_TOKEN', pattern: /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g },
+  {
+    category: 'JWT_TOKEN',
+    pattern: /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g,
+  },
   // Generic password assignments
   { category: 'PASSWORD', pattern: /\b(?:password|passwd|pwd)\s*[=:]\s*['"][^'"]{8,}['"]/gi },
 ];
@@ -55,19 +71,35 @@ const PII_PATTERNS: { category: string; pattern: RegExp }[] = [
   // US Social Security Number (SSN)
   { category: 'US_SSN', pattern: /\b\d{3}-\d{2}-\d{4}\b/g },
   // Credit card numbers (Visa, MC, Amex, Discover)
-  { category: 'CREDIT_CARD', pattern: /\b(?:4\d{3}|5[1-5]\d{2}|3[47]\d{2}|6(?:011|5\d{2}))[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b/g },
+  {
+    category: 'CREDIT_CARD',
+    pattern: /\b(?:4\d{3}|5[1-5]\d{2}|3[47]\d{2}|6(?:011|5\d{2}))[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b/g,
+  },
   // National ID patterns (generic)
-  { category: 'NATIONAL_ID', pattern: /\b(?:national[_ ]?id|ssn|social[_ ]?security)\s*[#:]\s*\d{3}[- ]?\d{2}[- ]?\d{4}\b/gi },
+  {
+    category: 'NATIONAL_ID',
+    pattern: /\b(?:national[_ ]?id|ssn|social[_ ]?security)\s*[#:]\s*\d{3}[- ]?\d{2}[- ]?\d{4}\b/gi,
+  },
   // Passport numbers (generic pattern)
   { category: 'PASSPORT', pattern: /\bpassport\s*[#:]\s*[A-Z0-9]{6,12}\b/gi },
   // Driver's license (generic)
-  { category: 'DRIVERS_LICENSE', pattern: /\bdriver(?:'s)?\s*licen[cs]e\s*[#:]\s*[A-Z0-9]{6,15}\b/gi },
+  {
+    category: 'DRIVERS_LICENSE',
+    pattern: /\bdriver(?:'s)?\s*licen[cs]e\s*[#:]\s*[A-Z0-9]{6,15}\b/gi,
+  },
   // Bank account numbers with routing
   { category: 'BANK_ACCOUNT', pattern: /\b(?:routing|account)\s*[#:]\s*\d{8,17}\b/gi },
   // Date of birth patterns with explicit label
-  { category: 'DATE_OF_BIRTH', pattern: /\b(?:date[_ ]?of[_ ]?birth|dob|birth[_ ]?date)\s*[#:]\s*\d{1,4}[-/]\d{1,2}[-/]\d{1,4}\b/gi },
+  {
+    category: 'DATE_OF_BIRTH',
+    pattern:
+      /\b(?:date[_ ]?of[_ ]?birth|dob|birth[_ ]?date)\s*[#:]\s*\d{1,4}[-/]\d{1,2}[-/]\d{1,4}\b/gi,
+  },
   // Medical record numbers
-  { category: 'MEDICAL_RECORD', pattern: /\b(?:medical|mrn|patient)\s*(?:record)?\s*[#:]\s*[A-Z0-9]{6,20}\b/gi },
+  {
+    category: 'MEDICAL_RECORD',
+    pattern: /\b(?:medical|mrn|patient)\s*(?:record)?\s*[#:]\s*[A-Z0-9]{6,20}\b/gi,
+  },
 ];
 
 /**

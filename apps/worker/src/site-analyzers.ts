@@ -5,7 +5,7 @@
  * bound to snapshot hash and analyzer version.
  */
 
-import type { BaselineFindingResult, CrawlSnapshotResult } from './site-crawl-handler.js';
+import type { CrawlSnapshotResult } from './site-crawl-handler.js';
 
 export interface AnalyzerContext {
   snapshot: CrawlSnapshotResult;
@@ -62,7 +62,9 @@ export class AnalyzerRegistry {
    * Run all registered analyzers against a context.
    * Returns findings with analyzer version metadata.
    */
-  analyzeAll(context: AnalyzerContext): (AnalyzerFinding & { analyzerId: string; analyzerVersion: string })[] {
+  analyzeAll(
+    context: AnalyzerContext,
+  ): (AnalyzerFinding & { analyzerId: string; analyzerVersion: string })[] {
     const findings: (AnalyzerFinding & { analyzerId: string; analyzerVersion: string })[] = [];
     for (const analyzer of this.analyzers.values()) {
       try {
@@ -99,6 +101,7 @@ export function createDefaultRegistry(): AnalyzerRegistry {
   registry.register(new StructuredDataAnalyzerV1());
   registry.register(new ContentEvidenceAnalyzerV1());
   registry.register(new AnswerReadinessAnalyzerV1());
+  registry.register(new InternalLinkGraphAnalyzerV1());
   return registry;
 }
 
@@ -162,8 +165,9 @@ export class TechnicalHtmlAnalyzerV1 implements SiteAnalyzer {
     }
 
     // Meta description check
-    const metaDescMatch = /<meta\b[^>]*\bname=["']description["'][^>]*\bcontent=["']([\s\S]*?)["']/i.exec(html)
-      ?? /<meta\b[^>]*\bcontent=["']([\s\S]*?)["'][^>]*\bname=["']description["']/i.exec(html);
+    const metaDescMatch =
+      /<meta\b[^>]*\bname=["']description["'][^>]*\bcontent=["']([\s\S]*?)["']/i.exec(html) ??
+      /<meta\b[^>]*\bcontent=["']([\s\S]*?)["'][^>]*\bname=["']description["']/i.exec(html);
     if (metaDescMatch === null || metaDescMatch[1]?.trim().length === 0) {
       findings.push({
         findingType: 'META_DESCRIPTION_MISSING',
@@ -223,8 +227,9 @@ export class IndexabilityAnalyzerV1 implements SiteAnalyzer {
     const { html } = context;
 
     // Meta robots check
-    const metaRobotsMatch = /<meta\b[^>]*\bname=["']robots["'][^>]*\bcontent=["']([\s\S]*?)["']/i.exec(html)
-      ?? /<meta\b[^>]*\bcontent=["']([\s\S]*?)["'][^>]*\bname=["']robots["']/i.exec(html);
+    const metaRobotsMatch =
+      /<meta\b[^>]*\bname=["']robots["'][^>]*\bcontent=["']([\s\S]*?)["']/i.exec(html) ??
+      /<meta\b[^>]*\bcontent=["']([\s\S]*?)["'][^>]*\bname=["']robots["']/i.exec(html);
     if (metaRobotsMatch !== null) {
       const content = metaRobotsMatch[1]?.toLowerCase() ?? '';
       if (content.includes('noindex')) {
@@ -247,8 +252,9 @@ export class IndexabilityAnalyzerV1 implements SiteAnalyzer {
     }
 
     // Canonical check
-    const canonicalMatch = /<link\b[^>]*\brel=["'][^"']*canonical[^"']*["'][^>]*\bhref=["']([\s\S]*?)["']/i.exec(html)
-      ?? /<link\b[^>]*\bhref=["']([\s\S]*?)["'][^>]*\brel=["'][^"']*canonical[^"']*["']/i.exec(html);
+    const canonicalMatch =
+      /<link\b[^>]*\brel=["'][^"']*canonical[^"']*["'][^>]*\bhref=["']([\s\S]*?)["']/i.exec(html) ??
+      /<link\b[^>]*\bhref=["']([\s\S]*?)["'][^>]*\brel=["'][^"']*canonical[^"']*["']/i.exec(html);
     if (canonicalMatch === null) {
       findings.push({
         findingType: 'CANONICAL_MISSING',
@@ -313,7 +319,8 @@ export class StructuredDataAnalyzerV1 implements SiteAnalyzer {
     const { html } = context;
 
     // Find all JSON-LD scripts
-    const jsonLdPattern = /<script\b[^>]*\btype=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+    const jsonLdPattern =
+      /<script\b[^>]*\btype=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
     let match: RegExpExecArray | null;
     let jsonLdCount = 0;
 
@@ -433,8 +440,9 @@ export class ContentEvidenceAnalyzerV1 implements SiteAnalyzer {
     const { html } = context;
 
     // Check for FAQ structure
-    const hasFaq = /<details\b[^>]*>[\s\S]*?<summary\b/i.test(html)
-      || /<(?:dl|div)\b[^>]*\bclass=["'][^"']*faq[^"']*["']/i.test(html);
+    const hasFaq =
+      /<details\b[^>]*>[\s\S]*?<summary\b/i.test(html) ||
+      /<(?:dl|div)\b[^>]*\bclass=["'][^"']*faq[^"']*["']/i.test(html);
     if (hasFaq) {
       findings.push({
         findingType: 'FAQ_STRUCTURE_PRESENT',
@@ -474,8 +482,9 @@ export class ContentEvidenceAnalyzerV1 implements SiteAnalyzer {
     }
 
     // Check for citations/references
-    const hasCitations = /<cite\b/i.test(html)
-      || /<(?:a|span)\b[^>]*\bclass=["'][^"']*(?:citation|reference|source)[^"']*["']/i.test(html);
+    const hasCitations =
+      /<cite\b/i.test(html) ||
+      /<(?:a|span)\b[^>]*\bclass=["'][^"']*(?:citation|reference|source)[^"']*["']/i.test(html);
     if (hasCitations) {
       findings.push({
         findingType: 'CITATION_STRUCTURE_PRESENT',
@@ -485,8 +494,9 @@ export class ContentEvidenceAnalyzerV1 implements SiteAnalyzer {
     }
 
     // Check for author/date metadata
-    const hasAuthor = /<[^>]*\b(?:author|byline)[^>]*>/i.test(html)
-      || /<(?:time|span)\b[^>]*\bdatetime=["']/i.test(html);
+    const hasAuthor =
+      /<[^>]*\b(?:author|byline)[^>]*>/i.test(html) ||
+      /<(?:time|span)\b[^>]*\bdatetime=["']/i.test(html);
     if (hasAuthor) {
       findings.push({
         findingType: 'AUTHOR_DATE_PRESENT',
@@ -496,7 +506,10 @@ export class ContentEvidenceAnalyzerV1 implements SiteAnalyzer {
     }
 
     // Content length estimation (strip HTML tags)
-    const textContent = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    const textContent = html
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
     const wordCount = textContent.split(/\s+/).length;
     if (wordCount < 300) {
       findings.push({
@@ -557,7 +570,9 @@ export class AnswerReadinessAnalyzerV1 implements SiteAnalyzer {
     }
 
     // Check for concise answer paragraphs (short paragraphs after headings)
-    const hasConciseAnswers = /<h[1-6]\b[^>]*>[^<]*<\/h[1-6]>\s*<p\b[^>]*>[^<]{50,300}<\/p>/i.test(html);
+    const hasConciseAnswers = /<h[1-6]\b[^>]*>[^<]*<\/h[1-6]>\s*<p\b[^>]*>[^<]{50,300}<\/p>/i.test(
+      html,
+    );
     if (hasConciseAnswers) {
       findings.push({
         findingType: 'CONCISE_ANSWER_PRESENT',
@@ -573,6 +588,136 @@ export class AnswerReadinessAnalyzerV1 implements SiteAnalyzer {
         findingType: 'SPEAKABLE_PRESENT',
         severity: 'INFO',
         detail: 'Page references speakable specification',
+      });
+    }
+
+    return findings;
+  }
+}
+
+// ============================================================================
+// Internal Link Graph Analyzer v1
+// ============================================================================
+
+export class InternalLinkGraphAnalyzerV1 implements SiteAnalyzer {
+  readonly id = 'internal-link-graph';
+  readonly version = 'v1';
+  readonly description = 'Internal link structure analysis: outlinks, anchor text, orphans';
+
+  analyze(context: AnalyzerContext): AnalyzerFinding[] {
+    const findings: AnalyzerFinding[] = [];
+    const { html, finalUrl } = context;
+
+    let currentHostname: string;
+    try {
+      currentHostname = new URL(finalUrl).hostname;
+    } catch {
+      return findings;
+    }
+
+    // Extract all anchor tags with href
+    const anchorPattern = /<a\b([^>]*)>([\s\S]*?)<\/a>/gi;
+    const links: { href: string; text: string; rel: string; internal: boolean }[] = [];
+    let match: RegExpExecArray | null;
+
+    while ((match = anchorPattern.exec(html)) !== null) {
+      const attrs = match[1] ?? '';
+      const text = (match[2] ?? '').replace(/<[^>]*>/g, '').trim();
+      const hrefMatch = /\bhref=["']([^"']*)["']/i.exec(attrs);
+      const relMatch = /\brel=["']([^"']*)["']/i.exec(attrs);
+      if (hrefMatch === null) continue;
+
+      const href = hrefMatch[1] ?? '';
+      const rel = (relMatch?.[1] ?? '').toLowerCase();
+
+      // Skip fragment-only, javascript:, mailto:, tel:
+      if (
+        href === '' ||
+        href.startsWith('#') ||
+        href.startsWith('javascript:') ||
+        href.startsWith('mailto:') ||
+        href.startsWith('tel:')
+      ) {
+        continue;
+      }
+
+      let internal: boolean;
+      try {
+        const resolved = new URL(href, finalUrl);
+        internal = resolved.hostname === currentHostname;
+      } catch {
+        // Invalid URL — treat as internal broken link
+        internal = true;
+      }
+
+      links.push({ href, text, rel, internal });
+    }
+
+    const internalLinks = links.filter((l) => l.internal);
+    const externalLinks = links.filter((l) => !l.internal);
+
+    // No internal links — potential orphan page
+    if (internalLinks.length === 0 && links.length >= 0) {
+      findings.push({
+        findingType: 'NO_INTERNAL_LINKS',
+        severity: 'WARNING',
+        detail: 'Page has no internal links (potential orphan page)',
+        suggestion: 'Add contextual internal links to improve crawlability and user navigation',
+      });
+    }
+
+    // Excessive outlinks (link dilution)
+    if (externalLinks.length > 100) {
+      findings.push({
+        findingType: 'EXCESSIVE_EXTERNAL_LINKS',
+        severity: 'WARNING',
+        detail: `Page has ${externalLinks.length} external links (potential link equity dilution)`,
+        suggestion: 'Review and reduce external links or add rel="nofollow" where appropriate',
+      });
+    }
+
+    // Internal links with no anchor text
+    const emptyAnchors = internalLinks.filter((l) => l.text.length === 0);
+    if (emptyAnchors.length > 0) {
+      findings.push({
+        findingType: 'EMPTY_ANCHOR_TEXT',
+        severity: 'WARNING',
+        detail: `${emptyAnchors.length} internal link(s) have no anchor text`,
+        evidencePointer: '/html/body//a[@href][not(text())]',
+        suggestion: 'Add descriptive anchor text for accessibility and SEO',
+      });
+    }
+
+    // Internal nofollow links (unusual — may indicate crawl budget waste)
+    const nofollowInternal = internalLinks.filter((l) => l.rel.includes('nofollow'));
+    if (nofollowInternal.length > 0) {
+      findings.push({
+        findingType: 'INTERNAL_NOFOLLOW',
+        severity: 'INFO',
+        detail: `${nofollowInternal.length} internal link(s) have rel="nofollow"`,
+        suggestion: 'Review whether internal nofollow links are intentional',
+      });
+    }
+
+    // External links without rel="noopener" (security)
+    const unsafeExternal = externalLinks.filter(
+      (l) => !l.rel.includes('noopener') && !l.rel.includes('noreferrer'),
+    );
+    if (unsafeExternal.length > 0 && externalLinks.length > 0) {
+      findings.push({
+        findingType: 'EXTERNAL_LINK_NO_NOOPENER',
+        severity: 'INFO',
+        detail: `${unsafeExternal.length} external link(s) missing rel="noopener"`,
+        suggestion: 'Add rel="noopener noreferrer" to external links for security',
+      });
+    }
+
+    // Link depth indicator (total internal outlinks as a proxy)
+    if (internalLinks.length > 0) {
+      findings.push({
+        findingType: 'INTERNAL_LINKS_COUNT',
+        severity: 'INFO',
+        detail: `Page has ${internalLinks.length} internal outlink(s) and ${externalLinks.length} external outlink(s)`,
       });
     }
 

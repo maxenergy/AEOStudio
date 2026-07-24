@@ -408,10 +408,13 @@ export class PostgresProfileOfferingStore
     });
   }
 
-  listProfiles(input: {
-    context: TenantContext;
-  }): Promise<
-    { id: string; displayName: string; currentRevision: number; completeness: CompletenessSummary }[]
+  listProfiles(input: { context: TenantContext }): Promise<
+    {
+      id: string;
+      displayName: string;
+      currentRevision: number;
+      completeness: CompletenessSummary;
+    }[]
   > {
     return this.contexts.run(input.context, async (client) => {
       const result = await client.query<{
@@ -440,9 +443,7 @@ export class PostgresProfileOfferingStore
     });
   }
 
-  listOfferings(input: {
-    context: TenantContext;
-  }): Promise<
+  listOfferings(input: { context: TenantContext }): Promise<
     {
       id: string;
       profileId: string;

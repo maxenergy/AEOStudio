@@ -213,16 +213,29 @@ export class InMemoryProfileOfferingStore
     });
   }
 
-  listProfiles(input: {
-    context: { tenantId: string; workspaceId: string };
-  }): Promise<
-    { id: string; displayName: string; currentRevision: number; completeness: { completedFields: number; totalFields: number; percent: number; missingFields: string[] } }[]
+  listProfiles(input: { context: { tenantId: string; workspaceId: string } }): Promise<
+    {
+      id: string;
+      displayName: string;
+      currentRevision: number;
+      completeness: {
+        completedFields: number;
+        totalFields: number;
+        percent: number;
+        missingFields: string[];
+      };
+    }[]
   > {
     const results: {
       id: string;
       displayName: string;
       currentRevision: number;
-      completeness: { completedFields: number; totalFields: number; percent: number; missingFields: string[] };
+      completeness: {
+        completedFields: number;
+        totalFields: number;
+        percent: number;
+        missingFields: string[];
+      };
     }[] = [];
     for (const [profileId, aggregate] of this.profiles) {
       if (aggregate.tenantId !== input.context.tenantId) continue;
@@ -239,9 +252,7 @@ export class InMemoryProfileOfferingStore
     return Promise.resolve(results);
   }
 
-  listOfferings(input: {
-    context: { tenantId: string; workspaceId: string };
-  }): Promise<
+  listOfferings(input: { context: { tenantId: string; workspaceId: string } }): Promise<
     {
       id: string;
       profileId: string;
@@ -250,7 +261,12 @@ export class InMemoryProfileOfferingStore
       locale: string;
       market: string;
       currentRevision: number;
-      completeness: { completedFields: number; totalFields: number; percent: number; missingFields: string[] };
+      completeness: {
+        completedFields: number;
+        totalFields: number;
+        percent: number;
+        missingFields: string[];
+      };
     }[]
   > {
     const results: {
@@ -261,7 +277,12 @@ export class InMemoryProfileOfferingStore
       locale: string;
       market: string;
       currentRevision: number;
-      completeness: { completedFields: number; totalFields: number; percent: number; missingFields: string[] };
+      completeness: {
+        completedFields: number;
+        totalFields: number;
+        percent: number;
+        missingFields: string[];
+      };
     }[] = [];
     for (const [offeringId, aggregate] of this.offerings) {
       if (aggregate.tenantId !== input.context.tenantId) continue;

@@ -761,7 +761,14 @@ export class PostgresContentPlanningStore implements ContentPlanningStore {
   }
 
   listApprovedBriefs(input: { context: TenantContext }): Promise<
-    { briefId: string; planId: string; assetKind: string; title: string; contentHash: string; status: string }[]
+    {
+      briefId: string;
+      planId: string;
+      assetKind: string;
+      title: string;
+      contentHash: string;
+      status: string;
+    }[]
   > {
     return this.contexts.run(input.context, async (client) => {
       const result = await client.query<{

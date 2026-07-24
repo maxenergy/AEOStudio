@@ -6,7 +6,10 @@ import type {
   StartContentPlanEnvelope,
   WorkspaceListEnvelope,
 } from '@aeostudio/contracts';
-import type { ProfileListEnvelope, OfferingListEnvelope } from '@aeostudio/contracts/profile-offering';
+import type {
+  ProfileListEnvelope,
+  OfferingListEnvelope,
+} from '@aeostudio/contracts/profile-offering';
 import type { ApprovedPromptSetListEnvelope } from '@aeostudio/contracts/prompt-research';
 import type { ApprovedClaimListEnvelope } from '@aeostudio/contracts/evidence-claims';
 import type { SiteBaselineListEnvelope } from '@aeostudio/contracts/site-crawl';
@@ -197,11 +200,15 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
       fetch(`${base}/claims/approved`, { cache: 'no-store', headers }),
       fetch(`${base}/sites/baselines`, { cache: 'no-store', headers }),
     ]);
-    if (profilesRes.ok) profiles = ((await profilesRes.json()) as ProfileListEnvelope).data.profiles;
-    if (offeringsRes.ok) offerings = ((await offeringsRes.json()) as OfferingListEnvelope).data.offerings;
-    if (promptSetsRes.ok) promptSets = ((await promptSetsRes.json()) as ApprovedPromptSetListEnvelope).data.promptSets;
+    if (profilesRes.ok)
+      profiles = ((await profilesRes.json()) as ProfileListEnvelope).data.profiles;
+    if (offeringsRes.ok)
+      offerings = ((await offeringsRes.json()) as OfferingListEnvelope).data.offerings;
+    if (promptSetsRes.ok)
+      promptSets = ((await promptSetsRes.json()) as ApprovedPromptSetListEnvelope).data.promptSets;
     if (claimsRes.ok) claims = ((await claimsRes.json()) as ApprovedClaimListEnvelope).data.claims;
-    if (baselinesRes.ok) baselines = ((await baselinesRes.json()) as SiteBaselineListEnvelope).data.baselines;
+    if (baselinesRes.ok)
+      baselines = ((await baselinesRes.json()) as SiteBaselineListEnvelope).data.baselines;
   }
 
   return (
@@ -234,85 +241,88 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
           <h2>冻结计划输入</h2>
           <p>所有 ID 都会作为 input artifact revision snapshot 保存，生成过程不调用真实 LLM。</p>
           {profiles.length === 0 && promptSets.length === 0 ? (
-            <p role="alert">尚无可用资源。请先完成 Profile/Offering 创建、Prompt Set 审批、Claim 审批和 Site Baseline 爬取。</p>
+            <p role="alert">
+              尚无可用资源。请先完成 Profile/Offering 创建、Prompt Set 审批、Claim 审批和 Site
+              Baseline 爬取。
+            </p>
           ) : (
-          <form action={startPlan} className="stacked-form">
-            <input name="tenantId" type="hidden" value={tenantId} />
-            <input name="workspaceId" type="hidden" value={workspaceId} />
-            <label htmlFor="plan-profile">Profile</label>
-            <select id="plan-profile" name="profileId" required>
-              {profiles.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.displayName} (rev {p.currentRevision})
-                </option>
-              ))}
-            </select>
-            <label htmlFor="plan-profile-revision">Profile revision</label>
-            <input
-              defaultValue={profiles[0]?.currentRevision ?? 1}
-              id="plan-profile-revision"
-              min="1"
-              name="profileRevision"
-              type="number"
-            />
-            <label htmlFor="plan-offering">Offering</label>
-            <select id="plan-offering" name="offeringId" required>
-              {offerings.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.name} [{o.kind}] (rev {o.currentRevision})
-                </option>
-              ))}
-            </select>
-            <label htmlFor="plan-offering-revision">Offering revision</label>
-            <input
-              defaultValue={offerings[0]?.currentRevision ?? 1}
-              id="plan-offering-revision"
-              min="1"
-              name="offeringRevision"
-              type="number"
-            />
-            <label htmlFor="plan-prompt-set">Approved Prompt Set</label>
-            <select id="plan-prompt-set" name="promptSetId" required>
-              {promptSets.map((ps) => (
-                <option key={ps.promptSetId} value={ps.promptSetId}>
-                  {ps.title} (rev {ps.revision})
-                </option>
-              ))}
-            </select>
-            <label htmlFor="plan-prompt-revision">Approved Prompt revision ID</label>
-            <select id="plan-prompt-revision" name="promptRevisionId" required>
-              {promptSets.map((ps) => (
-                <option key={ps.revisionId} value={ps.revisionId}>
-                  {ps.title} rev {ps.revision}
-                </option>
-              ))}
-            </select>
-            <label htmlFor="plan-primary-claims">Approved primary Claim revision IDs</label>
-            <textarea
-              defaultValue={claims.map((c) => c.revisionId).join('\n')}
-              id="plan-primary-claims"
-              name="primaryClaimRevisionIds"
-            />
-            <label htmlFor="plan-comparison-claims">
-              Independently evidenced comparison Claim revision IDs
-            </label>
-            <textarea
-              defaultValue=""
-              id="plan-comparison-claims"
-              name="comparisonClaimRevisionIds"
-            />
-            <label htmlFor="plan-baseline">Site baseline</label>
-            <select id="plan-baseline" name="baselineId" required>
-              {baselines.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.status} · {b.pageCount} pages · {b.completedAt}
-                </option>
-              ))}
-            </select>
-            <button className="primary-action" type="submit">
-              启动 Content Plan
-            </button>
-          </form>
+            <form action={startPlan} className="stacked-form">
+              <input name="tenantId" type="hidden" value={tenantId} />
+              <input name="workspaceId" type="hidden" value={workspaceId} />
+              <label htmlFor="plan-profile">Profile</label>
+              <select id="plan-profile" name="profileId" required>
+                {profiles.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.displayName} (rev {p.currentRevision})
+                  </option>
+                ))}
+              </select>
+              <label htmlFor="plan-profile-revision">Profile revision</label>
+              <input
+                defaultValue={profiles[0]?.currentRevision ?? 1}
+                id="plan-profile-revision"
+                min="1"
+                name="profileRevision"
+                type="number"
+              />
+              <label htmlFor="plan-offering">Offering</label>
+              <select id="plan-offering" name="offeringId" required>
+                {offerings.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.name} [{o.kind}] (rev {o.currentRevision})
+                  </option>
+                ))}
+              </select>
+              <label htmlFor="plan-offering-revision">Offering revision</label>
+              <input
+                defaultValue={offerings[0]?.currentRevision ?? 1}
+                id="plan-offering-revision"
+                min="1"
+                name="offeringRevision"
+                type="number"
+              />
+              <label htmlFor="plan-prompt-set">Approved Prompt Set</label>
+              <select id="plan-prompt-set" name="promptSetId" required>
+                {promptSets.map((ps) => (
+                  <option key={ps.promptSetId} value={ps.promptSetId}>
+                    {ps.title} (rev {ps.revision})
+                  </option>
+                ))}
+              </select>
+              <label htmlFor="plan-prompt-revision">Approved Prompt revision ID</label>
+              <select id="plan-prompt-revision" name="promptRevisionId" required>
+                {promptSets.map((ps) => (
+                  <option key={ps.revisionId} value={ps.revisionId}>
+                    {ps.title} rev {ps.revision}
+                  </option>
+                ))}
+              </select>
+              <label htmlFor="plan-primary-claims">Approved primary Claim revision IDs</label>
+              <textarea
+                defaultValue={claims.map((c) => c.revisionId).join('\n')}
+                id="plan-primary-claims"
+                name="primaryClaimRevisionIds"
+              />
+              <label htmlFor="plan-comparison-claims">
+                Independently evidenced comparison Claim revision IDs
+              </label>
+              <textarea
+                defaultValue=""
+                id="plan-comparison-claims"
+                name="comparisonClaimRevisionIds"
+              />
+              <label htmlFor="plan-baseline">Site baseline</label>
+              <select id="plan-baseline" name="baselineId" required>
+                {baselines.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.status} · {b.pageCount} pages · {b.completedAt}
+                  </option>
+                ))}
+              </select>
+              <button className="primary-action" type="submit">
+                启动 Content Plan
+              </button>
+            </form>
           )}
         </section>
       ) : null}

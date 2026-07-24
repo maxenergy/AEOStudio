@@ -413,7 +413,9 @@ describe('Task 5 verified Site crawl', () => {
     ).toBe(true);
     expect(
       baselineBody.data.baseline.findings.some(
-        (finding) => finding.findingType === 'HTTP_STATUS' && finding.detail === '200',
+        (finding) =>
+          finding.findingType === 'technical-html:META_DESCRIPTION_MISSING' &&
+          finding.severity === 'WARNING',
       ),
     ).toBe(true);
     const snapshotIds = new Set(
@@ -524,10 +526,13 @@ describe('Task 5 verified Site crawl', () => {
       expect.arrayContaining([
         expect.objectContaining({ findingType: 'ROBOTS_PRESENT' }),
         expect.objectContaining({ findingType: 'SITEMAP_PRESENT' }),
-        expect.objectContaining({ findingType: 'CANONICAL_PRESENT' }),
-        expect.objectContaining({ findingType: 'STRUCTURED_DATA_PRESENT' }),
-        expect.objectContaining({ findingType: 'TITLE_MISSING', severity: 'WARNING' }),
-        expect.objectContaining({ findingType: 'META_DESCRIPTION_MISSING' }),
+        expect.objectContaining({ findingType: 'structured-data:JSONLD_VALID' }),
+        expect.objectContaining({
+          findingType: 'technical-html:TITLE_MISSING',
+          severity: 'WARNING',
+        }),
+        expect.objectContaining({ findingType: 'technical-html:META_DESCRIPTION_MISSING' }),
+        expect.objectContaining({ findingType: 'indexability:CANONICAL_MISSING' }),
       ]),
     );
     const snapshotIds = new Set(result.snapshots.map((snapshot) => snapshot.id));

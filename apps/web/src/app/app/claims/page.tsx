@@ -277,8 +277,8 @@ export default async function ClaimsPage({ searchParams }: ClaimsPageProps) {
               type="file"
             />
             <p className="field-help">
-              支持文本、Markdown、PDF、CSV 和常见图片。上传后由服务端计算 hash 和 objectRef，浏览器不提交自称可信的
-              hash。
+              支持文本、Markdown、PDF、CSV 和常见图片。上传后由服务端计算 hash 和
+              objectRef，浏览器不提交自称可信的 hash。
             </p>
             <label htmlFor="claim-statement">Claim statement</label>
             <textarea id="claim-statement" name="statement" required />

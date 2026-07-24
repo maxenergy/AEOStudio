@@ -246,7 +246,8 @@ export default async function ArtifactsPage({ searchParams }: ArtifactsPageProps
       `${apiOrigin()}/api/v1/tenants/${tenantId}/workspaces/${workspaceId}/content-plans/briefs/approved`,
       { cache: 'no-store', headers: { cookie } },
     );
-    if (briefsRes.ok) approvedBriefs = ((await briefsRes.json()) as ApprovedBriefListEnvelope).data.briefs;
+    if (briefsRes.ok)
+      approvedBriefs = ((await briefsRes.json()) as ApprovedBriefListEnvelope).data.briefs;
   }
   const profileSource = bundle?.revision?.lineage.sourceReferences.find(
     (reference) => reference.kind === 'PROFILE_REVISION',
@@ -288,25 +289,25 @@ export default async function ArtifactsPage({ searchParams }: ArtifactsPageProps
           {approvedBriefs.length === 0 ? (
             <p role="alert">尚无已批准的 Brief。请先在 Content Plan 页面审批 Brief。</p>
           ) : (
-          <form action={startArtifact} className="stacked-form">
-            <input name="tenantId" type="hidden" value={tenantId} />
-            <input name="workspaceId" type="hidden" value={workspaceId} />
-            <label htmlFor="artifact-brief">Approved Brief</label>
-            <select id="artifact-brief" name="briefId" required>
-              {approvedBriefs.map((b) => (
-                <option key={b.briefId} value={b.briefId}>
-                  {b.title} [{b.assetKind}]
-                </option>
-              ))}
-            </select>
-            <label htmlFor="artifact-locale">Locale</label>
-            <input defaultValue="zh-CN" id="artifact-locale" name="locale" required />
-            <label htmlFor="artifact-market">Market</label>
-            <input defaultValue="Global" id="artifact-market" name="market" required />
-            <button className="primary-action" type="submit">
-              生成 Artifact Draft
-            </button>
-          </form>
+            <form action={startArtifact} className="stacked-form">
+              <input name="tenantId" type="hidden" value={tenantId} />
+              <input name="workspaceId" type="hidden" value={workspaceId} />
+              <label htmlFor="artifact-brief">Approved Brief</label>
+              <select id="artifact-brief" name="briefId" required>
+                {approvedBriefs.map((b) => (
+                  <option key={b.briefId} value={b.briefId}>
+                    {b.title} [{b.assetKind}]
+                  </option>
+                ))}
+              </select>
+              <label htmlFor="artifact-locale">Locale</label>
+              <input defaultValue="zh-CN" id="artifact-locale" name="locale" required />
+              <label htmlFor="artifact-market">Market</label>
+              <input defaultValue="Global" id="artifact-market" name="market" required />
+              <button className="primary-action" type="submit">
+                生成 Artifact Draft
+              </button>
+            </form>
           )}
         </section>
       ) : null}

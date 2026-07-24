@@ -572,7 +572,14 @@ export class PostgresPromptResearchStore implements PromptResearchStore {
   }
 
   listApprovedPromptSets(input: { context: TenantContext }): Promise<
-    { promptSetId: string; revisionId: string; revision: number; title: string; subject: string; contentHash: string }[]
+    {
+      promptSetId: string;
+      revisionId: string;
+      revision: number;
+      title: string;
+      subject: string;
+      contentHash: string;
+    }[]
   > {
     return this.contexts.run(input.context, async (client) => {
       const result = await client.query<{

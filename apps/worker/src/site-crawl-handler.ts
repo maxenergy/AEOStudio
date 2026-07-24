@@ -1,6 +1,8 @@
 import type { CrawlObjectStorage, CrawlPageFetcher } from '@aeostudio/application/site-crawl';
 import type { SiteRecord } from '@aeostudio/domain/site-crawl';
 
+import { createDefaultRegistry, type AnalyzerRegistry } from './site-analyzers.js';
+
 export interface CrawlPolicy {
   maxPages: number;
   maxBytes: number;
@@ -45,12 +47,17 @@ export interface SiteCrawlResult {
 }
 
 export class SiteCrawlHandler {
+  private readonly analyzers: AnalyzerRegistry;
+
   constructor(
     private readonly fetcher: CrawlPageFetcher,
     private readonly storage: CrawlObjectStorage,
     private readonly ids: { next(): string },
     private readonly clock: { now(): Date },
-  ) {}
+    analyzers?: AnalyzerRegistry,
+  ) {
+    this.analyzers = analyzers ?? createDefaultRegistry();
+  }
 
   async run(site: SiteRecord, policy: CrawlPolicy): Promise<SiteCrawlResult> {
     if (site.status !== 'VERIFIED') {
@@ -332,32 +339,22 @@ export class SiteCrawlHandler {
     status: number,
     findings: BaselineFindingResult[],
   ): void {
-    this.addFinding(
-      findings,
-      snapshot.id,
-      'HTTP_STATUS',
-      status >= 400 ? 'ERROR' : 'INFO',
-      String(status),
-    );
-    this.addPresenceFinding(findings, snapshot.id, 'TITLE', /<title\b[^>]*>\s*[^<]+/i.test(html));
-    this.addPresenceFinding(
-      findings,
-      snapshot.id,
-      'META_DESCRIPTION',
-      /<meta\b(?=[^>]*\bname=["']description["'])[^>]*>/i.test(html),
-    );
-    this.addPresenceFinding(
-      findings,
-      snapshot.id,
-      'CANONICAL',
-      /<link\b(?=[^>]*\brel=["'][^"']*canonical[^"']*["'])[^>]*>/i.test(html),
-    );
-    this.addPresenceFinding(
-      findings,
-      snapshot.id,
-      'STRUCTURED_DATA',
-      /<script\b(?=[^>]*\btype=["']application\/ld\+json["'])[^>]*>/i.test(html),
-    );
+    // Use versioned analyzer registry for comprehensive diagnostics
+    const analyzerFindings = this.analyzers.analyzeAll({
+      snapshot,
+      html,
+      status,
+      finalUrl: snapshot.url,
+    });
+    for (const finding of analyzerFindings) {
+      this.addFinding(
+        findings,
+        snapshot.id,
+        `${finding.analyzerId}:${finding.findingType}`,
+        finding.severity,
+        finding.detail,
+      );
+    }
   }
 
   private addPresenceFinding(
