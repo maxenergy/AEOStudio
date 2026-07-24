@@ -576,6 +576,9 @@ describe('Tenant Data Broker application gateway', () => {
         'content.md': '# Fixture',
         'content.html': '<h1>Fixture</h1>',
         'structured-data.json': '{"@type":"Product"}',
+        'post.txt': 'Reviewed destination copy',
+        'fields.json': '{"profileVersion":"1.0.0"}',
+        'submission-checklist.md': '# Review required',
       },
     };
     const bytes = new TextEncoder().encode(canonicalArtifactJson(payload));

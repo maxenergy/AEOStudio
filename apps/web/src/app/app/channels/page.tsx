@@ -1158,6 +1158,24 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
                       .map((adapter) => `${adapter.adapterKey}@${adapter.adapterVersion}`)
                       .join(', ')}
               </p>
+              {entry.channelProfile === undefined || entry.channelProfile === null ? null : (
+                <div data-testid="channel-profile-summary">
+                  <p className="monospace break-anywhere">
+                    Channel profile：{entry.channelProfile.profileVersion} ·{' '}
+                    {entry.channelProfile.profileHash}
+                  </p>
+                  <p>
+                    Required fields：
+                    {entry.channelProfile.fieldRequirements
+                      .map((requirement) => requirement.field)
+                      .join(', ')}
+                  </p>
+                  <p className="field-help">
+                    此渠道首期生成审核适配包；只有 Registry 后续存在合规 Adapter
+                    且授权通过时，发布按钮才可执行外部写入。
+                  </p>
+                </div>
+              )}
             </article>
           ))}
         </div>
@@ -1242,12 +1260,36 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
               className="secondary-action download-action"
               href={`${publicApiOrigin()}/api/v1/tenants/${tenantId}/workspaces/${workspaceId}/channel-packages/${packageId}/export`}
             >
-              下载渠道适配包
+              {channelPackage.manifest.channelProfile === undefined
+                ? '下载渠道适配包'
+                : '审核后导出渠道适配包'}
             </a>
 
             <div data-testid="channel-package-manifest" className="manifest-panel">
               <h3>Manifest</h3>
               <p>Schema version：{channelPackage.manifest.schemaVersion}</p>
+              {channelPackage.manifest.channelProfile === undefined ? null : (
+                <div className="nested-card" data-testid="channel-package-profile">
+                  <p>
+                    <strong>Reviewed-before-publish Channel Profile</strong>
+                  </p>
+                  <p>Channel：{channelPackage.manifest.channelProfile.channel}</p>
+                  <p>Profile version：{channelPackage.manifest.channelProfile.profileVersion}</p>
+                  <p className="monospace break-anywhere">
+                    Profile hash：{channelPackage.manifest.channelProfile.profileHash}
+                  </p>
+                  <ul>
+                    {channelPackage.manifest.channelProfile.fieldRequirements.map((requirement) => (
+                      <li key={requirement.field}>
+                        <strong>{requirement.field}</strong> ← {requirement.sourcePointer} ·{' '}
+                        {requirement.required ? 'required' : 'optional'} · length{' '}
+                        {requirement.minLength ?? 'none'}..{requirement.maxLength ?? 'none'} ·{' '}
+                        {requirement.format}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               <div className="table-scroll">
                 <table>
                   <thead>
@@ -1337,6 +1379,14 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
                       </li>
                     ))}
                   </ul>
+                  {channelPackage.manifest.channelProfile === undefined ? null : (
+                    <a
+                      className="secondary-action download-action"
+                      href={`${publicApiOrigin()}/api/v1/tenants/${tenantId}/workspaces/${workspaceId}/channel-packages/${packageId}/export`}
+                    >
+                      审核后导出 / 人工交接
+                    </a>
+                  )}
                 </div>
               ) : (
                 <div className="state-panel publish-ready">

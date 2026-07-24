@@ -436,6 +436,7 @@ describe('Task 10 PostgreSQL publication worker Artifact currentness', () => {
         snapshotId: randomUUID(),
         contentHash: '8'.repeat(64),
         objectRef: 'fixture://guarded-effect-evidence-r2',
+        objectVersionId: 'fixture-guarded-effect-evidence-r2-v1',
         contentType: 'text/plain',
         sizeBytes: 256,
         capturedAt: new Date(fixture.now.getTime() + 1_000),
@@ -1439,10 +1440,10 @@ async function seedRunningPublication(
     );
     await client.query(
       `INSERT INTO evidence_snapshots
-         (id, tenant_id, workspace_id, source_id, content_hash, object_ref, content_type,
-          size_bytes, captured_at)
+         (id, tenant_id, workspace_id, source_id, content_hash, object_ref, object_version_id,
+          content_type, size_bytes, captured_at)
        VALUES ($1, $2, $3, $4, $5, 'fixture://guarded-effect-evidence',
-         'text/plain', 128, $6)`,
+         'fixture-guarded-effect-evidence-v1', 'text/plain', 128, $6)`,
       [ids.evidenceSnapshot, ids.tenant, ids.workspace, ids.evidenceSource, evidenceHash, now],
     );
     await client.query(`UPDATE evidence_sources SET current_snapshot_id = $1 WHERE id = $2`, [

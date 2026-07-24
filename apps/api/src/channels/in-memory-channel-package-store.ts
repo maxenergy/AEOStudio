@@ -23,7 +23,9 @@ export class InMemoryChannelPackageStore implements ChannelPackageStore {
         record.channel.definitionId === input.channel.definitionId &&
         record.transformer.key === input.transformer.key &&
         record.transformer.version === input.transformer.version &&
-        record.packageSchemaVersion === input.packageSchemaVersion,
+        record.packageSchemaVersion === input.packageSchemaVersion &&
+        (record.manifest.channelProfile?.profileHash ?? null) ===
+          (input.manifest.channelProfile?.profileHash ?? null),
     );
     if (existing !== undefined) {
       return Promise.resolve({

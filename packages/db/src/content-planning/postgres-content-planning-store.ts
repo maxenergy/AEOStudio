@@ -110,6 +110,19 @@ export class PostgresContentPlanningStore implements ContentPlanningStore {
 
   preparePlan(input: Parameters<ContentPlanningStore['preparePlan']>[0]) {
     return this.contexts.run(input.context, async (client) => {
+      const replay = await client.query<ContentPlanRow>(
+        `SELECT id, tenant_id, workspace_id, job_id, status, method_policy_version,
+           input_snapshot, content_hash, created_by_user_id, created_at, completed_at
+         FROM content_plans
+         WHERE id = $1 AND workspace_id = $2`,
+        [input.planId, input.context.workspaceId],
+      );
+      if (replay.rows[0] !== undefined) {
+        return {
+          outcome: 'SUCCEEDED' as const,
+          plan: this.mapPlan(replay.rows[0]),
+        };
+      }
       const knowledge = await client.query<KnowledgeRow>(
         `SELECT profile_revision.id AS profile_revision_id,
            offering_revision.id AS offering_revision_id
@@ -227,8 +240,9 @@ export class PostgresContentPlanningStore implements ContentPlanningStore {
           (id, tenant_id, workspace_id, status, method_policy_version, input_snapshot,
             created_by_user_id, created_at)
          VALUES ($1, $2, $3, 'PENDING', $4, $5::jsonb, $6, $7)
+         ON CONFLICT (id) DO NOTHING
          RETURNING id, tenant_id, workspace_id, job_id, status, method_policy_version,
-           input_snapshot, content_hash, created_by_user_id, created_at, completed_at`,
+            input_snapshot, content_hash, created_by_user_id, created_at, completed_at`,
         [
           input.planId,
           input.context.tenantId,
@@ -239,6 +253,19 @@ export class PostgresContentPlanningStore implements ContentPlanningStore {
           input.createdAt,
         ],
       );
+      const row = inserted.rows[0];
+      if (row === undefined) {
+        const concurrentReplay = await client.query<ContentPlanRow>(
+          `SELECT id, tenant_id, workspace_id, job_id, status, method_policy_version,
+             input_snapshot, content_hash, created_by_user_id, created_at, completed_at
+           FROM content_plans
+           WHERE id = $1 AND workspace_id = $2`,
+          [input.planId, input.context.workspaceId],
+        );
+        const replayed = concurrentReplay.rows[0];
+        if (replayed === undefined) throw new Error('CONTENT_PLAN_DID_NOT_RETURN_RESULT');
+        return { outcome: 'SUCCEEDED' as const, plan: this.mapPlan(replayed) };
+      }
       await client.query(
         `INSERT INTO audit_events
           (id, tenant_id, workspace_id, actor_user_id, action, resource_type, resource_id,
@@ -264,8 +291,6 @@ export class PostgresContentPlanningStore implements ContentPlanningStore {
           input.createdAt,
         ],
       );
-      const row = inserted.rows[0];
-      if (row === undefined) throw new Error('CONTENT_PLAN_DID_NOT_RETURN_RESULT');
       return { outcome: 'SUCCEEDED' as const, plan: this.mapPlan(row) };
     });
   }

@@ -275,6 +275,60 @@ test('an approved Artifact becomes an exact portable package with an honest expo
   await expect(page.locator('body')).not.toContainText('fake://remote/');
 });
 
+test('a profiled channel produces a reviewable adaptation package without faking publication', async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await loginAs(page, 'owner@example.test');
+  const scope = await createApprovedArtifact(
+    page,
+    'Profiled Handoff Tenant',
+    'Profiled Handoff Workspace',
+  );
+
+  await openChannels(page, scope);
+  const registryEntry = page
+    .getByTestId('channel-registry-entry')
+    .filter({ hasText: 'Social Channel Handoff' });
+  await expect(registryEntry).toHaveCount(1);
+  await expect(registryEntry.getByTestId('channel-profile-summary')).toContainText(
+    'Required fields：post, disclosure',
+  );
+
+  await buildPackage(page, scope, 'Social Channel Handoff');
+  const profile = page.getByTestId('channel-package-profile');
+  await expect(profile).toContainText('Reviewed-before-publish Channel Profile');
+  await expect(profile).toContainText('social-channel-handoff');
+  await expect(profile).toContainText('Profile version：1.0.0');
+
+  const exportLink = page.getByRole('link', { name: '审核后导出渠道适配包' });
+  await expect(exportLink).toBeVisible();
+  const href = await exportLink.getAttribute('href');
+  if (href === null) throw new Error('PROFILED_PACKAGE_EXPORT_LINK_MISSING');
+  const response = await authenticatedApiGet(page, href);
+  expect(response.status()).toBe(200);
+  const exported = ChannelPackageExportSchema.parse(await response.json());
+  expect(exported.manifest.channelProfile).toMatchObject({
+    channel: 'social-channel-handoff',
+    profileVersion: '1.0.0',
+  });
+  expect(Object.keys(exported.files)).toContain('post.txt');
+  expect(Object.keys(exported.files)).toContain('fields.json');
+  expect(Object.keys(exported.files)).toContain('submission-checklist.md');
+  expect(exported.files['post.txt']).toBeTruthy();
+  expect(exported.files['fields.json']).toContain(scope.contentHash);
+  expect(exported.files['submission-checklist.md']).toContain(
+    'Review required before external publication',
+  );
+
+  const eligibility = page.getByTestId('publication-eligibility');
+  await expect(eligibility).toContainText('EXPORT_ONLY');
+  await expect(eligibility).toContainText('ADAPTER_NOT_FOUND');
+  await expect(page.getByRole('link', { name: '审核后导出 / 人工交接' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '审核后发布' })).toHaveCount(0);
+  await expect(page.getByTestId('publication-status')).toHaveCount(0);
+});
+
 test('an independent Publisher publishes once through the explicit fake Adapter after review', async ({
   browser,
 }) => {

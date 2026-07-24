@@ -1,9 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import {
-  AwsS3EvidenceObjectStore,
-  type AwsS3EvidenceApi,
-} from './aws-s3-evidence-object-store.js';
+import { AwsS3EvidenceObjectStore, type AwsS3EvidenceApi } from './aws-s3-evidence-object-store.js';
 
 const tenantA = '00000000-0000-7000-8000-000000000601';
 const tenantB = '00000000-0000-7000-8000-000000000602';
@@ -32,8 +29,7 @@ describe('AwsS3EvidenceObjectStore', () => {
       region: 'ap-southeast-1',
       accountId: '123456789012',
       bucket: 'aeostudio-evidence-test',
-      kmsKeyArn:
-        'arn:aws:kms:ap-southeast-1:123456789012:key/00000000-0000-7000-8000-000000000606',
+      kmsKeyArn: 'arn:aws:kms:ap-southeast-1:123456789012:key/00000000-0000-7000-8000-000000000606',
     });
 
     const stored = await storage.ingestExact({
@@ -108,8 +104,7 @@ describe('AwsS3EvidenceObjectStore', () => {
       region: 'ap-southeast-1',
       accountId: '123456789012',
       bucket: 'aeostudio-evidence-test',
-      kmsKeyArn:
-        'arn:aws:kms:ap-southeast-1:123456789012:key/00000000-0000-7000-8000-000000000606',
+      kmsKeyArn: 'arn:aws:kms:ap-southeast-1:123456789012:key/00000000-0000-7000-8000-000000000606',
     });
 
     await expect(

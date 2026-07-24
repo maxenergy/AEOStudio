@@ -86,6 +86,15 @@ interface JobRow {
   error_code: string | null;
 }
 
+interface GenerationStartIntentRow {
+  operation: 'CONTENT_PLAN' | 'ARTIFACT_GENERATION';
+  request_hash: string;
+  aggregate_id: string;
+  job_id: string;
+  estimated_units: number;
+  requested_at: Date;
+}
+
 interface PendingOutboxRow {
   message_id: string;
   tenant_id: string;
@@ -253,6 +262,76 @@ export class PostgresJobBudgetStore implements JobBudgetStore, JobExecutionStore
     });
   }
 
+  reserveGenerationStart(
+    input: Parameters<JobBudgetStore['reserveGenerationStart']>[0],
+  ): ReturnType<JobBudgetStore['reserveGenerationStart']> {
+    return this.contexts.run(input.context, async (client) => {
+      if (
+        !(await lockActiveLifecycleScope(client, input.context.tenantId, input.context.workspaceId))
+      ) {
+        return { outcome: 'NOT_FOUND' as const };
+      }
+      await lockIdempotencyScope(
+        client,
+        input.context.tenantId,
+        input.context.workspaceId,
+        input.operation,
+        input.idempotencyKey,
+      );
+      const existing = await findGenerationStartIntent(
+        client,
+        input.context.tenantId,
+        input.context.workspaceId,
+        input.operation,
+        input.idempotencyKey,
+      );
+      if (existing !== undefined) return mapGenerationStartIntent(existing, input);
+
+      const existingJob = await client.query<{ id: string }>(
+        `SELECT id FROM jobs
+         WHERE tenant_id = $1 AND workspace_id = $2
+           AND job_type = $3 AND idempotency_key = $4`,
+        [input.context.tenantId, input.context.workspaceId, input.operation, input.idempotencyKey],
+      );
+      if (existingJob.rows[0] !== undefined) {
+        return { outcome: 'IDEMPOTENCY_CONFLICT' as const };
+      }
+
+      const inserted = await client.query<GenerationStartIntentRow>(
+        `INSERT INTO generation_start_intents
+          (tenant_id, workspace_id, operation, idempotency_key, request_hash,
+            aggregate_id, job_id, estimated_units, requested_by_user_id, requested_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+         ON CONFLICT (tenant_id, workspace_id, operation, idempotency_key) DO NOTHING
+         RETURNING operation, request_hash, aggregate_id, job_id,
+           estimated_units::integer, requested_at`,
+        [
+          input.context.tenantId,
+          input.context.workspaceId,
+          input.operation,
+          input.idempotencyKey,
+          input.requestHash,
+          input.aggregateId,
+          input.jobId,
+          input.estimatedUnits,
+          input.context.actorUserId,
+          input.requestedAt,
+        ],
+      );
+      const row =
+        inserted.rows[0] ??
+        (await findGenerationStartIntent(
+          client,
+          input.context.tenantId,
+          input.context.workspaceId,
+          input.operation,
+          input.idempotencyKey,
+        ));
+      if (row === undefined) throw new Error('GENERATION_START_INTENT_DID_NOT_RETURN_RESULT');
+      return mapGenerationStartIntent(row, input);
+    });
+  }
+
   submitJob(input: Parameters<JobBudgetStore['submitJob']>[0]): Promise<JobRecord | null> {
     const traceContext =
       input.traceContext === undefined ? undefined : readJobTraceContext(input.traceContext);
@@ -267,13 +346,31 @@ export class PostgresJobBudgetStore implements JobBudgetStore, JobExecutionStore
       ) {
         return null;
       }
+      await lockIdempotencyScope(
+        client,
+        input.context.tenantId,
+        input.context.workspaceId,
+        input.jobType,
+        input.idempotencyKey,
+      );
+      const generationIntent = await findGenerationStartIntent(
+        client,
+        input.context.tenantId,
+        input.context.workspaceId,
+        input.jobType,
+        input.idempotencyKey,
+      );
+      if (generationIntent !== undefined && !generationStartMatchesJob(generationIntent, input)) {
+        return null;
+      }
       const existing = await client.query<JobRow>(
         `SELECT id, tenant_id, workspace_id, provider_key, job_type, aggregate_id, status, progress,
            attempt, max_attempts, budget_warning, estimated_units::integer, heartbeat_at,
            result, error_code
          FROM jobs
-         WHERE tenant_id = $1 AND workspace_id = $2 AND idempotency_key = $3`,
-        [input.context.tenantId, input.context.workspaceId, input.idempotencyKey],
+         WHERE tenant_id = $1 AND workspace_id = $2
+           AND job_type = $3 AND idempotency_key = $4`,
+        [input.context.tenantId, input.context.workspaceId, input.jobType, input.idempotencyKey],
       );
       if (existing.rows[0] !== undefined) {
         return jobMatchesIdempotentRequest(existing.rows[0], input)
@@ -344,8 +441,9 @@ export class PostgresJobBudgetStore implements JobBudgetStore, JobExecutionStore
            attempt, max_attempts, budget_warning, estimated_units::integer, heartbeat_at,
            result, error_code
          FROM jobs
-         WHERE tenant_id = $1 AND workspace_id = $2 AND idempotency_key = $3`,
-        [input.context.tenantId, input.context.workspaceId, input.idempotencyKey],
+         WHERE tenant_id = $1 AND workspace_id = $2
+           AND job_type = $3 AND idempotency_key = $4`,
+        [input.context.tenantId, input.context.workspaceId, input.jobType, input.idempotencyKey],
       );
       const replayedJob = serializedReplay.rows[0];
       if (replayedJob !== undefined) {
@@ -1554,6 +1652,72 @@ export class PostgresJobBudgetStore implements JobBudgetStore, JobExecutionStore
       errorCode: row.error_code,
     };
   }
+}
+
+async function lockIdempotencyScope(
+  client: PoolClient,
+  tenantId: string,
+  workspaceId: string,
+  operation: string,
+  idempotencyKey: string,
+): Promise<void> {
+  await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', [
+    `${tenantId}:${workspaceId}:${operation}:${idempotencyKey}`,
+  ]);
+}
+
+async function findGenerationStartIntent(
+  client: PoolClient,
+  tenantId: string,
+  workspaceId: string,
+  operation: string,
+  idempotencyKey: string,
+): Promise<GenerationStartIntentRow | undefined> {
+  const result = await client.query<GenerationStartIntentRow>(
+    `SELECT operation, request_hash, aggregate_id, job_id,
+       estimated_units::integer, requested_at
+     FROM generation_start_intents
+     WHERE tenant_id = $1 AND workspace_id = $2
+       AND operation = $3 AND idempotency_key = $4`,
+    [tenantId, workspaceId, operation, idempotencyKey],
+  );
+  return result.rows[0];
+}
+
+function mapGenerationStartIntent(
+  row: GenerationStartIntentRow,
+  input: Parameters<JobBudgetStore['reserveGenerationStart']>[0],
+):
+  | {
+      outcome: 'RESERVED';
+      aggregateId: string;
+      jobId: string;
+      estimatedUnits: number;
+      requestedAt: Date;
+    }
+  | { outcome: 'IDEMPOTENCY_CONFLICT' } {
+  if (row.operation !== input.operation || row.request_hash !== input.requestHash) {
+    return { outcome: 'IDEMPOTENCY_CONFLICT' };
+  }
+  return {
+    outcome: 'RESERVED',
+    aggregateId: row.aggregate_id,
+    jobId: row.job_id,
+    estimatedUnits: row.estimated_units,
+    requestedAt: row.requested_at,
+  };
+}
+
+function generationStartMatchesJob(
+  intent: GenerationStartIntentRow,
+  input: Parameters<JobBudgetStore['submitJob']>[0],
+): boolean {
+  return (
+    intent.operation === input.jobType &&
+    intent.aggregate_id === input.aggregateId &&
+    intent.job_id === input.jobId &&
+    intent.estimated_units === input.estimatedUnits
+  );
 }
 
 async function lockActiveLifecycleScope(

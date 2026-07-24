@@ -70,6 +70,15 @@ export class ArtifactsController {
       reply.code(403);
       return this.problem(request, 403, 'FORBIDDEN', 'The active role cannot generate Artifacts.');
     }
+    if (result.outcome === 'IDEMPOTENCY_CONFLICT') {
+      reply.code(409);
+      return this.problem(
+        request,
+        409,
+        'ARTIFACT_IDEMPOTENCY_CONFLICT',
+        'This idempotency key was already used for a different Artifact request.',
+      );
+    }
     if (result.outcome === 'INVALID_REFERENCE') {
       reply.code(409);
       return {

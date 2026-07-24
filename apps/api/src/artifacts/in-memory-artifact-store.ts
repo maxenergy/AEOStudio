@@ -51,6 +51,14 @@ export class InMemoryArtifactStore implements ArtifactStore, InMemoryTenantExpor
   public constructor(private readonly audit?: InMemoryAuditSink) {}
 
   prepareArtifact(input: Parameters<ArtifactStore['prepareArtifact']>[0]) {
+    const key = this.key(input.context.tenantId, input.context.workspaceId, input.artifactId);
+    const existing = this.states.get(key);
+    if (existing !== undefined) {
+      return Promise.resolve({
+        outcome: 'SUCCEEDED' as const,
+        artifact: structuredClone(existing.bundle.artifact),
+      });
+    }
     const type =
       TYPES[Number.parseInt(input.briefId.at(-1) ?? '1', 16) % TYPES.length] ??
       'DEFINITION_PRODUCT';
@@ -139,7 +147,7 @@ export class InMemoryArtifactStore implements ArtifactStore, InMemoryTenantExpor
         },
       ],
     };
-    this.states.set(this.key(input.context.tenantId, input.context.workspaceId, input.artifactId), {
+    this.states.set(key, {
       bundle: {
         artifact,
         revision: null,

@@ -38,7 +38,13 @@ describe.sequential('Task 11 explicit fake Git runtime', () => {
       (await task10Runtime.options.channelRegistryStore?.listEntries({ context }))?.map(
         ({ channelKey }) => channelKey,
       ),
-    ).toEqual(['portable-web-export', 'reviewed-test-publisher']);
+    ).toEqual([
+      'portable-web-export',
+      'third-party-site-handoff',
+      'social-channel-handoff',
+      'directory-handoff',
+      'reviewed-test-publisher',
+    ]);
     await task10Runtime.cleanup();
 
     process.env.AEOSTUDIO_GIT_PROVIDER_MODE = 'fake';
@@ -46,10 +52,13 @@ describe.sequential('Task 11 explicit fake Git runtime', () => {
     const entries = await runtime.options.channelRegistryStore?.listEntries({ context });
     expect(entries?.map(({ channelKey }) => channelKey)).toEqual([
       'portable-web-export',
+      'third-party-site-handoff',
+      'social-channel-handoff',
+      'directory-handoff',
       'reviewed-test-publisher',
       'git-pull-request',
     ]);
-    expect(entries?.[2]).toMatchObject({
+    expect(entries?.find((entry) => entry.channelKey === 'git-pull-request')).toMatchObject({
       displayName: 'Git Pull Request',
       status: 'AVAILABLE',
       adapterVersions: [

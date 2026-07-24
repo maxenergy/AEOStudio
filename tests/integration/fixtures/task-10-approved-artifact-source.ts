@@ -89,9 +89,10 @@ export async function seedTask10ApprovedArtifactSource(
     );
     await client.query(
       `INSERT INTO evidence_snapshots
-        (id, tenant_id, workspace_id, source_id, content_hash, object_ref, content_type,
-          size_bytes, captured_at)
-       VALUES ($1, $2, $3, $4, $5, 'fixture://package-evidence', 'text/plain', 128, $6)`,
+        (id, tenant_id, workspace_id, source_id, content_hash, object_ref, object_version_id,
+          content_type, size_bytes, captured_at)
+       VALUES ($1, $2, $3, $4, $5, 'fixture://package-evidence', 'fixture-version-v1',
+         'text/plain', 128, $6)`,
       [
         FAKE_ARTIFACT_LINEAGE.evidenceSnapshotId,
         scope.tenant.id,

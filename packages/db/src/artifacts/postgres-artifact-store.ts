@@ -109,6 +109,19 @@ export class PostgresArtifactStore implements ArtifactStore {
 
   prepareArtifact(input: Parameters<ArtifactStore['prepareArtifact']>[0]) {
     return this.contexts.run(input.context, async (client) => {
+      const replay = await client.query<ArtifactRow>(
+        `SELECT id, tenant_id, workspace_id, brief_id, artifact_type, current_revision,
+           status, locale, market, method_policy_version, job_id, created_by_user_id, created_at
+         FROM artifacts
+         WHERE id = $1 AND workspace_id = $2`,
+        [input.artifactId, input.context.workspaceId],
+      );
+      if (replay.rows[0] !== undefined) {
+        return {
+          outcome: 'SUCCEEDED' as const,
+          artifact: this.mapArtifact(replay.rows[0]),
+        };
+      }
       const source = await client.query<{ asset_kind: ArtifactRecord['type'] }>(
         `SELECT brief.asset_kind
          FROM briefs brief
@@ -154,8 +167,9 @@ export class PostgresArtifactStore implements ArtifactStore {
           (id, tenant_id, workspace_id, brief_id, artifact_type, current_revision, status,
             locale, market, method_policy_version, created_by_user_id, created_at)
          VALUES ($1, $2, $3, $4, $5, 1, 'PENDING', $6, $7, $8, $9, $10)
+         ON CONFLICT (id) DO NOTHING
          RETURNING id, tenant_id, workspace_id, brief_id, artifact_type, current_revision,
-           status, locale, market, method_policy_version, job_id, created_by_user_id, created_at`,
+            status, locale, market, method_policy_version, job_id, created_by_user_id, created_at`,
         [
           input.artifactId,
           input.context.tenantId,
@@ -169,6 +183,19 @@ export class PostgresArtifactStore implements ArtifactStore {
           input.createdAt,
         ],
       );
+      const row = inserted.rows[0];
+      if (row === undefined) {
+        const concurrentReplay = await client.query<ArtifactRow>(
+          `SELECT id, tenant_id, workspace_id, brief_id, artifact_type, current_revision,
+             status, locale, market, method_policy_version, job_id, created_by_user_id, created_at
+           FROM artifacts
+           WHERE id = $1 AND workspace_id = $2`,
+          [input.artifactId, input.context.workspaceId],
+        );
+        const replayed = concurrentReplay.rows[0];
+        if (replayed === undefined) throw new Error('ARTIFACT_DID_NOT_RETURN_RESULT');
+        return { outcome: 'SUCCEEDED' as const, artifact: this.mapArtifact(replayed) };
+      }
       await client.query(
         `INSERT INTO audit_events
           (id, tenant_id, workspace_id, actor_user_id, action, resource_type, resource_id,
@@ -188,8 +215,6 @@ export class PostgresArtifactStore implements ArtifactStore {
           input.createdAt,
         ],
       );
-      const row = inserted.rows[0];
-      if (row === undefined) throw new Error('ARTIFACT_DID_NOT_RETURN_RESULT');
       return { outcome: 'SUCCEEDED' as const, artifact: this.mapArtifact(row) };
     });
   }

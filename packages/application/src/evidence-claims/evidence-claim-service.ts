@@ -412,9 +412,7 @@ function decodeEvidenceBody(value: string): Uint8Array | null {
 
 function normalizeContentType(value: string): string | null {
   const normalized = value.split(';', 1)[0]?.trim().toLowerCase() ?? '';
-  return /^[a-z0-9][a-z0-9!#$&^_.+-]{0,126}\/[a-z0-9][a-z0-9!#$&^_.+-]{0,126}$/u.test(
-    normalized,
-  )
+  return /^[a-z0-9][a-z0-9!#$&^_.+-]{0,126}\/[a-z0-9][a-z0-9!#$&^_.+-]{0,126}$/u.test(normalized)
     ? normalized
     : null;
 }

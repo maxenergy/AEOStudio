@@ -279,7 +279,12 @@ export class SiteCrawlHandler {
   }
 
   private normalizeUserAgent(value: string): string {
-    return value.trim().toLowerCase().split(/[/:\s]/u, 1)[0] ?? '';
+    return (
+      value
+        .trim()
+        .toLowerCase()
+        .split(/[/:\s]/u, 1)[0] ?? ''
+    );
   }
 
   private compileRobotsRule(allow: boolean, source: string): RobotsRule {

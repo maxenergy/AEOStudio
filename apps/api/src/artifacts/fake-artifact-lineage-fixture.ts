@@ -189,6 +189,7 @@ export function fakeArtifactClaimEvidence(input: {
         sourceId: FAKE_ARTIFACT_LINEAGE.evidenceSourceId,
         contentHash: FAKE_ARTIFACT_LINEAGE.evidenceHash,
         objectRef: 'fixture://artifact-lineage/evidence.txt',
+        objectVersionId: 'fixture-artifact-lineage-v1',
         contentType: 'text/plain',
         sizeBytes: 128,
         capturedAt: CREATED_AT,

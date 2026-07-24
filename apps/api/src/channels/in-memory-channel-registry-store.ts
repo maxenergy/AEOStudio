@@ -12,6 +12,124 @@ const PORTABLE_WEB_EXPORT: ChannelRegistryEntry = {
   adapterVersions: [],
 };
 
+const REVIEW_ONLY_HANDOFFS: ChannelRegistryEntry[] = [
+  {
+    id: '00000000-0000-7000-8000-000000001050',
+    channelKey: 'third-party-site-handoff',
+    displayName: 'Third-party Site Handoff',
+    status: 'AVAILABLE',
+    unavailableReason: null,
+    packageTransformerKey: 'generic-web-package',
+    packageSchemaVersion: '1.1.0',
+    channelProfile: {
+      channel: 'third-party-site-handoff',
+      profileVersion: '1.0.0',
+      profileHash: '47105ddd224e542a047fc4b28ce127ef0ddeef13ebbbdad79ba60a1e3037ab9b',
+      fieldRequirements: [
+        {
+          field: 'title',
+          sourcePointer: '/title',
+          required: true,
+          minLength: 1,
+          maxLength: 180,
+          format: 'plain-text',
+        },
+        {
+          field: 'summary',
+          sourcePointer: '/summary',
+          required: true,
+          minLength: 1,
+          maxLength: 2_000,
+          format: 'plain-text',
+        },
+        {
+          field: 'disclosure',
+          sourcePointer: '/disclosure',
+          required: true,
+          minLength: 1,
+          maxLength: 800,
+          format: 'plain-text',
+        },
+      ],
+    },
+    adapterVersions: [],
+  },
+  {
+    id: '00000000-0000-7000-8000-000000001060',
+    channelKey: 'social-channel-handoff',
+    displayName: 'Social Channel Handoff',
+    status: 'AVAILABLE',
+    unavailableReason: null,
+    packageTransformerKey: 'generic-web-package',
+    packageSchemaVersion: '1.1.0',
+    channelProfile: {
+      channel: 'social-channel-handoff',
+      profileVersion: '1.0.0',
+      profileHash: '56bda296dfc9287991e75505bd05c61a4b417a2c864003f6710cb925e21d0bb4',
+      fieldRequirements: [
+        {
+          field: 'post',
+          sourcePointer: '/summary',
+          required: true,
+          minLength: 1,
+          maxLength: 280,
+          format: 'plain-text',
+        },
+        {
+          field: 'disclosure',
+          sourcePointer: '/disclosure',
+          required: true,
+          minLength: 1,
+          maxLength: 300,
+          format: 'plain-text',
+        },
+      ],
+    },
+    adapterVersions: [],
+  },
+  {
+    id: '00000000-0000-7000-8000-000000001070',
+    channelKey: 'directory-handoff',
+    displayName: 'Directory Handoff',
+    status: 'AVAILABLE',
+    unavailableReason: null,
+    packageTransformerKey: 'generic-web-package',
+    packageSchemaVersion: '1.1.0',
+    channelProfile: {
+      channel: 'directory-handoff',
+      profileVersion: '1.0.0',
+      profileHash: '29f453d7023f06932d0fc0a0087e7ef2b0a63792923f19c04ba5bde28c71cce0',
+      fieldRequirements: [
+        {
+          field: 'name',
+          sourcePointer: '/title',
+          required: true,
+          minLength: 1,
+          maxLength: 160,
+          format: 'plain-text',
+        },
+        {
+          field: 'description',
+          sourcePointer: '/summary',
+          required: true,
+          minLength: 1,
+          maxLength: 2_000,
+          format: 'plain-text',
+        },
+        {
+          field: 'disclosure',
+          sourcePointer: '/disclosure',
+          required: true,
+          minLength: 1,
+          maxLength: 800,
+          format: 'plain-text',
+        },
+      ],
+    },
+    adapterVersions: [],
+  },
+];
+
 const REVIEWED_TEST_PUBLISHER: ChannelRegistryEntry = {
   id: '00000000-0000-7000-8000-000000001001',
   channelKey: 'reviewed-test-publisher',
@@ -173,7 +291,7 @@ export class InMemoryChannelRegistryStore implements ChannelRegistryStore {
 
   /** Fake-runtime atomic effect boundary; returns a detached current Registry snapshot. */
   listEntriesNow(): ChannelRegistryEntry[] {
-    const entries = [PORTABLE_WEB_EXPORT];
+    const entries = [PORTABLE_WEB_EXPORT, ...REVIEW_ONLY_HANDOFFS];
     if (this.includeFakePublication) entries.push(REVIEWED_TEST_PUBLISHER);
     if (this.includeFakePublication && this.includeFakeGit) entries.push(GIT_PULL_REQUEST);
     if (this.includeFakePublication && this.includeFakeWordPress) {

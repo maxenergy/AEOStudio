@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 import { roleAllows } from '@aeostudio/domain/identity-access';
 import type { ArtifactPayload, ArtifactRevisionRecord } from '@aeostudio/domain/artifacts';
 import type { IdentityIdGenerator, TenantContext, TenancyStore } from '../identity-access/index.js';
@@ -9,7 +11,7 @@ import {
 import type { CapabilityBoundArtifactRevisionPayloadReader } from '../tenant-data-access/capability-context.js';
 
 import type { ArtifactPayloadWriter, ArtifactStore } from './ports.js';
-import { hashArtifactRevision } from './artifact-hash.js';
+import { canonicalArtifactJson, hashArtifactRevision } from './artifact-hash.js';
 import { validateArtifactPayload } from './artifact-payload-validation.js';
 
 export class ArtifactService {
@@ -235,7 +237,32 @@ export class ArtifactService {
         marketLength: input.market.length,
       },
     });
-    const artifactId = this.ids.next();
+    const reserved = await this.jobs.reserveGenerationStart({
+      context,
+      operation: 'ARTIFACT_GENERATION',
+      idempotencyKey: input.idempotencyKey,
+      requestHash: createHash('sha256')
+        .update(
+          canonicalArtifactJson({
+            briefId: input.briefId,
+            locale: input.locale,
+            market: input.market,
+            methodPolicyVersion: input.methodPolicyVersion,
+          }),
+          'utf8',
+        )
+        .digest('hex'),
+      aggregateId: this.ids.next(),
+      jobId: this.ids.next(),
+      estimatedUnits,
+      requestedAt: this.clock.now(),
+    });
+    if (reserved.outcome !== 'RESERVED') {
+      return reserved.outcome === 'IDEMPOTENCY_CONFLICT'
+        ? { outcome: 'IDEMPOTENCY_CONFLICT' as const }
+        : { outcome: 'NOT_FOUND' as const };
+    }
+    const artifactId = reserved.aggregateId;
     const prepared = await this.store.prepareArtifact({
       context,
       artifactId,
@@ -243,17 +270,17 @@ export class ArtifactService {
       locale: input.locale,
       market: input.market,
       methodPolicyVersion: input.methodPolicyVersion,
-      createdAt: this.clock.now(),
+      createdAt: reserved.requestedAt,
       auditEventId: this.ids.next(),
     });
     if (prepared.outcome === 'INVALID_REFERENCE') return prepared;
     const job = await this.jobs.submitJob({
       context,
-      jobId: this.ids.next(),
+      jobId: reserved.jobId,
       jobType: 'ARTIFACT_GENERATION',
       aggregateId: artifactId,
       idempotencyKey: input.idempotencyKey,
-      estimatedUnits,
+      estimatedUnits: reserved.estimatedUnits,
       reservationId: this.ids.next(),
       budgetAlertId: this.ids.next(),
       outboxMessageId: this.ids.next(),

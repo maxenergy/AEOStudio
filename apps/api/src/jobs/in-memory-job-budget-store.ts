@@ -169,13 +169,10 @@ export class InMemoryJobBudgetStore implements JobBudgetStore {
     ) {
       return Promise.resolve({ outcome: 'NOT_FOUND' });
     }
-    const key = `${this.scopeKey(input.context.tenantId, input.context.workspaceId)}:${input.idempotencyKey}`;
+    const key = `${this.scopeKey(input.context.tenantId, input.context.workspaceId)}:${input.operation}:${input.idempotencyKey}`;
     const existing = this.generationStarts.get(key);
     if (existing !== undefined) {
-      if (
-        existing.operation !== input.operation ||
-        existing.requestHash !== input.requestHash
-      ) {
+      if (existing.operation !== input.operation || existing.requestHash !== input.requestHash) {
         return Promise.resolve({ outcome: 'IDEMPOTENCY_CONFLICT' });
       }
       return Promise.resolve({
@@ -185,6 +182,16 @@ export class InMemoryJobBudgetStore implements JobBudgetStore {
         estimatedUnits: existing.estimatedUnits,
         requestedAt: new Date(existing.requestedAt),
       });
+    }
+    const existingJob = [...this.jobs.values()].find(
+      (state) =>
+        state.job.tenantId === input.context.tenantId &&
+        state.job.workspaceId === input.context.workspaceId &&
+        state.job.jobType === input.operation &&
+        state.idempotencyKey === input.idempotencyKey,
+    );
+    if (existingJob !== undefined) {
+      return Promise.resolve({ outcome: 'IDEMPOTENCY_CONFLICT' });
     }
     const state: GenerationStartState = {
       operation: input.operation,
@@ -211,10 +218,22 @@ export class InMemoryJobBudgetStore implements JobBudgetStore {
     ) {
       return Promise.resolve(null);
     }
+    const generationStart = this.generationStarts.get(
+      `${this.scopeKey(input.context.tenantId, input.context.workspaceId)}:${input.jobType}:${input.idempotencyKey}`,
+    );
+    if (
+      generationStart !== undefined &&
+      (generationStart.aggregateId !== input.aggregateId ||
+        generationStart.jobId !== input.jobId ||
+        generationStart.estimatedUnits !== input.estimatedUnits)
+    ) {
+      return Promise.resolve(null);
+    }
     const existing = [...this.jobs.values()].find(
       (state) =>
         state.job.tenantId === input.context.tenantId &&
         state.job.workspaceId === input.context.workspaceId &&
+        state.job.jobType === input.jobType &&
         state.idempotencyKey === input.idempotencyKey,
     );
     if (existing !== undefined) {

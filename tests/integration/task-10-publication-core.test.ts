@@ -6,6 +6,7 @@ import type {
   ExchangeCodeInput,
   OidcClient,
 } from '@aeostudio/application/auth';
+import { canonicalArtifactJson } from '@aeostudio/application/artifacts';
 import { JobWorkerCoordinator, type JobLease } from '@aeostudio/application/jobs-budgets';
 import type {
   ChannelPackagePayloadStore,
@@ -33,6 +34,8 @@ import {
 } from '@aeostudio/db';
 import * as DatabaseRuntime from '@aeostudio/db';
 import {
+  ChannelPackageEnvelopeSchema,
+  ChannelPackageExportSchema,
   ChannelAuthorizationEnvelopeSchema,
   ChannelAuthorizationListEnvelopeSchema,
   ChannelRegistryEnvelopeSchema,
@@ -406,6 +409,25 @@ describe('Task 10 generic Channel Registry and publication core', () => {
     ).toMatchObject({
       adapterVersions: [],
     });
+    const socialHandoff = body.data.entries.find(
+      (entry) => entry.channelKey === 'social-channel-handoff',
+    );
+    expect(socialHandoff).toMatchObject({
+      channelProfile: {
+        channel: 'social-channel-handoff',
+        profileVersion: '1.0.0',
+        profileHash: '56bda296dfc9287991e75505bd05c61a4b417a2c864003f6710cb925e21d0bb4',
+      },
+      adapterVersions: [],
+    });
+    expect(socialHandoff?.channelProfile?.fieldRequirements).toContainEqual({
+      field: 'post',
+      sourcePointer: '/summary',
+      required: true,
+      minLength: 1,
+      maxLength: 280,
+      format: 'plain-text',
+    });
 
     const ownerBSession = await signIn(app, 'channel-owner-b-code');
     const scopeB = await createScope(app, ownerBSession, 'Channel B');
@@ -430,25 +452,32 @@ describe('Task 10 generic Channel Registry and publication core', () => {
 
     const columns = await pool.query<{ table_name: string; column_name: string }>(
       `SELECT table_name, column_name FROM information_schema.columns
-       WHERE table_schema = 'public' AND table_name IN ('channel_definitions', 'adapter_versions')
-         AND column_name = 'tenant_id'`,
+       WHERE table_schema = 'public'
+         AND table_name IN ('channel_definitions', 'channel_profiles', 'adapter_versions')
+          AND column_name = 'tenant_id'`,
     );
     expect(columns.rows).toEqual([]);
     const privileges = await pool.query<{
       channel_select: boolean;
       channel_insert: boolean;
+      profile_select: boolean;
+      profile_insert: boolean;
       adapter_select: boolean;
       adapter_update: boolean;
     }>(
       `SELECT
          has_table_privilege('aeostudio_runtime', 'channel_definitions', 'SELECT') AS channel_select,
          has_table_privilege('aeostudio_runtime', 'channel_definitions', 'INSERT') AS channel_insert,
+         has_table_privilege('aeostudio_runtime', 'channel_profiles', 'SELECT') AS profile_select,
+         has_table_privilege('aeostudio_runtime', 'channel_profiles', 'INSERT') AS profile_insert,
          has_table_privilege('aeostudio_runtime', 'adapter_versions', 'SELECT') AS adapter_select,
          has_table_privilege('aeostudio_runtime', 'adapter_versions', 'UPDATE') AS adapter_update`,
     );
     expect(privileges.rows[0]).toEqual({
       channel_select: true,
       channel_insert: false,
+      profile_select: true,
+      profile_insert: false,
       adapter_select: true,
       adapter_update: false,
     });
@@ -682,6 +711,317 @@ describe('Task 10 generic Channel Registry and publication core', () => {
         channelPackage.id,
       ]),
     ).rejects.toThrow(/CHANNEL_PACKAGE_IMMUTABLE|permission denied/i);
+  });
+
+  test('a versioned data-driven Channel Profile produces a reviewed adaptation package with exact lineage', async () => {
+    const generated = await generateArtifact(
+      app,
+      packageOwnerSession,
+      packageScope,
+      artifactWorker,
+    );
+    await approveArtifact(app, packageOwnerSession, generated);
+
+    const suffix = randomUUID().slice(0, 8);
+    const channelId = randomUUID();
+    const profileId = randomUUID();
+    const channel = `review-handoff-${suffix}`;
+    const profileVersion = `2026.07.${suffix}`;
+    const fieldRequirements = [
+      {
+        field: 'headline',
+        sourcePointer: '/title',
+        required: true,
+        minLength: 1,
+        maxLength: 120,
+        format: 'plain-text',
+      },
+      {
+        field: 'body',
+        sourcePointer: '/summary',
+        required: true,
+        minLength: 1,
+        maxLength: 2_000,
+        format: 'plain-text',
+      },
+      {
+        field: 'disclosure',
+        sourcePointer: '/disclosure',
+        required: true,
+        minLength: 1,
+        maxLength: 800,
+        format: 'plain-text',
+      },
+    ];
+    const profileHash = createHash('sha256')
+      .update(
+        canonicalArtifactJson({
+          channel,
+          fieldRequirements,
+          profileVersion,
+        }),
+        'utf8',
+      )
+      .digest('hex');
+
+    await pool.query(
+      `INSERT INTO channel_definitions
+        (id, channel_key, display_name, status, unavailable_reason,
+          package_transformer_key, package_schema_version)
+       VALUES ($1, $2, 'Review handoff fixture', 'AVAILABLE', NULL,
+         'generic-web-package', '1.1.0')`,
+      [channelId, channel],
+    );
+    await pool.query(
+      `INSERT INTO channel_profiles
+        (id, channel_definition_id, channel, profile_version, profile_hash, field_requirements)
+       VALUES ($1, $2, $3, $4, $5, $6::jsonb)`,
+      [
+        profileId,
+        channelId,
+        channel,
+        profileVersion,
+        profileHash,
+        JSON.stringify(fieldRequirements),
+      ],
+    );
+    await pool.query(
+      `UPDATE channel_definitions
+       SET current_channel_profile_id = $1
+       WHERE id = $2`,
+      [profileId, channelId],
+    );
+
+    const built = await app.inject({
+      method: 'POST',
+      url: `${generated.scopeUrl}/channel-packages`,
+      headers: mutationHeaders(packageOwnerSession),
+      payload: {
+        artifactId: generated.artifact.id,
+        artifactRevisionId: generated.revision.id,
+        revision: generated.revision.revision,
+        expectedContentHash: generated.revision.contentHash,
+        channelKey: channel,
+      },
+    });
+    expect(
+      built.statusCode,
+      `expected adaptation package, received ${built.statusCode}: ${built.body}`,
+    ).toBe(201);
+    const channelPackage = ChannelPackageEnvelopeSchema.parse(built.json()).data.package;
+    expect(channelPackage.manifest.channelProfile).toEqual({
+      channel,
+      profileVersion,
+      profileHash,
+      fieldRequirements,
+    });
+    expect(channelPackage.manifest.files.map((file) => file.path).sort()).toEqual([
+      'content.html',
+      'content.md',
+      'fields.json',
+      'post.txt',
+      'structured-data.json',
+      'submission-checklist.md',
+    ]);
+
+    const exported = await app.inject({
+      method: 'GET',
+      url: `${generated.scopeUrl}/channel-packages/${channelPackage.id}/export`,
+      headers: { cookie: `__Host-aeo_session=${packageOwnerSession}` },
+    });
+    expect(exported.statusCode).toBe(200);
+    const packageExport = ChannelPackageExportSchema.parse(exported.json());
+    expect(packageExport.files['post.txt']).toContain(generated.payload.title);
+    expect(packageExport.files['post.txt']).toContain(generated.payload.summary);
+    expect(packageExport.files['post.txt']).toContain(generated.payload.disclosure);
+    expect(packageExport.files['submission-checklist.md']).toContain(
+      'Review required before external publication',
+    );
+    expect(packageExport.files['submission-checklist.md']).toContain(profileHash);
+
+    const fieldsFile = packageExport.files['fields.json'];
+    if (fieldsFile === undefined) throw new Error('CHANNEL_PROFILE_FIELDS_FILE_MISSING');
+    const fields = JSON.parse(fieldsFile) as {
+      channel: string;
+      profileVersion: string;
+      profileHash: string;
+      reviewedBeforePublish: boolean;
+      fields: Array<{
+        field: string;
+        sourcePointer: string;
+        value: string;
+        requirements: {
+          required: boolean;
+          minLength: number | null;
+          maxLength: number | null;
+          format: string;
+        };
+      }>;
+      lineage: {
+        artifact: {
+          artifactId: string;
+          artifactRevisionId: string;
+          revision: number;
+          contentHash: string;
+        };
+        claims: Array<{
+          claimRevisionId: string;
+          evidence: Array<{ sourceId: string; snapshotId: string; sourceHash: string }>;
+        }>;
+      };
+    };
+    expect(fields).toMatchObject({
+      channel,
+      profileVersion,
+      profileHash,
+      reviewedBeforePublish: true,
+      fields: [
+        {
+          field: 'headline',
+          sourcePointer: '/title',
+          value: generated.payload.title,
+          requirements: {
+            required: true,
+            minLength: 1,
+            maxLength: 120,
+            format: 'plain-text',
+          },
+        },
+        {
+          field: 'body',
+          sourcePointer: '/summary',
+          value: generated.payload.summary,
+          requirements: {
+            required: true,
+            minLength: 1,
+            maxLength: 2_000,
+            format: 'plain-text',
+          },
+        },
+        {
+          field: 'disclosure',
+          sourcePointer: '/disclosure',
+          value: generated.payload.disclosure,
+          requirements: {
+            required: true,
+            minLength: 1,
+            maxLength: 800,
+            format: 'plain-text',
+          },
+        },
+      ],
+      lineage: {
+        artifact: {
+          artifactId: generated.artifact.id,
+          artifactRevisionId: generated.revision.id,
+          revision: generated.revision.revision,
+          contentHash: generated.revision.contentHash,
+        },
+        claims: [
+          {
+            claimRevisionId: FAKE_ARTIFACT_LINEAGE.claimRevisionId,
+            evidence: [
+              {
+                sourceId: FAKE_ARTIFACT_LINEAGE.evidenceSourceId,
+                snapshotId: FAKE_ARTIFACT_LINEAGE.evidenceSnapshotId,
+                sourceHash: FAKE_ARTIFACT_LINEAGE.evidenceHash,
+              },
+            ],
+          },
+        ],
+      },
+    });
+
+    const nextFieldRequirements = fieldRequirements.map((requirement) =>
+      requirement.field === 'headline' ? { ...requirement, maxLength: 100 } : requirement,
+    );
+    const nextProfileVersion = `${profileVersion}.2`;
+    const nextProfileHash = createHash('sha256')
+      .update(
+        canonicalArtifactJson({
+          channel,
+          fieldRequirements: nextFieldRequirements,
+          profileVersion: nextProfileVersion,
+        }),
+        'utf8',
+      )
+      .digest('hex');
+    const nextProfileId = randomUUID();
+    await pool.query(
+      `INSERT INTO channel_profiles
+        (id, channel_definition_id, channel, profile_version, profile_hash, field_requirements)
+       VALUES ($1, $2, $3, $4, $5, $6::jsonb)`,
+      [
+        nextProfileId,
+        channelId,
+        channel,
+        nextProfileVersion,
+        nextProfileHash,
+        JSON.stringify(nextFieldRequirements),
+      ],
+    );
+    await pool.query(
+      `UPDATE channel_definitions
+       SET current_channel_profile_id = $1
+       WHERE id = $2`,
+      [nextProfileId, channelId],
+    );
+
+    const rebuilt = await app.inject({
+      method: 'POST',
+      url: `${generated.scopeUrl}/channel-packages`,
+      headers: mutationHeaders(packageOwnerSession),
+      payload: {
+        artifactId: generated.artifact.id,
+        artifactRevisionId: generated.revision.id,
+        revision: generated.revision.revision,
+        expectedContentHash: generated.revision.contentHash,
+        channelKey: channel,
+      },
+    });
+    expect(rebuilt.statusCode).toBe(201);
+    const nextPackage = ChannelPackageEnvelopeSchema.parse(rebuilt.json()).data.package;
+    expect(nextPackage).toMatchObject({
+      packageRevision: 2,
+      manifest: {
+        channelProfile: {
+          channel,
+          profileVersion: nextProfileVersion,
+          profileHash: nextProfileHash,
+          fieldRequirements: nextFieldRequirements,
+        },
+      },
+    });
+    expect(nextPackage.id).not.toBe(channelPackage.id);
+    expect(nextPackage.packageChecksum).not.toBe(channelPackage.packageChecksum);
+
+    const persistedProfiles = await pool.query<{
+      id: string;
+      channel_profile_hash: string;
+      manifest_profile_hash: string;
+    }>(
+      `SELECT
+         id,
+         channel_profile_hash,
+         manifest->'channelProfile'->>'profileHash' AS manifest_profile_hash
+       FROM channel_packages
+       WHERE tenant_id = $1 AND workspace_id = $2
+         AND artifact_id = $3 AND channel_definition_id = $4
+       ORDER BY package_revision`,
+      [packageScope.tenant.id, packageScope.workspace.id, generated.artifact.id, channelId],
+    );
+    expect(persistedProfiles.rows).toEqual([
+      {
+        id: channelPackage.id,
+        channel_profile_hash: profileHash,
+        manifest_profile_hash: profileHash,
+      },
+      {
+        id: nextPackage.id,
+        channel_profile_hash: nextProfileHash,
+        manifest_profile_hash: nextProfileHash,
+      },
+    ]);
   });
 
   test('a concurrent R2 committed during package payload I/O rejects the stale R1 build', async () => {
@@ -1030,7 +1370,7 @@ describe('Task 10 generic Channel Registry and publication core', () => {
     });
   });
 
-  test('a package for a Registry Channel with no Adapter remains an explicit export-only handoff', async () => {
+  test('a profiled Registry Channel with no Adapter remains a reviewed export-only handoff', async () => {
     const session = packageOwnerSession;
     const scope = packageScope;
     const generated = await generateArtifact(app, session, scope, artifactWorker);
@@ -1044,13 +1384,18 @@ describe('Task 10 generic Channel Registry and publication core', () => {
         artifactRevisionId: generated.revision.id,
         revision: generated.revision.revision,
         expectedContentHash: generated.revision.contentHash,
-        channelKey: 'portable-web-export',
+        channelKey: 'social-channel-handoff',
       },
     });
     expect(packageResponse.statusCode).toBe(201);
-    const channelPackage = packageResponse.json<{
-      data: { package: { id: string; packageChecksum: string } };
-    }>().data.package;
+    const channelPackage = ChannelPackageEnvelopeSchema.parse(packageResponse.json()).data.package;
+    expect(channelPackage.manifest.channelProfile).toMatchObject({
+      channel: 'social-channel-handoff',
+      profileVersion: '1.0.0',
+    });
+    expect(channelPackage.manifest.files.map((file) => file.path)).toEqual(
+      expect.arrayContaining(['post.txt', 'fields.json', 'submission-checklist.md']),
+    );
 
     const publish = await app.inject({
       method: 'POST',
@@ -1058,7 +1403,7 @@ describe('Task 10 generic Channel Registry and publication core', () => {
       headers: mutationHeaders(session),
       payload: {
         channelPackageId: channelPackage.id,
-        target: 'portable-export',
+        target: 'review-after-export',
         expectedPackageChecksum: channelPackage.packageChecksum,
         idempotencyKey: `no-adapter-${randomUUID()}`,
       },
@@ -1075,6 +1420,20 @@ describe('Task 10 generic Channel Registry and publication core', () => {
       href: `${generated.scopeUrl}/channel-packages/${channelPackage.id}/export`,
       packageChecksum: channelPackage.packageChecksum,
     });
+    expect(publish.body).not.toMatch(/PUBLISHED|remoteRef|publicationId/i);
+
+    const exported = await app.inject({
+      method: 'GET',
+      url: body.export.href,
+      headers: { cookie: `__Host-aeo_session=${session}` },
+    });
+    expect(exported.statusCode).toBe(200);
+    const packageExport = ChannelPackageExportSchema.parse(exported.json());
+    expect(packageExport.files['post.txt']).toContain(generated.payload.summary);
+    expect(packageExport.files['fields.json']).toContain(generated.revision.contentHash);
+    expect(packageExport.files['submission-checklist.md']).toContain(
+      'Review required before external publication',
+    );
 
     const effects = await pool.query<{ publications: string; attempts: string; jobs: string }>(
       `SELECT

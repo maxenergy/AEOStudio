@@ -2274,7 +2274,12 @@ async function readCanonicalJsonObject(
 function readChannelPackagePayload(value: unknown): ChannelPackagePayload {
   if (
     !exactRecord(value, ['files']) ||
-    !exactRecord(value.files, ['content.html', 'content.md', 'structured-data.json']) ||
+    !isPlainRecord(value.files) ||
+    Object.keys(value.files).length < 3 ||
+    Object.keys(value.files).length > 100 ||
+    !Object.entries(value.files).every(
+      ([path, content]) => path.length >= 1 && path.length <= 500 && typeof content === 'string',
+    ) ||
     typeof value.files['content.md'] !== 'string' ||
     value.files['content.md'].length < 1 ||
     typeof value.files['content.html'] !== 'string' ||
@@ -2285,11 +2290,7 @@ function readChannelPackagePayload(value: unknown): ChannelPackagePayload {
     throw new Error('TENANT_DATA_BROKER_CHANNEL_PACKAGE_PAYLOAD_INVALID');
   }
   return {
-    files: {
-      'content.md': value.files['content.md'],
-      'content.html': value.files['content.html'],
-      'structured-data.json': value.files['structured-data.json'],
-    },
+    files: structuredClone(value.files) as ChannelPackagePayload['files'],
   };
 }
 

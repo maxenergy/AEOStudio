@@ -76,7 +76,11 @@ export class ContentPlanningService {
       estimatedUnits,
       requestedAt: this.clock.now(),
     });
-    if (reserved.outcome !== 'RESERVED') return reserved;
+    if (reserved.outcome !== 'RESERVED') {
+      return reserved.outcome === 'IDEMPOTENCY_CONFLICT'
+        ? { outcome: 'IDEMPOTENCY_CONFLICT' as const }
+        : { outcome: 'NOT_FOUND' as const };
+    }
     const planId = reserved.aggregateId;
     const prepared = await this.store.preparePlan({
       context,

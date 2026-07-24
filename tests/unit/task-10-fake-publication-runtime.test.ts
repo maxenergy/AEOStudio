@@ -157,7 +157,12 @@ describe.sequential('Task 10 explicit fake publication runtime', () => {
 
     const authOnly = await resolveApiRuntime({});
     const authOnlyChannels = await authOnly.options.channelRegistryStore?.listEntries({ context });
-    expect(authOnlyChannels?.map((channel) => channel.channelKey)).toEqual(['portable-web-export']);
+    expect(authOnlyChannels?.map((channel) => channel.channelKey)).toEqual([
+      'portable-web-export',
+      'third-party-site-handoff',
+      'social-channel-handoff',
+      'directory-handoff',
+    ]);
     expect(authOnly.options.channelAuthorizationStore).toBeUndefined();
     expect(authOnly.options.publicationCommandStore).toBeUndefined();
     expect(authOnly.options.publicationQueryStore).toBeUndefined();
@@ -183,9 +188,14 @@ describe.sequential('Task 10 explicit fake publication runtime', () => {
 
     expect(channels?.map((channel) => channel.channelKey)).toEqual([
       'portable-web-export',
+      'third-party-site-handoff',
+      'social-channel-handoff',
+      'directory-handoff',
       'reviewed-test-publisher',
     ]);
-    expect(channels?.[1]).toMatchObject({
+    expect(
+      channels?.find((channel) => channel.channelKey === 'reviewed-test-publisher'),
+    ).toMatchObject({
       displayName: 'Reviewed Test Publisher',
       adapterVersions: [
         {
