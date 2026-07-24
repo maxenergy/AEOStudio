@@ -58,6 +58,11 @@
       "types": "./src/site-crawl/index.ts",
       "development": "./src/site-crawl/index.ts",
       "default": "./dist/site-crawl/index.js"
+    },
+    "./ux-safety": {
+      "types": "./src/ux-safety/index.ts",
+      "development": "./src/ux-safety/index.ts",
+      "default": "./dist/ux-safety/index.js"
     }
   },
   "scripts": {
