@@ -21,6 +21,7 @@
     "@aeostudio/application": "workspace:*",
     "@aeostudio/db": "workspace:*",
     "@aeostudio/domain": "workspace:*",
+    "cheerio": "^1.2.0",
     "pg": "8.22.0",
     "uuid": "14.0.1"
   },
