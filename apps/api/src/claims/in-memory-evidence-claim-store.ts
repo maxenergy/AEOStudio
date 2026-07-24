@@ -501,6 +501,24 @@ export class InMemoryEvidenceClaimStore implements EvidenceClaimStore, InMemoryT
       occurredAt,
     });
   }
+
+  listApprovedClaims(input: { context: { tenantId: string; workspaceId: string } }): Promise<
+    { claimId: string; revisionId: string; revision: number; statement: string; contentHash: string }[]
+  > {
+    const results: { claimId: string; revisionId: string; revision: number; statement: string; contentHash: string }[] = [];
+    for (const [key, bundle] of this.claims) {
+      if (!key.startsWith(`${input.context.tenantId}:${input.context.workspaceId}:`)) continue;
+      if (bundle.revision.status !== 'APPROVED') continue;
+      results.push({
+        claimId: bundle.claim.id,
+        revisionId: bundle.revision.id,
+        revision: bundle.revision.revision,
+        statement: bundle.revision.statement,
+        contentHash: bundle.revision.contentHash,
+      });
+    }
+    return Promise.resolve(results);
+  }
 }
 
 function toJsonValue(value: unknown): JsonValue {

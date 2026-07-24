@@ -193,4 +193,14 @@ export class ContentPlanningService {
       auditEventId: this.ids.next(),
     });
   }
+
+  async listApprovedBriefs(input: {
+    actorSubject: string;
+    tenantId: string;
+    workspaceId: string;
+  }) {
+    const context = await this.tenancy.resolveTenantContext(input);
+    if (context === null || !roleAllows(context.role, 'WORKSPACE_READ')) return null;
+    return this.store.listApprovedBriefs({ context });
+  }
 }

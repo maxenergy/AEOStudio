@@ -11,6 +11,9 @@ import type {
 
 export interface PromptResearchStore {
   listRegistry(input: { context: TenantContext }): Promise<ProviderSurfaceRegistryRecord[]>;
+  listApprovedPromptSets(input: { context: TenantContext }): Promise<
+    { promptSetId: string; revisionId: string; revision: number; title: string; subject: string; contentHash: string }[]
+  >;
   createProposal(input: {
     context: TenantContext;
     promptSetId: string;

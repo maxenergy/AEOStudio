@@ -24,4 +24,8 @@ export class MissingSiteCrawlStore implements SiteCrawlStore {
   findBaseline(): ReturnType<SiteCrawlStore['findBaseline']> {
     return Promise.reject(new Error('SITE_CRAWL_STORE_NOT_CONFIGURED'));
   }
+
+  listBaselines(): ReturnType<SiteCrawlStore['listBaselines']> {
+    return Promise.reject(new Error('SITE_CRAWL_STORE_NOT_CONFIGURED'));
+  }
 }

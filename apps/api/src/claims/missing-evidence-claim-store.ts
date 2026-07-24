@@ -36,4 +36,8 @@ export class MissingEvidenceClaimStore implements EvidenceClaimStore {
   findCurrentClaim(): ReturnType<EvidenceClaimStore['findCurrentClaim']> {
     return Promise.reject(new Error('EVIDENCE_CLAIM_STORE_NOT_CONFIGURED'));
   }
+
+  listApprovedClaims(): ReturnType<EvidenceClaimStore['listApprovedClaims']> {
+    return Promise.reject(new Error('EVIDENCE_CLAIM_STORE_NOT_CONFIGURED'));
+  }
 }

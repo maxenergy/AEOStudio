@@ -1,4 +1,5 @@
 import type { EvidenceClaimStore } from '@aeostudio/application/evidence-claims';
+import type { TenantContext } from '@aeostudio/application/identity-access';
 import type {
   ClaimBundle,
   ClaimCurrentState,
@@ -888,5 +889,33 @@ export class PostgresEvidenceClaimStore implements EvidenceClaimStore {
       createdByUserId: row.created_by_user_id,
       createdAt: row.created_at.toISOString(),
     };
+  }
+
+  listApprovedClaims(input: { context: TenantContext }): Promise<
+    { claimId: string; revisionId: string; revision: number; statement: string; contentHash: string }[]
+  > {
+    return this.contexts.run(input.context, async (client) => {
+      const result = await client.query<{
+        claim_id: string;
+        revision_id: string;
+        revision: number;
+        statement: string;
+        content_hash: string;
+      }>(
+        `SELECT cr.claim_id, cr.id AS revision_id, cr.revision, cr.statement, cr.content_hash
+         FROM claim_revisions cr
+         WHERE cr.workspace_id = $1 AND cr.status = 'APPROVED'
+         ORDER BY cr.created_at DESC
+         LIMIT 200`,
+        [input.context.workspaceId],
+      );
+      return result.rows.map((row) => ({
+        claimId: row.claim_id,
+        revisionId: row.revision_id,
+        revision: row.revision,
+        statement: row.statement,
+        contentHash: row.content_hash,
+      }));
+    });
   }
 }

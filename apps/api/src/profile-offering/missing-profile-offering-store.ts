@@ -25,4 +25,12 @@ export class MissingProfileOfferingStore implements ProfileOfferingStore {
   findOfferingRevision(): Promise<OfferingRevision | null> {
     return Promise.reject(new Error('PROFILE_OFFERING_STORE_NOT_CONFIGURED'));
   }
+
+  listProfiles(): Promise<never> {
+    return Promise.reject(new Error('PROFILE_OFFERING_STORE_NOT_CONFIGURED'));
+  }
+
+  listOfferings(): Promise<never> {
+    return Promise.reject(new Error('PROFILE_OFFERING_STORE_NOT_CONFIGURED'));
+  }
 }

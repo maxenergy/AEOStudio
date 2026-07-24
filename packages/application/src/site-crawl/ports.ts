@@ -79,6 +79,11 @@ export interface SiteCrawlStore {
     context: TenantContext;
     siteId: string;
   }): Promise<SiteBaselineRecord | null>;
+  listBaselines(input: {
+    context: TenantContext;
+  }): Promise<
+    { id: string; siteId: string; status: SiteBaselineRecord['status']; pageCount: number; completedAt: string }[]
+  >;
 }
 
 export interface PersistSiteBaselineInput {

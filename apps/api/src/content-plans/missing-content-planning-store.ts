@@ -24,4 +24,8 @@ export class MissingContentPlanningStore implements ContentPlanningStore {
   reviewBrief(): ReturnType<ContentPlanningStore['reviewBrief']> {
     return Promise.reject(new Error('CONTENT_PLANNING_STORE_NOT_CONFIGURED'));
   }
+
+  listApprovedBriefs(): ReturnType<ContentPlanningStore['listApprovedBriefs']> {
+    return Promise.reject(new Error('CONTENT_PLANNING_STORE_NOT_CONFIGURED'));
+  }
 }

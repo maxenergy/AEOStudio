@@ -213,6 +213,75 @@ export class InMemoryProfileOfferingStore
     });
   }
 
+  listProfiles(input: {
+    context: { tenantId: string; workspaceId: string };
+  }): Promise<
+    { id: string; displayName: string; currentRevision: number; completeness: { completedFields: number; totalFields: number; percent: number; missingFields: string[] } }[]
+  > {
+    const results: {
+      id: string;
+      displayName: string;
+      currentRevision: number;
+      completeness: { completedFields: number; totalFields: number; percent: number; missingFields: string[] };
+    }[] = [];
+    for (const [profileId, aggregate] of this.profiles) {
+      if (aggregate.tenantId !== input.context.tenantId) continue;
+      if (aggregate.workspaceId !== input.context.workspaceId) continue;
+      const current = aggregate.revisions.get(aggregate.currentRevision);
+      if (current === undefined) continue;
+      results.push({
+        id: profileId,
+        displayName: current.displayName,
+        currentRevision: aggregate.currentRevision,
+        completeness: structuredClone(current.completeness),
+      });
+    }
+    return Promise.resolve(results);
+  }
+
+  listOfferings(input: {
+    context: { tenantId: string; workspaceId: string };
+  }): Promise<
+    {
+      id: string;
+      profileId: string;
+      kind: string;
+      name: string;
+      locale: string;
+      market: string;
+      currentRevision: number;
+      completeness: { completedFields: number; totalFields: number; percent: number; missingFields: string[] };
+    }[]
+  > {
+    const results: {
+      id: string;
+      profileId: string;
+      kind: string;
+      name: string;
+      locale: string;
+      market: string;
+      currentRevision: number;
+      completeness: { completedFields: number; totalFields: number; percent: number; missingFields: string[] };
+    }[] = [];
+    for (const [offeringId, aggregate] of this.offerings) {
+      if (aggregate.tenantId !== input.context.tenantId) continue;
+      if (aggregate.workspaceId !== input.context.workspaceId) continue;
+      const current = aggregate.revisions.get(aggregate.currentRevision);
+      if (current === undefined) continue;
+      results.push({
+        id: offeringId,
+        profileId: aggregate.profileId,
+        kind: current.kind,
+        name: current.name,
+        locale: current.locale,
+        market: current.market,
+        currentRevision: aggregate.currentRevision,
+        completeness: structuredClone(current.completeness),
+      });
+    }
+    return Promise.resolve(results);
+  }
+
   private safeNow(): Date {
     const value = this.clock.now();
     if (!(value instanceof Date) || !Number.isFinite(value.getTime())) {

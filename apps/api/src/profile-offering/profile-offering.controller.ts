@@ -5,8 +5,10 @@ import { ProblemDetailsSchema, SCHEMA_VERSION } from '@aeostudio/contracts/auth'
 import {
   OfferingEnvelopeSchema,
   OfferingInputSchema,
+  OfferingListEnvelopeSchema,
   ProfileEnvelopeSchema,
   ProfileInputSchema,
+  ProfileListEnvelopeSchema,
 } from '@aeostudio/contracts/profile-offering';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 
@@ -175,6 +177,72 @@ export class ProfileOfferingController {
     }
     return ProfileEnvelopeSchema.parse({
       data: { profile },
+      meta: { requestId: request.id, schemaVersion: SCHEMA_VERSION },
+    });
+  }
+
+  @Get('profiles')
+  async listProfiles(
+    @Param('tenantId') tenantId: string,
+    @Param('workspaceId') workspaceId: string,
+    @Req() request: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ): Promise<Record<string, unknown>> {
+    const token = request.cookies['__Host-aeo_session'];
+    const session = token === undefined ? null : await this.authService.getSession(token);
+    if (session === null) {
+      reply.code(401);
+      return this.problem(request, 401, 'UNAUTHENTICATED', 'A valid server session is required.');
+    }
+    const result = await this.profileOfferingService.listProfiles({
+      actorSubject: session.subject,
+      tenantId,
+      workspaceId,
+    });
+    if (result.outcome === 'NOT_FOUND') {
+      reply.code(404);
+      return this.problem(
+        request,
+        404,
+        'NOT_FOUND_OR_FORBIDDEN',
+        'The requested resource was not found.',
+      );
+    }
+    return ProfileListEnvelopeSchema.parse({
+      data: { profiles: result.profiles },
+      meta: { requestId: request.id, schemaVersion: SCHEMA_VERSION },
+    });
+  }
+
+  @Get('offerings')
+  async listOfferings(
+    @Param('tenantId') tenantId: string,
+    @Param('workspaceId') workspaceId: string,
+    @Req() request: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ): Promise<Record<string, unknown>> {
+    const token = request.cookies['__Host-aeo_session'];
+    const session = token === undefined ? null : await this.authService.getSession(token);
+    if (session === null) {
+      reply.code(401);
+      return this.problem(request, 401, 'UNAUTHENTICATED', 'A valid server session is required.');
+    }
+    const result = await this.profileOfferingService.listOfferings({
+      actorSubject: session.subject,
+      tenantId,
+      workspaceId,
+    });
+    if (result.outcome === 'NOT_FOUND') {
+      reply.code(404);
+      return this.problem(
+        request,
+        404,
+        'NOT_FOUND_OR_FORBIDDEN',
+        'The requested resource was not found.',
+      );
+    }
+    return OfferingListEnvelopeSchema.parse({
+      data: { offerings: result.offerings },
       meta: { requestId: request.id, schemaVersion: SCHEMA_VERSION },
     });
   }

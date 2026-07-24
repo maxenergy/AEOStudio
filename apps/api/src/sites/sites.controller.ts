@@ -11,6 +11,7 @@ import {
   CreateSiteRequestSchema,
   CreateSiteVerificationRequestSchema,
   SiteBaselineEnvelopeSchema,
+  SiteBaselineListEnvelopeSchema,
   SiteEnvelopeSchema,
   SiteVerificationEnvelopeSchema,
   StartCrawlRequestSchema,
@@ -201,6 +202,34 @@ export class SitesController {
     }
     return SiteBaselineEnvelopeSchema.parse({
       data: { baseline },
+      meta: { requestId: request.id, schemaVersion: SCHEMA_VERSION },
+    });
+  }
+
+  @Get('sites/baselines')
+  async listBaselines(
+    @Param('tenantId') tenantId: string,
+    @Param('workspaceId') workspaceId: string,
+    @Req() request: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ): Promise<Record<string, unknown>> {
+    const token = request.cookies['__Host-aeo_session'];
+    const session = token === undefined ? null : await this.authService.getSession(token);
+    if (session === null) {
+      reply.code(401);
+      return this.problem(request, 401, 'UNAUTHENTICATED', 'A valid server session is required.');
+    }
+    const baselines = await this.sites.listBaselines({
+      actorSubject: session.subject,
+      tenantId,
+      workspaceId,
+    });
+    if (baselines === null) {
+      reply.code(404);
+      return this.problem(request, 404, 'NOT_FOUND_OR_FORBIDDEN', 'Resource not found.');
+    }
+    return SiteBaselineListEnvelopeSchema.parse({
+      data: { baselines },
       meta: { requestId: request.id, schemaVersion: SCHEMA_VERSION },
     });
   }

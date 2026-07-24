@@ -5,6 +5,7 @@ import type { JobTraceContextProvider } from '@aeostudio/application/jobs-budget
 import type { StructuredApplicationLogger } from '@aeostudio/adapters/observability';
 import { ProblemDetailsSchema, SCHEMA_VERSION } from '@aeostudio/contracts/auth';
 import {
+  ApprovedBriefListEnvelopeSchema,
   BriefReviewEnvelopeSchema,
   ContentPlanBundleEnvelopeSchema,
   ReviewBriefRequestSchema,
@@ -98,6 +99,31 @@ export class ContentPlansController {
     reply.code(202);
     return StartContentPlanEnvelopeSchema.parse({
       data: { plan: result.plan, job: result.job },
+      meta: { requestId: request.id, schemaVersion: SCHEMA_VERSION },
+    });
+  }
+
+  @Get('briefs/approved')
+  async listApprovedBriefs(
+    @Param('tenantId') tenantId: string,
+    @Param('workspaceId') workspaceId: string,
+    @Req() request: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ): Promise<Record<string, unknown>> {
+    const token = request.cookies['__Host-aeo_session'];
+    const session = token === undefined ? null : await this.authService.getSession(token);
+    if (session === null) return this.authenticationProblem(request, reply);
+    const briefs = await this.plans.listApprovedBriefs({
+      actorSubject: session.subject,
+      tenantId,
+      workspaceId,
+    });
+    if (briefs === null) {
+      reply.code(404);
+      return this.problem(request, 404, 'NOT_FOUND_OR_FORBIDDEN', 'Resource not found.');
+    }
+    return ApprovedBriefListEnvelopeSchema.parse({
+      data: { briefs },
       meta: { requestId: request.id, schemaVersion: SCHEMA_VERSION },
     });
   }

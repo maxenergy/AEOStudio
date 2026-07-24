@@ -3,6 +3,7 @@ import type {
   ProfileOfferingStore,
   ProfileReadinessExecutionStore,
 } from '@aeostudio/application/profile-offering';
+import type { TenantContext } from '@aeostudio/application/identity-access';
 import type { JobRecord } from '@aeostudio/domain/jobs-budgets';
 import type {
   CompletenessSummary,
@@ -404,6 +405,91 @@ export class PostgresProfileOfferingStore
       );
       const row = result.rows[0];
       return row === undefined ? null : this.mapOffering(row);
+    });
+  }
+
+  listProfiles(input: {
+    context: TenantContext;
+  }): Promise<
+    { id: string; displayName: string; currentRevision: number; completeness: CompletenessSummary }[]
+  > {
+    return this.contexts.run(input.context, async (client) => {
+      const result = await client.query<{
+        id: string;
+        display_name: string;
+        current_revision: number;
+        completeness: CompletenessSummary;
+      }>(
+        `SELECT p.id, pr.content ->> 'displayName' AS display_name,
+                p.current_revision, pr.completeness
+         FROM profiles p
+         JOIN profile_revisions pr
+           ON pr.profile_id = p.id AND pr.revision = p.current_revision
+           AND pr.workspace_id = p.workspace_id
+         WHERE p.workspace_id = $1
+         ORDER BY p.created_at DESC
+         LIMIT 200`,
+        [input.context.workspaceId],
+      );
+      return result.rows.map((row) => ({
+        id: row.id,
+        displayName: row.display_name,
+        currentRevision: row.current_revision,
+        completeness: row.completeness,
+      }));
+    });
+  }
+
+  listOfferings(input: {
+    context: TenantContext;
+  }): Promise<
+    {
+      id: string;
+      profileId: string;
+      kind: string;
+      name: string;
+      locale: string;
+      market: string;
+      currentRevision: number;
+      completeness: CompletenessSummary;
+    }[]
+  > {
+    return this.contexts.run(input.context, async (client) => {
+      const result = await client.query<{
+        id: string;
+        profile_id: string;
+        kind: string;
+        name: string;
+        locale: string;
+        market: string;
+        current_revision: number;
+        completeness: CompletenessSummary;
+      }>(
+        `SELECT o.id, o.profile_id,
+                orv.content ->> 'kind' AS kind,
+                orv.content ->> 'name' AS name,
+                orv.content ->> 'locale' AS locale,
+                orv.content ->> 'market' AS market,
+                o.current_revision, orv.completeness
+         FROM offerings o
+         JOIN offering_revisions orv
+           ON orv.offering_id = o.id AND orv.revision = o.current_revision
+           AND orv.workspace_id = o.workspace_id
+         WHERE o.workspace_id = $1
+         ORDER BY o.created_at DESC
+         LIMIT 200`,
+        [input.context.workspaceId],
+      );
+      return result.rows.map((row) => ({
+        id: row.id,
+        profileId: row.profile_id,
+        kind: row.kind,
+        name: row.name,
+        locale: row.locale,
+        market: row.market,
+        currentRevision: row.current_revision,
+        completeness: row.completeness,
+      }));
     });
   }
 

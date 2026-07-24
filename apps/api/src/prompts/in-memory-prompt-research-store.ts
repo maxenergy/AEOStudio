@@ -237,4 +237,23 @@ export class InMemoryPromptResearchStore implements PromptResearchStore {
   private key(tenantId: string, workspaceId: string, promptSetId: string): string {
     return `${tenantId}:${workspaceId}:${promptSetId}`;
   }
+
+  listApprovedPromptSets(input: { context: { tenantId: string; workspaceId: string } }): Promise<
+    { promptSetId: string; revisionId: string; revision: number; title: string; subject: string; contentHash: string }[]
+  > {
+    const results: { promptSetId: string; revisionId: string; revision: number; title: string; subject: string; contentHash: string }[] = [];
+    for (const [key, bundle] of this.bundles) {
+      if (!key.startsWith(`${input.context.tenantId}:${input.context.workspaceId}:`)) continue;
+      if (bundle.revision.status !== 'APPROVED') continue;
+      results.push({
+        promptSetId: bundle.promptSet.id,
+        revisionId: bundle.revision.id,
+        revision: bundle.revision.revision,
+        title: bundle.revision.title,
+        subject: bundle.revision.subject,
+        contentHash: bundle.revision.contentHash,
+      });
+    }
+    return Promise.resolve(results);
+  }
 }

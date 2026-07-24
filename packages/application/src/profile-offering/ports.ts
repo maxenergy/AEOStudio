@@ -35,6 +35,25 @@ export interface ProfileOfferingStore {
     profileId: string;
     revision: number;
   }): Promise<ProfileRevision | null>;
+  listProfiles(input: {
+    context: TenantContext;
+  }): Promise<
+    { id: string; displayName: string; currentRevision: number; completeness: CompletenessSummary }[]
+  >;
+  listOfferings(input: {
+    context: TenantContext;
+  }): Promise<
+    {
+      id: string;
+      profileId: string;
+      kind: string;
+      name: string;
+      locale: string;
+      market: string;
+      currentRevision: number;
+      completeness: CompletenessSummary;
+    }[]
+  >;
   createOffering(input: {
     context: TenantContext;
     profileId: string;

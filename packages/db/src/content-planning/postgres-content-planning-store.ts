@@ -1,4 +1,5 @@
 import type { ContentPlanningStore } from '@aeostudio/application/content-planning';
+import type { TenantContext } from '@aeostudio/application/identity-access';
 import {
   contentPlanReferenceErrors,
   type BriefRecord,
@@ -757,5 +758,35 @@ export class PostgresContentPlanningStore implements ContentPlanningStore {
       note: row.note,
       reviewedAt: row.reviewed_at.toISOString(),
     };
+  }
+
+  listApprovedBriefs(input: { context: TenantContext }): Promise<
+    { briefId: string; planId: string; assetKind: string; title: string; contentHash: string; status: string }[]
+  > {
+    return this.contexts.run(input.context, async (client) => {
+      const result = await client.query<{
+        brief_id: string;
+        plan_id: string;
+        asset_kind: string;
+        title: string;
+        content_hash: string;
+        status: string;
+      }>(
+        `SELECT b.id AS brief_id, b.content_plan_id AS plan_id, b.asset_kind, b.title, b.content_hash, b.status
+         FROM briefs b
+         WHERE b.workspace_id = $1 AND b.status = 'APPROVED'
+         ORDER BY b.created_at DESC
+         LIMIT 200`,
+        [input.context.workspaceId],
+      );
+      return result.rows.map((row) => ({
+        briefId: row.brief_id,
+        planId: row.plan_id,
+        assetKind: row.asset_kind,
+        title: row.title,
+        contentHash: row.content_hash,
+        status: row.status,
+      }));
+    });
   }
 }

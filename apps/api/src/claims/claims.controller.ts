@@ -3,6 +3,7 @@ import type { AuthService } from '@aeostudio/application/auth';
 import type { EvidenceClaimService } from '@aeostudio/application/evidence-claims';
 import { ProblemDetailsSchema, SCHEMA_VERSION } from '@aeostudio/contracts/auth';
 import {
+  ApprovedClaimListEnvelopeSchema,
   ClaimCurrentStateEnvelopeSchema,
   ClaimEnvelopeSchema,
   ClaimEvidenceDrillDownEnvelopeSchema,
@@ -291,6 +292,34 @@ export class ClaimsController {
     reply.code(200);
     return ClaimReviewEnvelopeSchema.parse({
       data: { ...result.bundle, review: result.review },
+      meta: { requestId: request.id, schemaVersion: SCHEMA_VERSION },
+    });
+  }
+
+  @Get('claims/approved')
+  async listApprovedClaims(
+    @Param('tenantId') tenantId: string,
+    @Param('workspaceId') workspaceId: string,
+    @Req() request: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ): Promise<Record<string, unknown>> {
+    const token = request.cookies['__Host-aeo_session'];
+    const session = token === undefined ? null : await this.authService.getSession(token);
+    if (session === null) {
+      reply.code(401);
+      return this.problem(request, 401, 'UNAUTHENTICATED', 'A valid session is required.');
+    }
+    const claims = await this.claims.listApprovedClaims({
+      actorSubject: session.subject,
+      tenantId,
+      workspaceId,
+    });
+    if (claims === null) {
+      reply.code(404);
+      return this.problem(request, 404, 'NOT_FOUND_OR_FORBIDDEN', 'Resource not found.');
+    }
+    return ApprovedClaimListEnvelopeSchema.parse({
+      data: { claims },
       meta: { requestId: request.id, schemaVersion: SCHEMA_VERSION },
     });
   }

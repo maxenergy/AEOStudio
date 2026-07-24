@@ -4,6 +4,7 @@ import type { PromptResearchService } from '@aeostudio/application/prompt-resear
 import { ProblemDetailsSchema, SCHEMA_VERSION } from '@aeostudio/contracts/auth';
 import {
   ApprovePromptRevisionRequestSchema,
+  ApprovedPromptSetListEnvelopeSchema,
   CreatePromptRevisionRequestSchema,
   PromptBundleEnvelopeSchema,
   PromptRegistryEnvelopeSchema,
@@ -177,6 +178,30 @@ export class PromptsController {
     reply.code(200);
     return PromptBundleEnvelopeSchema.parse({
       data: result.bundle,
+      meta: { requestId: request.id, schemaVersion: SCHEMA_VERSION },
+    });
+  }
+
+  @Get('prompt-sets/approved')
+  async listApproved(
+    @Param('tenantId') tenantId: string,
+    @Param('workspaceId') workspaceId: string,
+    @Req() request: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ): Promise<Record<string, unknown>> {
+    const subject = await this.readSubject(request, reply);
+    if (subject === null) return this.problem(request, 401, 'UNAUTHENTICATED', 'Login required.');
+    const promptSets = await this.prompts.listApprovedPromptSets({
+      actorSubject: subject,
+      tenantId,
+      workspaceId,
+    });
+    if (promptSets === null) {
+      reply.code(404);
+      return this.problem(request, 404, 'NOT_FOUND_OR_FORBIDDEN', 'Resource not found.');
+    }
+    return ApprovedPromptSetListEnvelopeSchema.parse({
+      data: { promptSets },
       meta: { requestId: request.id, schemaVersion: SCHEMA_VERSION },
     });
   }

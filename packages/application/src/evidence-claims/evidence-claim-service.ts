@@ -390,6 +390,16 @@ export class EvidenceClaimService {
       auditEventId: this.ids.next(),
     });
   }
+
+  async listApprovedClaims(input: {
+    actorSubject: string;
+    tenantId: string;
+    workspaceId: string;
+  }) {
+    const context = await this.tenancy.resolveTenantContext(input);
+    if (context === null || !roleAllows(context.role, 'WORKSPACE_READ')) return null;
+    return this.store.listApprovedClaims({ context });
+  }
 }
 
 const MAX_EVIDENCE_OBJECT_BYTES = 10 * 1024 * 1024;

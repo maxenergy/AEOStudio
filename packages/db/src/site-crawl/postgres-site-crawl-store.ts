@@ -275,6 +275,28 @@ export class PostgresSiteCrawlStore implements SiteCrawlStore, SiteCrawlExecutio
     );
   }
 
+  listBaselines(
+    input: Parameters<SiteCrawlStore['listBaselines']>[0],
+  ): ReturnType<SiteCrawlStore['listBaselines']> {
+    return this.contexts.run(input.context, async (client) => {
+      const result = await client.query<CrawlRunRow>(
+        `SELECT id, tenant_id, workspace_id, site_id, job_id, status, error_code,
+           page_count, total_bytes::text, completed_at
+         FROM crawl_runs
+         WHERE workspace_id = $1
+         ORDER BY completed_at DESC, id DESC`,
+        [input.context.workspaceId],
+      );
+      return result.rows.map((row) => ({
+        id: row.id,
+        siteId: row.site_id,
+        status: row.status,
+        pageCount: row.page_count,
+        completedAt: row.completed_at.toISOString(),
+      }));
+    });
+  }
+
   persistBaseline(
     input: Parameters<SiteCrawlExecutionStore['persistBaseline']>[0],
   ): ReturnType<SiteCrawlExecutionStore['persistBaseline']> {

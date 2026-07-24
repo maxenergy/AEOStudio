@@ -152,6 +152,25 @@ export class InMemorySiteCrawlStore implements SiteCrawlStore {
     );
   }
 
+  listBaselines(
+    input: Parameters<SiteCrawlStore['listBaselines']>[0],
+  ): ReturnType<SiteCrawlStore['listBaselines']> {
+    const results = [...this.baselines.values()]
+      .filter(
+        (baseline) =>
+          baseline.tenantId === input.context.tenantId &&
+          baseline.workspaceId === input.context.workspaceId,
+      )
+      .map((baseline) => ({
+        id: baseline.id,
+        siteId: baseline.siteId,
+        status: baseline.status,
+        pageCount: baseline.pageCount,
+        completedAt: baseline.completedAt,
+      }));
+    return Promise.resolve(results);
+  }
+
   recordCompletedCrawl(job: JobRecord): void {
     if (job.jobType !== 'SITE_CRAWL') {
       return;

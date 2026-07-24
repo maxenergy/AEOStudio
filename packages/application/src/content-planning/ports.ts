@@ -63,4 +63,7 @@ export interface ContentPlanningStore {
       }
     | { outcome: 'NOT_FOUND' | 'HASH_MISMATCH' | 'SELF_APPROVAL' | 'ALREADY_REVIEWED' }
   >;
+  listApprovedBriefs(input: { context: TenantContext }): Promise<
+    { briefId: string; planId: string; assetKind: string; title: string; contentHash: string; status: string }[]
+  >;
 }

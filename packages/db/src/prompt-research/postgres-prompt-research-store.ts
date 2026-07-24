@@ -1,4 +1,5 @@
 import type { PromptResearchStore } from '@aeostudio/application/prompt-research';
+import type { TenantContext } from '@aeostudio/application/identity-access';
 import {
   promptApprovalIssues,
   type MeasurementScenarioRecord,
@@ -568,5 +569,35 @@ export class PostgresPromptResearchStore implements PromptResearchStore {
       unavailableReason: row.unavailable_reason,
       adapterVersion: row.adapter_version,
     };
+  }
+
+  listApprovedPromptSets(input: { context: TenantContext }): Promise<
+    { promptSetId: string; revisionId: string; revision: number; title: string; subject: string; contentHash: string }[]
+  > {
+    return this.contexts.run(input.context, async (client) => {
+      const result = await client.query<{
+        prompt_set_id: string;
+        revision_id: string;
+        revision: number;
+        title: string;
+        subject: string;
+        content_hash: string;
+      }>(
+        `SELECT pr.prompt_set_id, pr.id AS revision_id, pr.revision, pr.title, pr.subject, pr.content_hash
+         FROM prompt_revisions pr
+         WHERE pr.workspace_id = $1 AND pr.status = 'APPROVED'
+         ORDER BY pr.created_at DESC
+         LIMIT 200`,
+        [input.context.workspaceId],
+      );
+      return result.rows.map((row) => ({
+        promptSetId: row.prompt_set_id,
+        revisionId: row.revision_id,
+        revision: row.revision,
+        title: row.title,
+        subject: row.subject,
+        contentHash: row.content_hash,
+      }));
+    });
   }
 }

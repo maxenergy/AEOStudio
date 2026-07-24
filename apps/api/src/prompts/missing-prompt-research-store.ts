@@ -24,4 +24,8 @@ export class MissingPromptResearchStore implements PromptResearchStore {
   approveRevision(): ReturnType<PromptResearchStore['approveRevision']> {
     return Promise.reject(new Error('PROMPT_RESEARCH_STORE_NOT_CONFIGURED'));
   }
+
+  listApprovedPromptSets(): ReturnType<PromptResearchStore['listApprovedPromptSets']> {
+    return Promise.reject(new Error('PROMPT_RESEARCH_STORE_NOT_CONFIGURED'));
+  }
 }

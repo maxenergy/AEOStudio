@@ -202,4 +202,36 @@ export class ProfileOfferingService {
       revision: input.revision,
     });
   }
+
+  async listProfiles(input: {
+    actorSubject: string;
+    tenantId: string;
+    workspaceId: string;
+  }): Promise<
+    | { outcome: 'SUCCEEDED'; profiles: { id: string; displayName: string; currentRevision: number; completeness: { completedFields: number; totalFields: number; percent: number; missingFields: string[] } }[] }
+    | { outcome: 'NOT_FOUND' }
+  > {
+    const context = await this.tenancy.resolveTenantContext(input);
+    if (context === null || !roleAllows(context.role, 'WORKSPACE_READ')) {
+      return { outcome: 'NOT_FOUND' };
+    }
+    const profiles = await this.store.listProfiles({ context });
+    return { outcome: 'SUCCEEDED', profiles };
+  }
+
+  async listOfferings(input: {
+    actorSubject: string;
+    tenantId: string;
+    workspaceId: string;
+  }): Promise<
+    | { outcome: 'SUCCEEDED'; offerings: { id: string; profileId: string; kind: string; name: string; locale: string; market: string; currentRevision: number; completeness: { completedFields: number; totalFields: number; percent: number; missingFields: string[] } }[] }
+    | { outcome: 'NOT_FOUND' }
+  > {
+    const context = await this.tenancy.resolveTenantContext(input);
+    if (context === null || !roleAllows(context.role, 'WORKSPACE_READ')) {
+      return { outcome: 'NOT_FOUND' };
+    }
+    const offerings = await this.store.listOfferings({ context });
+    return { outcome: 'SUCCEEDED', offerings };
+  }
 }
