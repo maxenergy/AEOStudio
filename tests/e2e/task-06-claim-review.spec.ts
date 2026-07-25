@@ -5,18 +5,21 @@ test('an Editor-facing ledger submits an evidence-backed Claim for independent r
 }) => {
   await page.goto('/login');
   await page.getByRole('link', { name: '安全登录' }).click();
-  await page.getByLabel('Tenant 名称').fill('Evidence Review Cooperative');
-  await page.getByLabel('Workspace 名称').fill('Review Workspace');
-  await page.getByRole('button', { name: '创建 Workspace' }).click();
+  await page.getByLabel('团队名称').fill('Evidence Review Cooperative');
+  await page.getByLabel('工作空间名称').fill('Review Workspace');
+  await page.getByRole('button', { name: '创建工作空间' }).click();
 
-  await page.getByRole('link', { name: 'Evidence / Claim Ledger' }).click();
-  await expect(page.getByRole('heading', { name: 'Evidence / Claim Ledger' })).toBeVisible();
-  await page.getByLabel('Evidence 标题').fill('Evaluation methodology');
-  await page.getByLabel('Evidence URI').fill('https://evidence.example.test/evaluation.txt');
+  await page.getByRole('link', { name: '证明材料 / 事实声明', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '证明材料 / 事实声明台账' })).toBeVisible();
+  await page.getByLabel('证明材料标题').fill('Evaluation methodology');
+  await page.getByLabel('证明材料 URI').fill('https://evidence.example.test/evaluation.txt');
   await page.getByLabel('License').fill('CC-BY-4.0');
-  await page.getByLabel('Snapshot SHA-256').fill('f'.repeat(64));
-  await page.getByLabel('对象引用').fill(`s3://evidence-fixture/${'f'.repeat(64)}`);
-  await page.getByLabel('Claim statement').fill('Documented completion rate is 92 percent.');
+  await page.locator('#evidence-file').setInputFiles({
+    name: 'evaluation.txt',
+    mimeType: 'text/plain',
+    buffer: Buffer.from('Completion rate: 92%; sample size: 120; protocol revision: 3.'),
+  });
+  await page.getByLabel('事实声明内容').fill('Documented completion rate is 92 percent.');
   await page.getByLabel('数值').fill('92');
   await page.getByLabel('单位').fill('percent');
   await page.getByLabel('适用范围').fill('Evaluation protocol revision 3');
@@ -31,7 +34,5 @@ test('an Editor-facing ledger submits an evidence-backed Claim for independent r
   await expect(page.getByText('创建者不可自批')).toBeVisible();
   await expect(page.getByText(/Completion rate: 92%/)).toBeVisible();
   await expect(page.getByText(/CC-BY-4.0/)).toBeVisible();
-  await expect(
-    page.getByText(new RegExp(`^Snapshot/source hash：${'f'.repeat(64)}$`)),
-  ).toBeVisible();
+  await expect(page.getByText(/Snapshot\/source hash：[a-f0-9]{64}/)).toBeVisible();
 });

@@ -9,6 +9,9 @@ import type {
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
+import { makeT } from '../../../lib/i18n';
+import { getLocale } from '../../../lib/i18n/get-locale';
+
 function apiOrigin(): string {
   return process.env.API_INTERNAL_ORIGIN ?? 'http://127.0.0.1:3200';
 }
@@ -156,6 +159,7 @@ interface ClaimsPageProps {
 }
 
 export default async function ClaimsPage({ searchParams }: ClaimsPageProps) {
+  const t = makeT(await getLocale());
   const query = await searchParams;
   const tenantId = typeof query.tenant === 'string' ? query.tenant : undefined;
   const workspaceId = typeof query.workspace === 'string' ? query.workspace : undefined;
@@ -215,60 +219,57 @@ export default async function ClaimsPage({ searchParams }: ClaimsPageProps) {
 
   return (
     <main>
-      <p className="eyebrow">AEO Studio</p>
-      <h1>Evidence / Claim Ledger</h1>
-      <p>
-        公开 URL 只登记来源；只有 exact snapshot/hash/snippet、适用范围与 expiry
-        齐全时才能提交独立审核。
-      </p>
+      <p className="eyebrow">{t('claims.eyebrow')}</p>
+      <h1>{t('claims.title')}</h1>
+      <p>{t('claims.lede')}</p>
 
       {claimRevisionId !== undefined && current === undefined ? (
         <section className="shell-card">
-          <h2>Exact Claim revision</h2>
-          <p>Exact Claim revision ID：{claimRevisionId}</p>
-          <p className="warning-message">该 exact Claim revision 当前不可读取。</p>
+          <h2>{t('claims.revisionUnavailableHeading')}</h2>
+          <p>{t('claims.revisionId', { id: claimRevisionId })}</p>
+          <p className="warning-message">{t('claims.revisionUnavailable')}</p>
         </section>
       ) : null}
 
       {(selectedSourceId !== undefined || selectedSnapshotId !== undefined) &&
       current === undefined ? (
         <section className="shell-card">
-          <h2>Selected exact Evidence</h2>
+          <h2>{t('claims.evidenceUnavailableHeading')}</h2>
           {selectedSourceId === undefined ? null : (
-            <p>Selected exact Evidence Source：{selectedSourceId}</p>
+            <p>{t('claims.selectedSourceId', { id: selectedSourceId })}</p>
           )}
           {selectedSnapshotId === undefined ? null : (
-            <p>Selected exact Evidence Snapshot：{selectedSnapshotId}</p>
+            <p>{t('claims.selectedSnapshotId', { id: selectedSnapshotId })}</p>
           )}
-          <p className="warning-message">该 exact Evidence 当前不可读取。</p>
+          <p className="warning-message">{t('claims.evidenceUnavailable')}</p>
         </section>
       ) : null}
 
       {current === undefined && ['OWNER', 'ADMIN', 'EDITOR'].includes(membership.activeRole) ? (
         <section className="shell-card">
-          <h2>登记 Evidence 并提议 Claim</h2>
+          <h2>{t('claims.registerHeading')}</h2>
           <form action={createAndSubmitClaim} className="stacked-form">
             <input name="tenantId" type="hidden" value={tenantId} />
             <input name="workspaceId" type="hidden" value={workspaceId} />
-            <label htmlFor="evidence-type">来源类型</label>
+            <label htmlFor="evidence-type">{t('claims.sourceType')}</label>
             <select defaultValue="UPLOAD" id="evidence-type" name="sourceType">
-              <option value="UPLOAD">Upload</option>
-              <option value="CRAWL">Verified crawl</option>
-              <option value="PUBLIC">Public source</option>
+              <option value="UPLOAD">{t('claims.sourceType.upload')}</option>
+              <option value="CRAWL">{t('claims.sourceType.crawl')}</option>
+              <option value="PUBLIC">{t('claims.sourceType.public')}</option>
             </select>
-            <label htmlFor="evidence-title">Evidence 标题</label>
+            <label htmlFor="evidence-title">{t('claims.evidenceTitle')}</label>
             <input id="evidence-title" name="title" required />
-            <label htmlFor="evidence-uri">Evidence URI</label>
+            <label htmlFor="evidence-uri">{t('claims.evidenceUri')}</label>
             <input id="evidence-uri" name="uri" required type="url" />
-            <label htmlFor="evidence-license">License</label>
+            <label htmlFor="evidence-license">{t('claims.license')}</label>
             <input id="evidence-license" name="license" required />
-            <label htmlFor="evidence-publicity">Publicity</label>
+            <label htmlFor="evidence-publicity">{t('claims.publicity')}</label>
             <select defaultValue="PUBLIC" id="evidence-publicity" name="publicity">
-              <option value="PUBLIC">Public</option>
-              <option value="PRIVATE">Private</option>
-              <option value="RESTRICTED">Restricted</option>
+              <option value="PUBLIC">{t('claims.publicity.public')}</option>
+              <option value="PRIVATE">{t('claims.publicity.private')}</option>
+              <option value="RESTRICTED">{t('claims.publicity.restricted')}</option>
             </select>
-            <label htmlFor="evidence-file">Evidence 文件（服务端计算 SHA-256 和 objectRef）</label>
+            <label htmlFor="evidence-file">{t('claims.evidenceFile')}</label>
             <input
               accept=".txt,.md,.pdf,.csv,.png,.jpg,.jpeg,.webp,text/plain,text/markdown,application/pdf,text/csv,image/*"
               id="evidence-file"
@@ -276,26 +277,23 @@ export default async function ClaimsPage({ searchParams }: ClaimsPageProps) {
               required
               type="file"
             />
-            <p className="field-help">
-              支持文本、Markdown、PDF、CSV 和常见图片。上传后由服务端计算 hash 和
-              objectRef，浏览器不提交自称可信的 hash。
-            </p>
-            <label htmlFor="claim-statement">Claim statement</label>
+            <p className="field-help">{t('claims.evidenceFileHelp')}</p>
+            <label htmlFor="claim-statement">{t('claims.statement')}</label>
             <textarea id="claim-statement" name="statement" required />
-            <label htmlFor="numeric-value">数值</label>
+            <label htmlFor="numeric-value">{t('claims.numeric')}</label>
             <input id="numeric-value" name="numericValue" step="any" type="number" />
-            <label htmlFor="claim-unit">单位</label>
+            <label htmlFor="claim-unit">{t('claims.unit')}</label>
             <input id="claim-unit" name="unit" />
-            <label htmlFor="claim-scope">适用范围</label>
+            <label htmlFor="claim-scope">{t('claims.scope')}</label>
             <textarea id="claim-scope" name="scope" required />
-            <label htmlFor="claim-conditions">适用条件</label>
+            <label htmlFor="claim-conditions">{t('claims.conditions')}</label>
             <textarea id="claim-conditions" name="conditions" required />
-            <label htmlFor="claim-expiry">Expiry</label>
+            <label htmlFor="claim-expiry">{t('claims.expiry')}</label>
             <input id="claim-expiry" name="expiresAt" required type="date" />
-            <label htmlFor="claim-snippet">Exact evidence snippet</label>
+            <label htmlFor="claim-snippet">{t('claims.snippet')}</label>
             <textarea id="claim-snippet" name="snippet" required />
             <button className="primary-action" type="submit">
-              创建并提交独立审核
+              {t('claims.submitAction')}
             </button>
           </form>
         </section>
@@ -304,28 +302,29 @@ export default async function ClaimsPage({ searchParams }: ClaimsPageProps) {
       {current === undefined ? null : (
         <>
           <section className="shell-card">
-            <h2>Claim revision {current.revision.revision}</h2>
-            <p>Exact Claim revision ID：{current.revision.id}</p>
+            <h2>{t('claims.revisionHeading', { revision: current.revision.revision })}</h2>
+            <p>{t('claims.revisionId', { id: current.revision.id })}</p>
             <p>{current.revision.statement}</p>
             <p>
-              状态：<strong data-testid="claim-status">{current.revision.status}</strong>
+              {t('claims.status')}
+              <strong data-testid="claim-status">{current.revision.status}</strong>
             </p>
-            <p>Content hash：{current.revision.contentHash}</p>
-            <p>适用范围：{current.revision.scope}</p>
-            <p>Expiry：{current.revision.expiresAt}</p>
-            <p>创建者不可自批；必须由独立 Reviewer 审核 exact revision/hash。</p>
+            <p>{t('claims.contentHash', { hash: current.revision.contentHash })}</p>
+            <p>{t('claims.scopeValue', { value: current.revision.scope ?? '' })}</p>
+            <p>{t('claims.expiryValue', { value: current.revision.expiresAt ?? '' })}</p>
+            <p>{t('claims.independentRule')}</p>
           </section>
           <section className="shell-card">
-            <h2>Exact Evidence drill-down</h2>
+            <h2>{t('claims.drillDownHeading')}</h2>
             {selectedSourceId === undefined ? null : (
-              <p>Selected exact Evidence Source：{selectedSourceId}</p>
+              <p>{t('claims.selectedSourceId', { id: selectedSourceId })}</p>
             )}
             {selectedSnapshotId === undefined ? null : (
-              <p>Selected exact Evidence Snapshot：{selectedSnapshotId}</p>
+              <p>{t('claims.selectedSnapshotId', { id: selectedSnapshotId })}</p>
             )}
             {(selectedSourceId !== undefined || selectedSnapshotId !== undefined) &&
             selectedEvidence === undefined ? (
-              <p className="warning-message">所选 exact Evidence 不属于该 Claim revision。</p>
+              <p className="warning-message">{t('claims.evidenceNotLinked')}</p>
             ) : null}
             {drillDown.map((entry) => {
               const isSelected =
@@ -334,37 +333,40 @@ export default async function ClaimsPage({ searchParams }: ClaimsPageProps) {
                 <article className={isSelected ? 'nested-card' : undefined} key={entry.link.id}>
                   {isSelected ? (
                     <p>
-                      <strong>Selected exact Evidence</strong>
+                      <strong>{t('claims.selectedEvidence')}</strong>
                     </p>
                   ) : null}
                   <h3>{entry.source.title}</h3>
-                  <p>Evidence Source ID：{entry.source.id}</p>
-                  <p>Evidence Snapshot ID：{entry.snapshot.id}</p>
+                  <p>{t('claims.sourceId', { id: entry.source.id })}</p>
+                  <p>{t('claims.snapshotId', { id: entry.snapshot.id })}</p>
                   <p>
-                    License/Publicity：{entry.source.license} / {entry.source.publicity}
+                    {t('claims.licensePublicity', {
+                      license: entry.source.license,
+                      publicity: entry.source.publicity,
+                    })}
                   </p>
-                  <p>Snapshot/source hash：{entry.snapshot.contentHash}</p>
+                  <p>{t('claims.snapshotHash', { hash: entry.snapshot.contentHash })}</p>
                   <blockquote>{entry.link.snippet}</blockquote>
-                  <p>Object ref：{entry.snapshot.objectRef}</p>
+                  <p>{t('claims.objectRef', { ref: entry.snapshot.objectRef })}</p>
                 </article>
               );
             })}
           </section>
           {membership.activeRole === 'REVIEWER' && current.revision.status === 'IN_REVIEW' ? (
             <section className="shell-card">
-              <h2>独立审核</h2>
+              <h2>{t('claims.reviewHeading')}</h2>
               <form action={reviewClaim} className="stacked-form">
                 <input name="tenantId" type="hidden" value={tenantId} />
                 <input name="workspaceId" type="hidden" value={workspaceId} />
                 <input name="claimId" type="hidden" value={current.claim.id} />
                 <input name="revisionId" type="hidden" value={current.revision.id} />
-                <label htmlFor="review-note">审核备注</label>
+                <label htmlFor="review-note">{t('claims.reviewNote')}</label>
                 <textarea id="review-note" name="note" required />
                 <button name="decision" type="submit" value="APPROVE">
-                  批准 exact revision
+                  {t('claims.approve')}
                 </button>
                 <button name="decision" type="submit" value="REJECT">
-                  拒绝
+                  {t('claims.reject')}
                 </button>
               </form>
             </section>

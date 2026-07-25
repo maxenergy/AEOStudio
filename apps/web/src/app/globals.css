@@ -382,7 +382,7 @@ summary {
   font-weight: 700;
   letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: #66788f;
+  color: #94a3b8;
 }
 
 .sidebar-group ul {
@@ -426,6 +426,41 @@ summary {
   place-items: center;
   min-height: 100vh;
   color: var(--color-muted);
+}
+
+/* ── 全局语言切换器（固定右上角） ──────────────── */
+
+.locale-switcher {
+  position: fixed;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 50;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  box-shadow: 0 1px 4px rgba(16, 24, 40, 0.14);
+  padding: 0.3rem 0.65rem;
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+
+.locale-switcher select {
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 700;
+  padding: 0.15rem 0.2rem;
+  cursor: pointer;
+}
+
+@media (max-width: 40rem) {
+  .locale-switcher-label {
+    display: none;
+  }
 }
 
 @media (max-width: 40rem) {

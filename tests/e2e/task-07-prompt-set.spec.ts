@@ -5,13 +5,13 @@ test('an Analyst-facing lab proposes, approves and invalidates an exact Prompt S
 }) => {
   await page.goto('/login');
   await page.getByRole('link', { name: '安全登录' }).click();
-  await page.getByLabel('Tenant 名称').fill('Prompt Research Cooperative');
-  await page.getByLabel('Workspace 名称').fill('Research Workspace');
-  await page.getByRole('button', { name: '创建 Workspace' }).click();
+  await page.getByLabel('团队名称').fill('Prompt Research Cooperative');
+  await page.getByLabel('工作空间名称').fill('Research Workspace');
+  await page.getByRole('button', { name: '创建工作空间' }).click();
 
-  await page.getByRole('link', { name: 'Prompt / Scenario Lab' }).click();
-  await expect(page.getByRole('heading', { name: 'Prompt / Scenario Lab' })).toBeVisible();
-  await page.getByLabel('Prompt Set 标题').fill('Guided service discovery');
+  await page.getByRole('link', { name: '问题集 / 场景实验室' }).click();
+  await expect(page.getByRole('heading', { name: '问题集 / 场景实验室' })).toBeVisible();
+  await page.getByLabel('问题集标题').fill('Guided service discovery');
   await page.getByLabel('研究主题').fill('Guided community learning service');
   await page.getByLabel('Profile revision ID').fill('00000000-0000-7000-8000-000000000711');
   await page.getByLabel('Offering revision ID').fill('00000000-0000-7000-8000-000000000712');

@@ -5,7 +5,11 @@ import type {
   WorkspaceListEnvelope,
 } from '@aeostudio/contracts';
 import { cookies } from 'next/headers';
+import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+
+import { makeT } from '../../lib/i18n';
+import { getLocale } from '../../lib/i18n/get-locale';
 
 const ROLE_LABELS = {
   OWNER: 'Owner',
@@ -46,6 +50,7 @@ async function createWorkspace(formData: FormData): Promise<never> {
     redirect('/app?error=create-failed');
   }
   const created = (await response.json()) as CreateTenantEnvelope;
+  revalidatePath('/app', 'layout');
   redirect(
     `/app?tenant=${created.data.tenant.id}&workspace=${created.data.workspace.id}&notice=created`,
   );
@@ -82,6 +87,7 @@ async function inviteMember(formData: FormData): Promise<never> {
     redirect(`/app?tenant=${tenantId}&workspace=${workspaceId}&error=invite-failed`);
   }
   const invited = (await response.json()) as MembershipEnvelope;
+  revalidatePath('/app', 'layout');
   const query = new URLSearchParams({
     tenant: tenantId,
     workspace: workspaceId,
@@ -118,6 +124,7 @@ async function acceptMembership(formData: FormData): Promise<never> {
     },
   );
   if (!response.ok) redirect('/app?error=invitation-accept-failed');
+  revalidatePath('/app', 'layout');
   redirect(`/app?tenant=${tenantId}&workspace=${workspaceId}&notice=accepted`);
 }
 
@@ -126,6 +133,7 @@ interface ApplicationPageProps {
 }
 
 export default async function ApplicationPage({ searchParams }: ApplicationPageProps) {
+  const t = makeT(await getLocale());
   const cookieHeader = (await cookies()).toString();
   const sessionResponse = await fetch(`${apiOrigin()}/api/v1/auth/session`, {
     cache: 'no-store',
@@ -158,20 +166,20 @@ export default async function ApplicationPage({ searchParams }: ApplicationPageP
 
   return (
     <main>
-      <p className="eyebrow">AEO Studio</p>
-      <h1>AEO Studio 工作台</h1>
-      <p>已安全登录：{session.data.email}</p>
+      <p className="eyebrow">{t('workbench.eyebrow')}</p>
+      <h1>{t('workbench.title')}</h1>
+      <p>{t('workbench.signedIn', { email: session.data.email })}</p>
 
       {tenantId !== undefined && workspaceId !== undefined && membershipToAccept !== undefined ? (
         <section aria-labelledby="accept-invitation-heading" className="shell-card">
-          <h2 id="accept-invitation-heading">接受 Workspace 邀请</h2>
-          <p>系统会校验当前登录邮箱与邀请记录；不匹配时不会泄露 Workspace 信息。</p>
+          <h2 id="accept-invitation-heading">{t('workbench.acceptHeading')}</h2>
+          <p>{t('workbench.acceptHelp')}</p>
           <form action={acceptMembership}>
             <input name="tenantId" type="hidden" value={tenantId} />
             <input name="workspaceId" type="hidden" value={workspaceId} />
             <input name="membershipId" type="hidden" value={membershipToAccept} />
             <button className="primary-action" type="submit">
-              接受 Workspace 邀请
+              {t('workbench.acceptAction')}
             </button>
           </form>
         </section>
@@ -180,42 +188,58 @@ export default async function ApplicationPage({ searchParams }: ApplicationPageP
       <section aria-labelledby="workspace-heading" className="shell-card">
         {current === undefined ? (
           <>
-            <h2 id="workspace-heading">Workspace 尚未创建</h2>
-            <p>先建立一个行业中立的 Tenant 与 Workspace，之后再录入你的业务资料。</p>
+            <h2 id="workspace-heading">{t('workbench.emptyHeading')}</h2>
+            <p>{t('workbench.emptyHelp')}</p>
           </>
         ) : (
           <>
             <p className="eyebrow">{current.tenant.name}</p>
             <h2 id="workspace-heading">{current.workspace.name}</h2>
-            <p>当前角色：{ROLE_LABELS[current.activeRole]}</p>
-            <p>使用左侧导航栏进入各功能模块。</p>
+            <p>{t('workbench.currentRole', { role: ROLE_LABELS[current.activeRole] })}</p>
+            <p>{t('workbench.navHint')}</p>
+            {['OWNER', 'ADMIN', 'EDITOR'].includes(current.activeRole) ? (
+              <a
+                className="secondary-action"
+                href={`/app/onboarding?tenant=${current.tenant.id}&workspace=${current.workspace.id}`}
+              >
+                {t('workbench.startOnboarding')}
+              </a>
+            ) : null}
+            {['OWNER', 'ADMIN', 'EDITOR', 'REVIEWER'].includes(current.activeRole) ? (
+              <a
+                className="secondary-action"
+                href={`/app/claims?tenant=${current.tenant.id}&workspace=${current.workspace.id}`}
+              >
+                {t('workbench.claimLedger')}
+              </a>
+            ) : null}
             {query.notice === 'invited' ? (
               <>
                 <p className="success-message" role="status">
-                  邀请已创建，等待对方接受。
+                  {t('workbench.inviteCreated')}
                 </p>
                 {invitationId === undefined || invitationEmail === undefined ? null : (
                   <a
                     href={`/app?tenant=${current.tenant.id}&workspace=${current.workspace.id}&acceptMembership=${invitationId}`}
                   >
-                    {invitationEmail} 接受邀请链接
+                    {t('workbench.acceptLink', { email: invitationEmail })}
                   </a>
                 )}
               </>
             ) : null}
             {query.notice === 'accepted' ? (
               <p className="success-message" role="status">
-                Workspace 邀请已接受。
+                {t('workbench.inviteAccepted')}
               </p>
             ) : null}
             {current.activeRole === 'OWNER' ? (
               <form action={inviteMember} className="stacked-form">
-                <h3>邀请成员</h3>
+                <h3>{t('workbench.inviteHeading')}</h3>
                 <input name="tenantId" type="hidden" value={current.tenant.id} />
                 <input name="workspaceId" type="hidden" value={current.workspace.id} />
-                <label htmlFor="invite-email">受邀人邮箱</label>
+                <label htmlFor="invite-email">{t('workbench.inviteEmail')}</label>
                 <input id="invite-email" name="email" required type="email" />
-                <label htmlFor="invite-role">角色</label>
+                <label htmlFor="invite-role">{t('workbench.inviteRole')}</label>
                 <select defaultValue="EDITOR" id="invite-role" name="role">
                   <option value="ADMIN">Admin</option>
                   <option value="EDITOR">Editor</option>
@@ -225,7 +249,7 @@ export default async function ApplicationPage({ searchParams }: ApplicationPageP
                   <option value="VIEWER">Viewer</option>
                 </select>
                 <button className="primary-action" type="submit">
-                  发送邀请
+                  {t('workbench.inviteAction')}
                 </button>
               </form>
             ) : null}
@@ -234,14 +258,14 @@ export default async function ApplicationPage({ searchParams }: ApplicationPageP
       </section>
 
       <section aria-labelledby="create-workspace-heading" className="shell-card">
-        <h2 id="create-workspace-heading">创建 Tenant 与 Workspace</h2>
+        <h2 id="create-workspace-heading">{t('workbench.createHeading')}</h2>
         <form action={createWorkspace} className="stacked-form">
-          <label htmlFor="tenant-name">Tenant 名称</label>
+          <label htmlFor="tenant-name">{t('workbench.tenantName')}</label>
           <input id="tenant-name" maxLength={120} name="tenantName" required />
-          <label htmlFor="workspace-name">Workspace 名称</label>
+          <label htmlFor="workspace-name">{t('workbench.workspaceName')}</label>
           <input id="workspace-name" maxLength={120} name="workspaceName" required />
           <button className="primary-action" type="submit">
-            创建 Workspace
+            {t('workbench.createAction')}
           </button>
         </form>
       </section>

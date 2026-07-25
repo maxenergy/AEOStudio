@@ -32,6 +32,8 @@ import type {
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
+import { makeT, type TFunction } from '../../../lib/i18n';
+import { getLocale } from '../../../lib/i18n/get-locale';
 import { JobPoller } from '../jobs/job-poller';
 import { ShopifyTargetFields } from './shopify-target-fields';
 
@@ -266,14 +268,14 @@ function shopifyDestinationFromForm(formData: FormData): ShopifyDraftTargetV1['d
     : { kind: 'PRODUCT', operation: 'UPDATE', handle, remoteId: remoteId as string };
 }
 
-function publicationRecoveryGuidance(errorCode: string | null): string | null {
+function publicationRecoveryGuidance(errorCode: string | null, t: TFunction): string | null {
   switch (errorCode) {
     case 'ADAPTER_AUTHORIZATION_SCOPE_INSUFFICIENT':
-      return 'Git 授权权限不足；补齐所需 scopes 后可安全重试。';
+      return t('channels.recoveryScopeInsufficient');
     case 'ADAPTER_AUTHORIZATION_BRANCH_POLICY_CONFLICT':
-      return 'Git branch policy 冲突；确认受保护的 base branch 后可安全重试。';
+      return t('channels.recoveryBranchPolicyConflict');
     case 'ADAPTER_AUTHORIZATION_TARGET_NOT_ALLOWED':
-      return 'Git installation、repository 或 path 不在授权范围；修正授权目标后可安全重试。';
+      return t('channels.recoveryTargetNotAllowed');
     default:
       return null;
   }
@@ -855,6 +857,8 @@ interface ChannelsPageProps {
 }
 
 export default async function ChannelsPage({ searchParams }: ChannelsPageProps) {
+  const locale = await getLocale();
+  const t = makeT(locale);
   const query = await searchParams;
   const tenantId = typeof query.tenant === 'string' ? query.tenant : undefined;
   const workspaceId = typeof query.workspace === 'string' ? query.workspace : undefined;
@@ -1066,80 +1070,83 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
 
   return (
     <main>
-      <p className="eyebrow">AEO Studio</p>
-      <h1>Channel Packages / Publications</h1>
-      <p className="lede">
-        把已批准的 exact Artifact revision
-        转换为可审计渠道适配包。所有渠道都先提供下载；只有资格检查通过且当前角色拥有发布权限
-        时，才显示审核后发布操作。
-      </p>
-      <nav aria-label="Channel Workbench breadcrumb" className="breadcrumb">
-        <a href={`/app?tenant=${tenantId}&workspace=${workspaceId}`}>Workspace</a>
+      <p className="eyebrow">{t('channels.eyebrow')}</p>
+      <h1>{t('channels.title')}</h1>
+      <p className="lede">{t('channels.lede')}</p>
+      <nav aria-label={t('channels.breadcrumbAria')} className="breadcrumb">
+        <a href={`/app?tenant=${tenantId}&workspace=${workspaceId}`}>
+          {t('channels.breadcrumbWorkspace')}
+        </a>
         <span aria-hidden="true">/</span>
-        <a href={`/app/artifacts?tenant=${tenantId}&workspace=${workspaceId}`}>Artifact Studio</a>
+        <a href={`/app/artifacts?tenant=${tenantId}&workspace=${workspaceId}`}>
+          {t('channels.breadcrumbArtifacts')}
+        </a>
         <span aria-hidden="true">/</span>
-        <span aria-current="page">Channels</span>
+        <span aria-current="page">{t('channels.breadcrumbChannels')}</span>
       </nav>
 
       {query.notice === 'package' ? (
         <p className="success-message" role="status">
-          渠道适配包已生成并完成 checksum 验证。
+          {t('channels.noticePackage')}
         </p>
       ) : null}
       {query.notice === 'authorization' ? (
         <p className="success-message" role="status">
-          Channel 授权请求已保存，等待提供商验证；验证通过前仅可导出审核包。
+          {t('channels.noticeAuthorization')}
         </p>
       ) : null}
       {query.notice === 'git-authorization' ? (
         <p className="success-message" role="status">
-          Git 授权请求已保存，等待提供商验证；验证通过前仅可导出审核包。
+          {t('channels.noticeGitAuthorization')}
         </p>
       ) : null}
       {query.notice === 'wordpress-authorization' ? (
         <p className="success-message" role="status">
-          WordPress 授权与草稿目标已保存，等待提供商验证；验证通过前仅可导出审核包。
+          {t('channels.noticeWordPressAuthorization')}
         </p>
       ) : null}
       {query.notice === 'shopify-authorization' ? (
         <p className="success-message" role="status">
-          Shopify 授权与草稿目标已保存，等待提供商验证；验证通过前仅可导出审核包。
+          {t('channels.noticeShopifyAuthorization')}
         </p>
       ) : null}
       {query.notice === 'signed-webhook-authorization' ? (
         <p className="success-message" role="status">
-          Signed Webhook 授权与目标已保存，等待提供商验证；验证通过前仅可导出审核包。
+          {t('channels.noticeSignedWebhookAuthorization')}
         </p>
       ) : null}
       {query.notice === 'authorization-revoked' ? (
         <p className="success-message" role="status">
-          Channel 授权已撤销。
+          {t('channels.noticeAuthorizationRevoked')}
         </p>
       ) : null}
       {query.notice === 'publication' ? (
         <p className="success-message" role="status">
-          发布命令已进入可审计执行队列。
+          {t('channels.noticePublication')}
         </p>
       ) : null}
       {query.notice === 'remote-status-refreshed' ? (
         <p className="success-message" role="status">
-          Pull Request 状态已从 Provider 重新确认。
+          {t('channels.noticeRemoteStatusRefreshed')}
         </p>
       ) : null}
       {typeof query.error === 'string' ? (
         <p className="error-message" role="alert">
-          操作未完成：{typeof query.code === 'string' ? query.code : query.error}。请检查当前
-          revision、授权和目标后重试。
+          {t('channels.errorGeneric', {
+            code: typeof query.code === 'string' ? query.code : query.error,
+          })}
         </p>
       ) : null}
 
       <section aria-labelledby="registry-heading" className="shell-card">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">Registry-driven</p>
-            <h2 id="registry-heading">Available channels</h2>
+            <p className="eyebrow">{t('channels.registryEyebrow')}</p>
+            <h2 id="registry-heading">{t('channels.registryHeading')}</h2>
           </div>
-          <span className="status-badge neutral">{registry.data.entries.length} channels</span>
+          <span className="status-badge neutral">
+            {t('channels.registryCount', { count: registry.data.entries.length })}
+          </span>
         </div>
         <div className="channel-grid">
           {registry.data.entries.map((entry) => (
@@ -1148,12 +1155,12 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
               <p>
                 <code>{entry.channelKey}</code>
               </p>
-              <p>状态：{entry.status}</p>
-              <p>Package schema：{entry.packageSchemaVersion}</p>
+              <p>{t('channels.registryStatus', { status: entry.status })}</p>
+              <p>{t('channels.registryPackageSchema', { version: entry.packageSchemaVersion })}</p>
               <p>
-                Adapters：
+                {t('channels.registryAdaptersLabel')}
                 {entry.adapterVersions.length === 0
-                  ? 'none · export only'
+                  ? t('channels.registryNoAdapters')
                   : entry.adapterVersions
                       .map((adapter) => `${adapter.adapterKey}@${adapter.adapterVersion}`)
                       .join(', ')}
@@ -1161,19 +1168,19 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
               {entry.channelProfile === undefined || entry.channelProfile === null ? null : (
                 <div data-testid="channel-profile-summary">
                   <p className="monospace break-anywhere">
-                    Channel profile：{entry.channelProfile.profileVersion} ·{' '}
-                    {entry.channelProfile.profileHash}
+                    {t('channels.profileSummary', {
+                      version: entry.channelProfile.profileVersion,
+                      hash: entry.channelProfile.profileHash,
+                    })}
                   </p>
                   <p>
-                    Required fields：
-                    {entry.channelProfile.fieldRequirements
-                      .map((requirement) => requirement.field)
-                      .join(', ')}
+                    {t('channels.requiredFields', {
+                      fields: entry.channelProfile.fieldRequirements
+                        .map((requirement) => requirement.field)
+                        .join(', '),
+                    })}
                   </p>
-                  <p className="field-help">
-                    此渠道首期生成审核适配包；只有 Registry 后续存在合规 Adapter
-                    且授权通过时，发布按钮才可执行外部写入。
-                  </p>
+                  <p className="field-help">{t('channels.profileHelp')}</p>
                 </div>
               )}
             </article>
@@ -1182,27 +1189,29 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
       </section>
 
       <section aria-labelledby="package-builder-heading" className="shell-card">
-        <h2 id="package-builder-heading">生成 exact Channel Package</h2>
+        <h2 id="package-builder-heading">{t('channels.builderHeading')}</h2>
         {artifact === undefined ? (
           <p>
-            请先从{' '}
+            {t('channels.builderNeedArtifactPrefix')}{' '}
             <a href={`/app/artifacts?tenant=${tenantId}&workspace=${workspaceId}`}>
-              Artifact Studio
+              {t('channels.builderArtifactStudioLink')}
             </a>{' '}
-            打开一个已批准 Artifact。
+            {t('channels.builderNeedArtifactSuffix')}
           </p>
         ) : approvedRevisions.length === 0 ? (
           <p className="error-message" role="status">
-            这个 Artifact 当前没有可选择的 approved revision/hash。
+            {t('channels.builderNoRevisions')}
           </p>
         ) : !mayBuild ? (
-          <p>当前角色可查看与下载既有适配包，但不能创建或发布。</p>
+          <p>{t('channels.builderNoPermission')}</p>
         ) : (
           <form action={buildChannelPackage} className="stacked-form wide-form">
             <input name="tenantId" type="hidden" value={tenantId} />
             <input name="workspaceId" type="hidden" value={workspaceId} />
             <input name="artifactId" type="hidden" value={artifact.artifact.id} />
-            <label htmlFor="approved-artifact-revision">Approved Artifact revision</label>
+            <label htmlFor="approved-artifact-revision">
+              {t('channels.approvedRevisionLabel')}
+            </label>
             <select
               defaultValue={selectedRevisionId}
               id="approved-artifact-revision"
@@ -1215,10 +1224,8 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
                 </option>
               ))}
             </select>
-            <p className="field-help">
-              只列出 approval 与当前 source lineage 均有效的 exact revision/hash。
-            </p>
-            <label htmlFor="channel-registry-select">Channel Registry</label>
+            <p className="field-help">{t('channels.approvedRevisionHelp')}</p>
+            <label htmlFor="channel-registry-select">{t('channels.registrySelectLabel')}</label>
             <select
               defaultValue={selectedChannel?.channelKey}
               id="channel-registry-select"
@@ -1232,7 +1239,7 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
               ))}
             </select>
             <button className="primary-action" type="submit">
-              生成渠道适配包
+              {t('channels.buildAction')}
             </button>
           </form>
         )}
@@ -1243,47 +1250,70 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
           <section aria-labelledby="package-preview-heading" className="shell-card">
             <div className="section-heading">
               <div>
-                <p className="eyebrow">Immutable package R{channelPackage.packageRevision}</p>
-                <h2 id="package-preview-heading">Exact package preview</h2>
+                <p className="eyebrow">
+                  {t('channels.packageEyebrow', { revision: channelPackage.packageRevision })}
+                </p>
+                <h2 id="package-preview-heading">{t('channels.packagePreviewHeading')}</h2>
               </div>
-              <span className="status-badge ready">Verified</span>
+              <span className="status-badge ready">{t('channels.packageVerifiedBadge')}</span>
             </div>
             <p data-testid="channel-package-checksum" className="monospace break-anywhere">
-              Package checksum：{channelPackage.packageChecksum}
+              {t('channels.packageChecksum', { checksum: channelPackage.packageChecksum })}
             </p>
             <p data-testid="channel-package-exact-artifact" className="monospace break-anywhere">
-              Artifact revision：{channelPackage.artifact.artifactRevisionId} · R
-              {channelPackage.artifact.revision} · {channelPackage.artifact.contentHash}
+              {t('channels.packageArtifactRevision', {
+                id: channelPackage.artifact.artifactRevisionId,
+                revision: channelPackage.artifact.revision,
+                hash: channelPackage.artifact.contentHash,
+              })}
             </p>
-            <p>Channel：{channelPackage.channel.channelKey}</p>
+            <p>{t('channels.packageChannel', { channel: channelPackage.channel.channelKey })}</p>
             <a
               className="secondary-action download-action"
               href={`${publicApiOrigin()}/api/v1/tenants/${tenantId}/workspaces/${workspaceId}/channel-packages/${packageId}/export`}
             >
               {channelPackage.manifest.channelProfile === undefined
-                ? '下载渠道适配包'
-                : '审核后导出渠道适配包'}
+                ? t('channels.downloadAction')
+                : t('channels.downloadReviewedAction')}
             </a>
 
             <div data-testid="channel-package-manifest" className="manifest-panel">
-              <h3>Manifest</h3>
-              <p>Schema version：{channelPackage.manifest.schemaVersion}</p>
+              <h3>{t('channels.manifestHeading')}</h3>
+              <p>
+                {t('channels.manifestSchemaVersion', {
+                  version: channelPackage.manifest.schemaVersion,
+                })}
+              </p>
               {channelPackage.manifest.channelProfile === undefined ? null : (
                 <div className="nested-card" data-testid="channel-package-profile">
                   <p>
-                    <strong>Reviewed-before-publish Channel Profile</strong>
+                    <strong>{t('channels.profileReviewedHeading')}</strong>
                   </p>
-                  <p>Channel：{channelPackage.manifest.channelProfile.channel}</p>
-                  <p>Profile version：{channelPackage.manifest.channelProfile.profileVersion}</p>
+                  <p>
+                    {t('channels.profileChannel', {
+                      channel: channelPackage.manifest.channelProfile.channel,
+                    })}
+                  </p>
+                  <p>
+                    {t('channels.profileVersion', {
+                      version: channelPackage.manifest.channelProfile.profileVersion,
+                    })}
+                  </p>
                   <p className="monospace break-anywhere">
-                    Profile hash：{channelPackage.manifest.channelProfile.profileHash}
+                    {t('channels.profileHash', {
+                      hash: channelPackage.manifest.channelProfile.profileHash,
+                    })}
                   </p>
                   <ul>
                     {channelPackage.manifest.channelProfile.fieldRequirements.map((requirement) => (
                       <li key={requirement.field}>
                         <strong>{requirement.field}</strong> ← {requirement.sourcePointer} ·{' '}
-                        {requirement.required ? 'required' : 'optional'} · length{' '}
-                        {requirement.minLength ?? 'none'}..{requirement.maxLength ?? 'none'} ·{' '}
+                        {requirement.required
+                          ? t('channels.requirementRequired')
+                          : t('channels.requirementOptional')}{' '}
+                        · {t('channels.requirementLength')}{' '}
+                        {requirement.minLength ?? t('channels.requirementNone')}..
+                        {requirement.maxLength ?? t('channels.requirementNone')} ·{' '}
                         {requirement.format}
                       </li>
                     ))}
@@ -1294,10 +1324,10 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
                 <table>
                   <thead>
                     <tr>
-                      <th>Path</th>
-                      <th>Media type</th>
-                      <th>SHA-256</th>
-                      <th>Bytes</th>
+                      <th>{t('channels.manifestColPath')}</th>
+                      <th>{t('channels.manifestColMediaType')}</th>
+                      <th>{t('channels.manifestColSha256')}</th>
+                      <th>{t('channels.manifestColBytes')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1313,9 +1343,9 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
                 </table>
               </div>
               <div data-testid="channel-package-asset-refs">
-                <h3>Asset refs</h3>
+                <h3>{t('channels.assetRefsHeading')}</h3>
                 {channelPackage.manifest.assetRefs.length === 0 ? (
-                  <p>none</p>
+                  <p>{t('channels.assetRefsNone')}</p>
                 ) : (
                   <ul>
                     {channelPackage.manifest.assetRefs.map((ref) => (
@@ -1325,16 +1355,23 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
                 )}
               </div>
               <div data-testid="channel-package-claim-source-map">
-                <h3>Claim / source map</h3>
+                <h3>{t('channels.claimSourceMapHeading')}</h3>
                 {channelPackage.manifest.claimSourceMap.map((claim) => (
                   <article className="nested-card" key={claim.claimRevisionId}>
                     <p className="monospace break-anywhere">
-                      Claim：{claim.claimId} · {claim.claimRevisionId} · {claim.claimContentHash}
+                      {t('channels.claimMapClaim', {
+                        id: claim.claimId,
+                        revision: claim.claimRevisionId,
+                        hash: claim.claimContentHash,
+                      })}
                     </p>
                     {claim.evidence.map((evidence) => (
                       <p className="monospace break-anywhere" key={evidence.snapshotId}>
-                        Evidence：{evidence.sourceId} · {evidence.snapshotId} ·{' '}
-                        {evidence.sourceHash}
+                        {t('channels.claimMapEvidence', {
+                          source: evidence.sourceId,
+                          snapshot: evidence.snapshotId,
+                          hash: evidence.sourceHash,
+                        })}
                       </p>
                     ))}
                   </article>
@@ -1343,15 +1380,15 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
             </div>
 
             <details open>
-              <summary>Markdown preview</summary>
+              <summary>{t('channels.markdownPreviewSummary')}</summary>
               <pre data-testid="channel-package-markdown">{channelPackage.preview.markdown}</pre>
             </details>
             <details open>
-              <summary>HTML source</summary>
+              <summary>{t('channels.htmlSourceSummary')}</summary>
               <pre data-testid="channel-package-html-source">{channelPackage.preview.html}</pre>
             </details>
             <details open>
-              <summary>JSON-LD</summary>
+              <summary>{t('channels.jsonLdSummary')}</summary>
               <pre data-testid="channel-package-json-ld">
                 {JSON.stringify(channelPackage.preview.jsonLd, null, 2)}
               </pre>
@@ -1359,18 +1396,23 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
           </section>
 
           <section aria-labelledby="eligibility-heading" className="shell-card">
-            <h2 id="eligibility-heading">Publication eligibility</h2>
+            <h2 id="eligibility-heading">{t('channels.eligibilityHeading')}</h2>
             <div data-testid="publication-eligibility" aria-live="polite">
               {eligibility === undefined ? (
                 <p>
                   {eligibilityProblem === undefined
-                    ? '当前角色仅可查看发布记录。'
-                    : `${eligibilityProblem.code} · ${eligibilityProblem.detail ?? '资格检查失败。'}`}
+                    ? t('channels.eligibilityViewOnly')
+                    : t('channels.eligibilityProblem', {
+                        code: eligibilityProblem.code,
+                        detail:
+                          eligibilityProblem.detail ??
+                          t('channels.eligibilityProblemDefaultDetail'),
+                      })}
                 </p>
               ) : eligibility.eligibility.mode === 'EXPORT_ONLY' ? (
                 <div className="state-panel export-only">
                   <p>
-                    <strong>EXPORT_ONLY</strong> · 此适配包仍可下载并交由人工审核处理。
+                    <strong>EXPORT_ONLY</strong> {t('channels.exportOnlyNote')}
                   </p>
                   <ul>
                     {eligibility.eligibility.reasons.map((reason) => (
@@ -1384,15 +1426,14 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
                       className="secondary-action download-action"
                       href={`${publicApiOrigin()}/api/v1/tenants/${tenantId}/workspaces/${workspaceId}/channel-packages/${packageId}/export`}
                     >
-                      审核后导出 / 人工交接
+                      {t('channels.exportHandoffAction')}
                     </a>
                   )}
                 </div>
               ) : (
                 <div className="state-panel publish-ready">
                   <p>
-                    <strong>PUBLISH_READY</strong> · exact approval、授权、terms、scope 与 runtime
-                    均有效。
+                    <strong>PUBLISH_READY</strong> {t('channels.publishReadyNote')}
                   </p>
                 </div>
               )}
@@ -1400,35 +1441,35 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
 
             {gitTarget === undefined ? null : (
               <div className="nested-card" data-testid="git-planned-diff">
-                <p className="eyebrow">Planned file diff</p>
-                <h3>Git Pull Request target</h3>
+                <p className="eyebrow">{t('channels.gitDiffEyebrow')}</p>
+                <h3>{t('channels.gitTargetHeading')}</h3>
                 <p>
-                  Repository：<strong>{gitTarget.repository}</strong>
-                </p>
-                <p>
-                  Protected base：<strong>{gitTarget.baseBranch}</strong>
+                  {t('channels.gitRepositoryValue')}
+                  <strong>{gitTarget.repository}</strong>
                 </p>
                 <p>
-                  Authorized path：<strong>{gitTarget.pathPrefix}</strong>
+                  {t('channels.gitProtectedBaseValue')}
+                  <strong>{gitTarget.baseBranch}</strong>
                 </p>
-                <p className="field-help">
-                  这是根据 exact Channel Package 生成的计划写入清单；不会直接写入 protected
-                  branch，也不代表内容已部署或上线。
+                <p>
+                  {t('channels.gitAuthorizedPathValue')}
+                  <strong>{gitTarget.pathPrefix}</strong>
                 </p>
+                <p className="field-help">{t('channels.gitDiffHelp')}</p>
                 <div className="table-scroll">
                   <table>
                     <thead>
                       <tr>
-                        <th>Planned path</th>
-                        <th>Operation</th>
-                        <th>SHA-256</th>
+                        <th>{t('channels.gitColPlannedPath')}</th>
+                        <th>{t('channels.gitColOperation')}</th>
+                        <th>{t('channels.manifestColSha256')}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {channelPackage.manifest.files.map((file) => (
                         <tr data-testid="git-planned-file" key={file.path}>
                           <td>{`${gitTarget.pathPrefix}/${file.path}`}</td>
-                          <td>CREATE / UPDATE</td>
+                          <td>{t('channels.gitOperationCell')}</td>
                           <td className="monospace">{file.sha256}</td>
                         </tr>
                       ))}
@@ -1440,90 +1481,115 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
 
             {wordpressTarget === undefined || wordpressRequestPath === undefined ? null : (
               <div className="nested-card" data-testid="wordpress-mapped-payload-preview">
-                <p className="eyebrow">Mapped draft payload</p>
-                <h3>WordPress / WooCommerce draft target</h3>
+                <p className="eyebrow">{t('channels.wordpressEyebrow')}</p>
+                <h3>{t('channels.wordpressTargetHeading')}</h3>
                 <p className="monospace">
                   POST {wordpressRequestPath}
                   {wordpressTarget.destination.operation === 'UPDATE'
                     ? `/${String(wordpressTarget.destination.remoteId)}`
                     : ''}
                 </p>
-                <p>status：draft</p>
-                <p>operation：{wordpressTarget.destination.operation}</p>
-                <p>content type：{wordpressTarget.destination.kind}</p>
-                <p>slug：{wordpressTarget.destination.slug}</p>
+                <p>{t('channels.wordpressStatusDraft')}</p>
+                <p>
+                  {t('channels.wordpressOperationValue', {
+                    operation: wordpressTarget.destination.operation,
+                  })}
+                </p>
+                <p>
+                  {t('channels.wordpressContentTypeValue', {
+                    kind: wordpressTarget.destination.kind,
+                  })}
+                </p>
+                <p>
+                  {t('channels.wordpressSlugValue', { slug: wordpressTarget.destination.slug })}
+                </p>
                 {'categoryIds' in wordpressTarget.destination ? (
                   <p>
-                    categories：
-                    {wordpressTarget.destination.categoryIds.join(', ') || 'none'}
+                    {t('channels.wordpressCategoriesLabel')}
+                    {wordpressTarget.destination.categoryIds.join(', ') ||
+                      t('channels.wordpressCategoriesNone')}
                   </p>
                 ) : null}
                 <p className="monospace break-anywhere">
-                  Artifact revision：{channelPackage.artifact.artifactRevisionId} · R
-                  {channelPackage.artifact.revision} · {channelPackage.artifact.contentHash}
+                  {t('channels.packageArtifactRevision', {
+                    id: channelPackage.artifact.artifactRevisionId,
+                    revision: channelPackage.artifact.revision,
+                    hash: channelPackage.artifact.contentHash,
+                  })}
                 </p>
                 <p className="monospace break-anywhere">
-                  Package checksum：{channelPackage.packageChecksum}
+                  {t('channels.packageChecksum', { checksum: channelPackage.packageChecksum })}
                 </p>
-                <p className="field-help">
-                  适配器会硬编码 draft 并在写入后读回核对；此预览不会创建或上线内容。
-                </p>
+                <p className="field-help">{t('channels.wordpressPreviewHelp')}</p>
               </div>
             )}
 
             {shopifyTarget === undefined || shopifyMutation === undefined ? null : (
               <div className="nested-card" data-testid="shopify-mapped-graphql-preview">
-                <p className="eyebrow">Mapped unpublished GraphQL payload</p>
-                <h3>Shopify Draft target</h3>
+                <p className="eyebrow">{t('channels.shopifyEyebrow')}</p>
+                <h3>{t('channels.shopifyTargetHeading')}</h3>
                 <p className="monospace">POST /admin/api/{shopifyTarget.apiVersion}/graphql.json</p>
                 <p className="monospace">mutation {shopifyMutation.operationName}</p>
                 <p className="monospace">{shopifyMutation.field}</p>
                 <p>{shopifyMutation.guard}</p>
-                <p>contentType：{shopifyTarget.destination.kind}</p>
-                <p>operation：{shopifyTarget.destination.operation}</p>
-                <p>handle：{shopifyTarget.destination.handle}</p>
-                <p className="monospace break-anywhere">
-                  Artifact revision：{channelPackage.artifact.artifactRevisionId} · R
-                  {channelPackage.artifact.revision} · {channelPackage.artifact.contentHash}
+                <p>
+                  {t('channels.shopifyContentTypeValue', { kind: shopifyTarget.destination.kind })}
+                </p>
+                <p>
+                  {t('channels.shopifyOperationValue', {
+                    operation: shopifyTarget.destination.operation,
+                  })}
+                </p>
+                <p>
+                  {t('channels.shopifyHandleValue', { handle: shopifyTarget.destination.handle })}
                 </p>
                 <p className="monospace break-anywhere">
-                  Package checksum：{channelPackage.packageChecksum}
+                  {t('channels.packageArtifactRevision', {
+                    id: channelPackage.artifact.artifactRevisionId,
+                    revision: channelPackage.artifact.revision,
+                    hash: channelPackage.artifact.contentHash,
+                  })}
                 </p>
-                <p className="field-help">
-                  适配器只写入未公开状态并在写入后读回核对；此预览不会创建或上线内容。
+                <p className="monospace break-anywhere">
+                  {t('channels.packageChecksum', { checksum: channelPackage.packageChecksum })}
                 </p>
+                <p className="field-help">{t('channels.shopifyPreviewHelp')}</p>
               </div>
             )}
 
             {signedWebhookTarget === undefined ? null : (
               <div className="nested-card" data-testid="signed-webhook-delivery-preview">
-                <p className="eyebrow">Versioned signed delivery preview</p>
-                <h3>Signed Webhook target</h3>
+                <p className="eyebrow">{t('channels.webhookEyebrow')}</p>
+                <h3>{t('channels.webhookTargetHeading')}</h3>
                 <p className="monospace break-anywhere">POST {signedWebhookTarget.endpointUrl}</p>
                 <p className="monospace break-anywhere">
                   Reconcile POST {signedWebhookTarget.receiptUrl}
                 </p>
-                <p>schemaVersion：1.0.0</p>
-                <p>eventType：channel-package.approved.v1</p>
-                <p>algorithm：{signedWebhookTarget.algorithm}</p>
-                <p>keyId：{signedWebhookTarget.keyId}</p>
+                <p>{t('channels.webhookSchemaVersionValue')}</p>
+                <p>{t('channels.webhookEventTypeValue')}</p>
+                <p>
+                  {t('channels.webhookAlgorithmValue', {
+                    algorithm: signedWebhookTarget.algorithm,
+                  })}
+                </p>
+                <p>{t('channels.webhookKeyIdValue', { keyId: signedWebhookTarget.keyId })}</p>
                 <p className="monospace break-anywhere">
-                  Artifact revision：{channelPackage.artifact.artifactRevisionId} · R
-                  {channelPackage.artifact.revision} · {channelPackage.artifact.contentHash}
+                  {t('channels.packageArtifactRevision', {
+                    id: channelPackage.artifact.artifactRevisionId,
+                    revision: channelPackage.artifact.revision,
+                    hash: channelPackage.artifact.contentHash,
+                  })}
                 </p>
                 <p className="monospace break-anywhere">
-                  Package checksum：{channelPackage.packageChecksum}
+                  {t('channels.packageChecksum', { checksum: channelPackage.packageChecksum })}
                 </p>
-                <p className="field-help">
-                  发送时覆盖 timestamp、nonce、Content-Digest 与 exact canonical body；202、超时和
-                  5xx 不视为成功，必须通过 receipt reconcile 确认。
-                </p>
+                <p className="field-help">{t('channels.webhookPreviewHelp')}</p>
               </div>
             )}
 
             {canManageAuthorizations && selectedAdapter !== undefined ? (
               <form action={saveChannelAuthorization} className="stacked-form wide-form">
-                <h3>配置 Channel authorization</h3>
+                <h3>{t('channels.authorizationHeading')}</h3>
                 <input name="tenantId" type="hidden" value={tenantId} />
                 <input name="workspaceId" type="hidden" value={workspaceId} />
                 <input name="artifactId" type="hidden" value={channelPackage.artifact.artifactId} />
@@ -1541,19 +1607,19 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
                 <input name="adapterVersionId" type="hidden" value={selectedAdapter.id} />
                 <input name="adapterKey" type="hidden" value={selectedAdapter.adapterKey} />
                 <p>
-                  Adapter：
+                  {t('channels.authorizationAdapterLabel')}
                   <code>
                     {selectedAdapter.adapterKey}@{selectedAdapter.adapterVersion}
                   </code>
                 </p>
                 <p>
-                  Required scopes：
+                  {t('channels.authorizationRequiredScopesLabel')}
                   <strong data-testid="channel-adapter-required-scopes">
-                    {selectedAdapter.requiredScopes.join(', ') || 'none'}
+                    {selectedAdapter.requiredScopes.join(', ') || t('channels.authorizationNone')}
                   </strong>
                 </p>
                 <p>
-                  Terms version：
+                  {t('channels.authorizationTermsVersionLabel')}
                   <strong data-testid="channel-adapter-terms-version">
                     {selectedAdapter.termsVersion}
                   </strong>{' '}
@@ -1561,14 +1627,16 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
                 </p>
                 {selectedAdapter.adapterKey === 'git-pull-request' ? (
                   <>
-                    <label htmlFor="git-installation-id">Git installation ID</label>
+                    <label htmlFor="git-installation-id">
+                      {t('channels.gitInstallationIdField')}
+                    </label>
                     <input
                       defaultValue={gitTarget?.installationId ?? ''}
                       id="git-installation-id"
                       name="gitInstallationId"
                       required
                     />
-                    <label htmlFor="git-repository">Git repository</label>
+                    <label htmlFor="git-repository">{t('channels.gitRepositoryField')}</label>
                     <input
                       defaultValue={gitTarget?.repository ?? ''}
                       id="git-repository"
@@ -1576,14 +1644,14 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
                       placeholder="owner/repository"
                       required
                     />
-                    <label htmlFor="git-base-branch">Protected base branch</label>
+                    <label htmlFor="git-base-branch">{t('channels.gitBaseBranchField')}</label>
                     <input
                       defaultValue={gitTarget?.baseBranch ?? 'main'}
                       id="git-base-branch"
                       name="gitBaseBranch"
                       required
                     />
-                    <label htmlFor="git-path-prefix">Authorized path prefix</label>
+                    <label htmlFor="git-path-prefix">{t('channels.gitPathPrefixField')}</label>
                     <input
                       defaultValue={gitTarget?.pathPrefix ?? ''}
                       id="git-path-prefix"
@@ -1594,7 +1662,9 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
                   </>
                 ) : selectedAdapter.adapterKey === 'wordpress-woocommerce-draft' ? (
                   <>
-                    <label htmlFor="wordpress-site-url">WordPress Site URL (HTTPS only)</label>
+                    <label htmlFor="wordpress-site-url">
+                      {t('channels.wordpressSiteUrlField')}
+                    </label>
                     <input
                       defaultValue={wordpressTarget?.siteUrl ?? ''}
                       id="wordpress-site-url"
@@ -1603,39 +1673,47 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
                       required
                       type="url"
                     />
-                    <label htmlFor="wordpress-auth-mode">WordPress authorization mode</label>
+                    <label htmlFor="wordpress-auth-mode">
+                      {t('channels.wordpressAuthModeField')}
+                    </label>
                     <select
                       defaultValue={wordpressTarget?.authMode ?? 'APPLICATION_PASSWORD'}
                       id="wordpress-auth-mode"
                       name="wordpressAuthMode"
                       required
                     >
-                      <option value="APPLICATION_PASSWORD">Application Password</option>
-                      <option value="OAUTH">OAuth</option>
-                      <option value="APPROVED_TOKEN">Approved token</option>
+                      <option value="APPLICATION_PASSWORD">
+                        {t('channels.wordpressAuthModePassword')}
+                      </option>
+                      <option value="OAUTH">{t('channels.wordpressAuthModeOAuth')}</option>
+                      <option value="APPROVED_TOKEN">{t('channels.wordpressAuthModeToken')}</option>
                     </select>
-                    <label htmlFor="wordpress-content-type">WordPress content type</label>
+                    <label htmlFor="wordpress-content-type">
+                      {t('channels.wordpressContentTypeField')}
+                    </label>
                     <select
                       defaultValue={wordpressTarget?.destination.kind ?? 'PAGE'}
                       id="wordpress-content-type"
                       name="wordpressContentType"
                       required
                     >
-                      <option value="PAGE">Page</option>
-                      <option value="POST">Post</option>
-                      <option value="PRODUCT">WooCommerce product</option>
+                      <option value="PAGE">{t('channels.wordpressContentTypePage')}</option>
+                      <option value="POST">{t('channels.wordpressContentTypePost')}</option>
+                      <option value="PRODUCT">{t('channels.wordpressContentTypeProduct')}</option>
                     </select>
-                    <label htmlFor="wordpress-operation">WordPress draft operation</label>
+                    <label htmlFor="wordpress-operation">
+                      {t('channels.wordpressOperationField')}
+                    </label>
                     <select
                       defaultValue={wordpressTarget?.destination.operation ?? 'CREATE'}
                       id="wordpress-operation"
                       name="wordpressOperation"
                       required
                     >
-                      <option value="CREATE">Create new draft</option>
-                      <option value="UPDATE">Update owned draft</option>
+                      <option value="CREATE">{t('channels.wordpressOperationCreate')}</option>
+                      <option value="UPDATE">{t('channels.wordpressOperationUpdate')}</option>
                     </select>
-                    <label htmlFor="wordpress-slug">WordPress slug</label>
+                    <label htmlFor="wordpress-slug">{t('channels.wordpressSlugField')}</label>
                     <input
                       defaultValue={wordpressTarget?.destination.slug ?? ''}
                       id="wordpress-slug"
@@ -1644,7 +1722,7 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
                       required
                     />
                     <label htmlFor="wordpress-remote-id">
-                      WordPress existing draft ID（UPDATE only）
+                      {t('channels.wordpressRemoteIdField')}
                     </label>
                     <input
                       defaultValue={
@@ -1658,7 +1736,7 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
                       type="number"
                     />
                     <label htmlFor="wordpress-category-ids">
-                      WordPress / WooCommerce category IDs（POST / PRODUCT，可选）
+                      {t('channels.wordpressCategoryIdsField')}
                     </label>
                     <input
                       defaultValue={
@@ -1674,7 +1752,9 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
                   </>
                 ) : selectedAdapter.adapterKey === 'shopify-draft' ? (
                   <>
-                    <label htmlFor="shopify-shop-domain">Shopify Shop domain</label>
+                    <label htmlFor="shopify-shop-domain">
+                      {t('channels.shopifyShopDomainField')}
+                    </label>
                     <input
                       defaultValue={shopifyTarget?.shopDomain ?? ''}
                       id="shopify-shop-domain"
@@ -1688,6 +1768,7 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
                       }
                       contentType={shopifyTarget?.destination.kind ?? 'PAGE'}
                       handle={shopifyTarget?.destination.handle ?? ''}
+                      locale={locale}
                       operation={shopifyTarget?.destination.operation ?? 'CREATE'}
                       {...(shopifyTarget?.destination.kind === 'BLOG_ARTICLE'
                         ? { blogId: shopifyTarget.destination.blogId }
@@ -1700,7 +1781,7 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
                 ) : selectedAdapter.adapterKey === 'signed-webhook' ? (
                   <>
                     <label htmlFor="webhook-delivery-endpoint">
-                      Webhook delivery endpoint (verified HTTPS)
+                      {t('channels.webhookDeliveryEndpointField')}
                     </label>
                     <input
                       defaultValue={signedWebhookTarget?.endpointUrl ?? ''}
@@ -1711,7 +1792,7 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
                       type="url"
                     />
                     <label htmlFor="webhook-receipt-endpoint">
-                      Webhook receipt endpoint (same verified origin)
+                      {t('channels.webhookReceiptEndpointField')}
                     </label>
                     <input
                       defaultValue={signedWebhookTarget?.receiptUrl ?? ''}
@@ -1722,7 +1803,7 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
                       type="url"
                     />
                     <label htmlFor="webhook-endpoint-verification-id">
-                      Endpoint verification ID
+                      {t('channels.webhookVerificationIdField')}
                     </label>
                     <input
                       defaultValue={signedWebhookTarget?.endpointVerificationId ?? ''}
@@ -1730,17 +1811,21 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
                       name="webhookEndpointVerificationId"
                       required
                     />
-                    <label htmlFor="webhook-signing-algorithm">Webhook signing algorithm</label>
+                    <label htmlFor="webhook-signing-algorithm">
+                      {t('channels.webhookAlgorithmField')}
+                    </label>
                     <select
                       defaultValue={signedWebhookTarget?.algorithm ?? 'HMAC_SHA256'}
                       id="webhook-signing-algorithm"
                       name="webhookSigningAlgorithm"
                       required
                     >
-                      <option value="HMAC_SHA256">HMAC SHA-256</option>
-                      <option value="ED25519">Ed25519</option>
+                      <option value="HMAC_SHA256">{t('channels.webhookAlgorithmHmac')}</option>
+                      <option value="ED25519">{t('channels.webhookAlgorithmEd25519')}</option>
                     </select>
-                    <label htmlFor="webhook-signing-key-id">Webhook signing key ID</label>
+                    <label htmlFor="webhook-signing-key-id">
+                      {t('channels.webhookKeyIdField')}
+                    </label>
                     <input
                       defaultValue={signedWebhookTarget?.keyId ?? ''}
                       id="webhook-signing-key-id"
@@ -1750,7 +1835,9 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
                   </>
                 ) : (
                   <>
-                    <label htmlFor="channel-authorization-target">授权目标</label>
+                    <label htmlFor="channel-authorization-target">
+                      {t('channels.authorizationTargetField')}
+                    </label>
                     <input
                       defaultValue={effectiveTarget}
                       id="channel-authorization-target"
@@ -1761,19 +1848,18 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
                 )}
                 <label htmlFor="channel-secret-arn">
                   {selectedAdapter.adapterKey === 'wordpress-woocommerce-draft'
-                    ? 'WordPress Application Password secret ARN'
+                    ? t('channels.wordpressSecretArnField')
                     : selectedAdapter.adapterKey === 'shopify-draft'
-                      ? 'Shopify OAuth secret ARN'
+                      ? t('channels.shopifySecretArnField')
                       : selectedAdapter.adapterKey === 'signed-webhook'
-                        ? 'Webhook signing key ring secret ARN'
-                        : 'AWS Secrets Manager ARN'}
+                        ? t('channels.webhookSecretArnField')
+                        : t('channels.secretArnField')}
                 </label>
                 <input autoComplete="off" id="channel-secret-arn" name="secretArn" required />
-                <p className="field-help">
-                  仅保存 Singapore Secrets Manager 引用；credential value 不进入浏览器、Job、Outbox
-                  或 PublicationRecord。
-                </p>
-                <label htmlFor="channel-authorization-expiry">授权到期时间（可选）</label>
+                <p className="field-help">{t('channels.secretArnHelp')}</p>
+                <label htmlFor="channel-authorization-expiry">
+                  {t('channels.authorizationExpiryField')}
+                </label>
                 <input
                   id="channel-authorization-expiry"
                   name="expiresAt"
@@ -1781,23 +1867,23 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
                 />
                 <button className="secondary-button" type="submit">
                   {selectedAdapter.adapterKey === 'git-pull-request'
-                    ? '保存 Git 授权'
+                    ? t('channels.saveGitAuthorizationAction')
                     : selectedAdapter.adapterKey === 'wordpress-woocommerce-draft'
-                      ? '保存 WordPress 授权与草稿目标'
+                      ? t('channels.saveWordPressAuthorizationAction')
                       : selectedAdapter.adapterKey === 'shopify-draft'
-                        ? '保存 Shopify 授权与草稿目标'
+                        ? t('channels.saveShopifyAuthorizationAction')
                         : selectedAdapter.adapterKey === 'signed-webhook'
-                          ? '保存 Signed Webhook 授权与目标'
-                          : '保存 Channel 授权'}
+                          ? t('channels.saveWebhookAuthorizationAction')
+                          : t('channels.saveAuthorizationAction')}
                 </button>
               </form>
             ) : null}
 
             {canManageAuthorizations ? (
               <div className="stacked-form" data-testid="channel-authorization-list">
-                <h3>现有 Channel authorizations</h3>
+                <h3>{t('channels.authorizationListHeading')}</h3>
                 {channelAuthorizations.length === 0 ? (
-                  <p>尚未配置授权。</p>
+                  <p>{t('channels.noAuthorizations')}</p>
                 ) : (
                   channelAuthorizations.map((authorization) => (
                     <article
@@ -1809,20 +1895,34 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
                         <strong>{authorization.status}</strong> · {authorization.target}
                       </p>
                       <p className="monospace break-anywhere">
-                        Adapter version：{authorization.adapterVersionId}
+                        {t('channels.authorizationAdapterVersion', {
+                          id: authorization.adapterVersionId,
+                        })}
                       </p>
                       <p>
-                        Scopes：{authorization.grantedScopes.join(', ') || 'none'} · Expires：
-                        {authorization.expiresAt ?? 'none'} · Secret：
-                        {authorization.secretConfigured ? 'configured' : 'missing'}
+                        {t('channels.authorizationScopesLabel')}
+                        {authorization.grantedScopes.join(', ') ||
+                          t('channels.authorizationNone')}{' '}
+                        {t('channels.authorizationExpiresLabel')}
+                        {authorization.expiresAt ?? t('channels.authorizationNone')}{' '}
+                        {t('channels.authorizationSecretLabel')}
+                        {authorization.secretConfigured
+                          ? t('channels.authorizationSecretConfigured')
+                          : t('channels.authorizationSecretMissing')}
                       </p>
                       <p data-testid="channel-authorization-validation">
-                        Provider validation：<strong>{authorization.validationStatus}</strong>
+                        {t('channels.authorizationValidationLabel')}
+                        <strong>{authorization.validationStatus}</strong>
                         {authorization.validationSnapshot === null
                           ? authorization.validationFailureCode === null
-                            ? ' · 尚未完成'
-                            : ` · ${authorization.validationFailureCode}`
-                          : ` · ${authorization.validationSnapshot.validatedAt} → ${authorization.validationSnapshot.validUntil}`}
+                            ? t('channels.authorizationValidationPending')
+                            : t('channels.authorizationValidationFailure', {
+                                code: authorization.validationFailureCode,
+                              })
+                          : t('channels.authorizationValidationWindow', {
+                              from: authorization.validationSnapshot.validatedAt,
+                              until: authorization.validationSnapshot.validUntil,
+                            })}
                       </p>
                       {authorization.status === 'ACTIVE' ? (
                         <form action={revokeChannelAuthorization}>
@@ -1852,7 +1952,7 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
                           <input name="target" type="hidden" value={authorization.target} />
                           <input name="authorizationId" type="hidden" value={authorization.id} />
                           <button className="secondary-button" type="submit">
-                            撤销授权
+                            {t('channels.revokeAuthorizationAction')}
                           </button>
                         </form>
                       ) : null}
@@ -1894,15 +1994,15 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
                 <button className="primary-action" type="submit">
                   {retryFromPublicationId === undefined
                     ? selectedAdapter.adapterKey === 'git-pull-request'
-                      ? '审核后创建 Pull Request'
+                      ? t('channels.publishGitAction')
                       : selectedAdapter.adapterKey === 'wordpress-woocommerce-draft'
-                        ? '审核后创建 WordPress 草稿'
+                        ? t('channels.publishWordPressAction')
                         : selectedAdapter.adapterKey === 'shopify-draft'
-                          ? '审核后创建 Shopify 草稿'
+                          ? t('channels.publishShopifyAction')
                           : selectedAdapter.adapterKey === 'signed-webhook'
-                            ? '审核后发送 Signed Webhook'
-                            : '审核后发布'
-                    : '重新审阅并重试'}
+                            ? t('channels.publishWebhookAction')
+                            : t('channels.publishAction')
+                    : t('channels.retryPublicationAction')}
                 </button>
               </form>
             ) : null}
@@ -1914,8 +2014,8 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
         <section aria-labelledby="publication-heading" className="shell-card">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">PublicationRecord</p>
-              <h2 id="publication-heading">发布执行记录</h2>
+              <p className="eyebrow">{t('channels.publicationEyebrow')}</p>
+              <h2 id="publication-heading">{t('channels.publicationHeading')}</h2>
             </div>
             <strong
               className={`status-badge ${publication.publication.status === 'PUBLISHED' ? 'ready' : 'neutral'}`}
@@ -1926,31 +2026,35 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
           </div>
           <JobPoller status={publication.job.status} />
           <p>
-            Job：{publication.job.id} · {publication.job.status} · attempt {publication.job.attempt}
-            /{publication.job.maxAttempts}
+            {t('channels.publicationJob', {
+              id: publication.job.id,
+              status: publication.job.status,
+              attempt: publication.job.attempt,
+              maxAttempts: publication.job.maxAttempts,
+            })}
           </p>
           <p className="monospace break-anywhere">
-            Package checksum：{publication.publication.packageChecksum}
+            {t('channels.packageChecksum', { checksum: publication.publication.packageChecksum })}
           </p>
-          {publicationRecoveryGuidance(publication.job.errorCode) === null ? null : (
+          {publicationRecoveryGuidance(publication.job.errorCode, t) === null ? null : (
             <p className="error-panel" data-testid="publication-recovery-guidance" role="alert">
-              {publicationRecoveryGuidance(publication.job.errorCode)}
+              {publicationRecoveryGuidance(publication.job.errorCode, t)}
             </p>
           )}
           {publication.publication.remoteRef === null ? null : isShopifyRemoteState ? (
             <p className="monospace break-anywhere" data-testid="publication-remote-ref">
-              <a href={publication.publication.remoteRef}>打开 Shopify 后台草稿</a>
+              <a href={publication.publication.remoteRef}>{t('channels.openShopifyDraft')}</a>
             </p>
           ) : publication.publication.remoteState?.status === 'DRAFT' ? (
             <p className="monospace break-anywhere" data-testid="publication-remote-ref">
-              <a href={publication.publication.remoteRef}>打开 WordPress 后台草稿预览</a>
+              <a href={publication.publication.remoteRef}>{t('channels.openWordPressDraft')}</a>
             </p>
           ) : publication.publication.remoteState?.status.startsWith('PR_') ||
             ['MERGED', 'CLOSED', 'FAILED'].includes(
               publication.publication.remoteState?.status ?? '',
             ) ? (
             <p className="monospace break-anywhere" data-testid="publication-remote-ref">
-              <a href={publication.publication.remoteRef}>打开 Pull Request</a>
+              <a href={publication.publication.remoteRef}>{t('channels.openPullRequest')}</a>
             </p>
           ) : (
             <p className="monospace break-anywhere" data-testid="publication-remote-ref">
@@ -1961,7 +2065,7 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
           publication.publication.remoteState === undefined ? null : (
             <div className="state-panel" data-testid="publication-remote-state">
               <p>
-                Remote status：
+                {t('channels.remoteStatusLabel')}
                 <strong data-testid="publication-remote-status">
                   {publication.publication.remoteState.status}
                 </strong>
@@ -1970,14 +2074,14 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
                 <p>
                   {publication.publication.remoteState.status === 'DRAFT' ? (
                     <>
-                      WordPress Draft ID：
+                      {t('channels.wordpressDraftIdLabel')}
                       <strong data-testid="wordpress-draft-id">
                         {publication.publication.remoteState.number}
                       </strong>
                     </>
                   ) : (
                     <>
-                      Pull Request #
+                      {t('channels.pullRequestNumberLabel')}
                       <strong data-testid="publication-pr-number">
                         {publication.publication.remoteState.number}
                       </strong>
@@ -1987,28 +2091,29 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
               )}
               {shopifyRemoteGid === undefined ? null : (
                 <p>
-                  Shopify GID：<strong data-testid="shopify-remote-gid">{shopifyRemoteGid}</strong>
+                  {t('channels.shopifyGidLabel')}
+                  <strong data-testid="shopify-remote-gid">{shopifyRemoteGid}</strong>
                 </p>
               )}
               <p data-testid="publication-production-live">
                 {publication.publication.remoteState.isProductionLive
-                  ? '远端效果已标记为生产上线。'
+                  ? t('channels.productionLive')
                   : publication.publication.remoteState.status === 'DELIVERED'
-                    ? 'Webhook 已送达接收端，但不代表 CMS 内容已生产上线。'
+                    ? t('channels.webhookDeliveredNotLive')
                     : isShopifyRemoteState
-                      ? 'Shopify 未公开内容已创建，尚未生产上线。'
+                      ? t('channels.shopifyContentNotLive')
                       : publication.publication.remoteState.status === 'DRAFT'
-                        ? 'WordPress 草稿已创建，尚未生产上线。'
-                        : 'Pull Request 已创建，尚未生产上线。'}
+                        ? t('channels.wordpressDraftNotLive')
+                        : t('channels.pullRequestNotLive')}
               </p>
               <p data-testid="publication-rollback-available">
                 {publication.publication.remoteState.rollbackHandle === null
-                  ? '无自动回滚操作；请人工处理。'
+                  ? t('channels.noRollback')
                   : isShopifyRemoteState
-                    ? '可删除 Shopify 未公开内容；不会自动发布。'
+                    ? t('channels.shopifyRollback')
                     : publication.publication.remoteState.status === 'DRAFT'
-                      ? '可移入 WordPress 回收站；不会自动发布。'
-                      : '可关闭 Pull Request；不会重写 protected branch。'}
+                      ? t('channels.wordpressRollback')
+                      : t('channels.pullRequestRollback')}
               </p>
             </div>
           )}
@@ -2040,11 +2145,11 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
               )}
               <input name="target" type="hidden" value={publication.publication.target} />
               <button className="secondary-action" type="submit">
-                刷新 Pull Request 状态
+                {t('channels.refreshPullRequestStatusAction')}
               </button>
             </form>
           ) : null}
-          <h3>Attempts</h3>
+          <h3>{t('channels.attemptsHeading')}</h3>
           <ol className="attempt-list">
             {publication.attempts.map((attempt) => (
               <li data-testid="publication-attempt" key={attempt.id}>

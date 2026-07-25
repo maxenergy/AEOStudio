@@ -2,6 +2,7 @@ import { expect, test, type APIResponse, type Locator, type Page } from '@playwr
 import { ArtifactBundleEnvelopeSchema } from '@aeostudio/contracts/artifacts';
 import { PublicationDetailEnvelopeSchema } from '@aeostudio/contracts/channels';
 import { MeasurementRunEnvelopeSchema } from '@aeostudio/contracts/measurement';
+import { setupArtifactPrerequisites } from './helpers.js';
 
 const apiOrigin = 'http://127.0.0.1:3200';
 const reviewedTarget = 'fake://task-16-reviewed-publication';
@@ -43,13 +44,15 @@ test('an Owner compares a published intervention between compatible immutable me
   test.setTimeout(150_000);
   await loginAs(page, 'owner@example.test');
   await page.goto('/app');
-  await page.getByLabel('Tenant 名称').fill('Experiment RED Tenant');
-  await page.getByLabel('Workspace 名称').fill('Experiment RED Workspace');
-  await page.getByRole('button', { name: '创建 Workspace' }).click();
+  await page.getByLabel('团队名称').fill('Experiment RED Tenant');
+  await page.getByLabel('工作空间名称').fill('Experiment RED Workspace');
+  await page.getByRole('button', { name: '创建工作空间' }).click();
   await expect(page.getByRole('heading', { name: 'Experiment RED Workspace' })).toBeVisible();
 
+  await setupArtifactPrerequisites(page);
+
   const scopeHref = await page
-    .getByRole('link', { name: 'Prompt / Scenario Lab' })
+    .getByRole('link', { name: '问题集 / 场景实验室' })
     .getAttribute('href');
   if (scopeHref === null) throw new Error('EXPERIMENT_SCOPE_LINK_MISSING');
   const scope = new URL(scopeHref, page.url());
@@ -58,13 +61,13 @@ test('an Owner compares a published intervention between compatible immutable me
   if (tenantId === null || workspaceId === null) throw new Error('EXPERIMENT_SCOPE_MISSING');
 
   await expect(
-    page.getByRole('link', { name: 'Experiment Comparison' }),
-    'expected the scoped Workspace navigation to expose Experiment Comparison',
+    page.getByRole('link', { name: '实验对比' }),
+    'expected the scoped Workspace navigation to expose 实验对比',
   ).toHaveAttribute('href', `/app/experiments?tenant=${tenantId}&workspace=${workspaceId}`);
 
-  await page.getByRole('link', { name: 'Artifact Studio' }).click();
+  await page.getByRole('link', { name: '内容稿件工作室' }).click();
   await page.getByRole('button', { name: '保存 Artifact 预算' }).click();
-  await page.getByRole('button', { name: '生成 Artifact Draft' }).click();
+  await page.getByRole('button', { name: '生成内容稿件草稿' }).click();
   await expect(page.getByTestId('artifact-job-status')).toHaveText('SUCCEEDED', {
     timeout: 15_000,
   });
@@ -91,7 +94,7 @@ test('an Owner compares a published intervention between compatible immutable me
   if (publishedReview === undefined) throw new Error('EXPERIMENT_PUBLICATION_REVIEW_MISSING');
 
   await page.goto(scopeHref);
-  await page.getByLabel('Prompt Set 标题').fill('Compatible immutable experiment');
+  await page.getByLabel('问题集标题').fill('Compatible immutable experiment');
   await page.getByLabel('研究主题').fill('Workspace-defined product evidence');
   await page.getByLabel('Profile revision ID').fill('00000000-0000-7000-8000-000000000711');
   await page.getByLabel('Offering revision ID').fill('00000000-0000-7000-8000-000000000712');
@@ -116,8 +119,8 @@ test('an Owner compares a published intervention between compatible immutable me
     `/app/jobs?tenant=${tenantId}&workspace=${workspaceId}` +
       '&profile=00000000-0000-7000-8000-000000000711',
   );
-  await page.getByLabel('Workspace 预算上限', { exact: true }).fill('500');
-  await page.getByRole('button', { name: '保存 Workspace 预算', exact: true }).click();
+  await page.getByLabel('工作空间预算上限', { exact: true }).fill('500');
+  await page.getByRole('button', { name: '保存工作空间预算', exact: true }).click();
   await expect(page.getByText('预算上限已更新')).toBeVisible();
 
   await page.goto(promptUrl);
@@ -141,7 +144,7 @@ test('an Owner compares a published intervention between compatible immutable me
 
   await page.goto(`/app/artifacts?tenant=${tenantId}&workspace=${workspaceId}`);
   await page.getByRole('button', { name: '保存 Artifact 预算' }).click();
-  await page.getByRole('button', { name: '生成 Artifact Draft' }).click();
+  await page.getByRole('button', { name: '生成内容稿件草稿' }).click();
   await expect(page.getByTestId('artifact-job-status')).toHaveText('SUCCEEDED', {
     timeout: 15_000,
   });
@@ -246,14 +249,14 @@ test('an Owner compares a published intervention between compatible immutable me
   expect(remeasurementRun.completedAt).not.toBeNull();
 
   await page.goto(`/app?tenant=${tenantId}&workspace=${workspaceId}`);
-  const experimentNavigation = page.getByRole('link', { name: 'Experiment Comparison' });
+  const experimentNavigation = page.getByRole('link', { name: '实验对比' });
   await expect(experimentNavigation).toHaveAttribute(
     'href',
     `/app/experiments?tenant=${tenantId}&workspace=${workspaceId}`,
   );
   await experimentNavigation.click();
   await expect(
-    page.getByRole('heading', { name: 'Experiment Comparison' }),
+    page.getByRole('heading', { name: '实验对比' }),
     'expected Experiment route instead of the Next.js not-found page',
   ).toBeVisible();
   const compatibleInputs = page.getByLabel('Compatible Experiment inputs');

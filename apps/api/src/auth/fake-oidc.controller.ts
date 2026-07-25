@@ -38,7 +38,9 @@ export class FakeOidcController {
           ? 'fake-code-reviewer'
           : loginHint === 'publisher@example.test'
             ? 'fake-code-publisher'
-            : 'fake-code';
+            : loginHint === 'brief-reviewer@example.test'
+              ? 'fake-code-brief-reviewer'
+              : 'fake-code';
     callback.searchParams.set('code', code);
     callback.searchParams.set('state', state);
     await reply.redirect(callback.toString(), 302);

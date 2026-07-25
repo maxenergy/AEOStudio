@@ -15,9 +15,9 @@ function requiredParam(url: URL, name: string): string {
 async function createSyntheticScope(page: Page): Promise<Scope> {
   await page.goto('/app');
   await page.getByRole('link', { name: '安全登录' }).click();
-  await page.getByLabel('Tenant 名称').fill('Accessible Community Studio');
-  await page.getByLabel('Workspace 名称').fill('Accessible Evidence Workspace');
-  await page.getByRole('button', { name: '创建 Workspace' }).click();
+  await page.getByLabel('团队名称').fill('Accessible Community Studio');
+  await page.getByLabel('工作空间名称').fill('Accessible Evidence Workspace');
+  await page.getByRole('button', { name: '创建工作空间' }).click();
   await expect(page.getByRole('heading', { name: 'Accessible Evidence Workspace' })).toBeVisible();
   await expect(page).toHaveURL(/\/app\?tenant=[^&]+&workspace=[^&]+/u);
   const url = new URL(page.url());

@@ -12,6 +12,8 @@ import type {
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
+import { makeT, type TFunction } from '../../../lib/i18n';
+import { getLocale } from '../../../lib/i18n/get-locale';
 import { JobPoller } from '../jobs/job-poller';
 import { formatDashboardCost } from './cost-summary';
 
@@ -75,6 +77,7 @@ export default async function MeasurementPage({ searchParams }: MeasurementPageP
     redirect('/app');
   }
 
+  const t = makeT(await getLocale());
   const cookie = (await cookies()).toString();
   const workspacesResponse = await fetch(`${apiOrigin()}/api/v1/tenants`, {
     cache: 'no-store',
@@ -210,48 +213,54 @@ export default async function MeasurementPage({ searchParams }: MeasurementPageP
   return (
     <main>
       <JobPoller status={pollStatus} />
-      <p className="eyebrow">AEO Studio · Measurement Evidence</p>
-      <h1>Measurement baseline dashboard</h1>
-      <p className="lede">
-        本页只解释一个 approved Scenario 的单一 Surface cohort；不会把 API、Search data 与 Consumer
-        Surface 合成跨 Surface 总分，也不会把未检查或错误当作失败。
-      </p>
-      <nav aria-label="Measurement navigation" className="breadcrumb">
+      <p className="eyebrow">{t('measurement.eyebrow')}</p>
+      <h1>{t('measurement.title')}</h1>
+      <p className="lede">{t('measurement.lede')}</p>
+      <nav aria-label={t('measurement.navAria')} className="breadcrumb">
         <a href={`/app/prompts?tenant=${tenantId}&workspace=${workspaceId}`}>
-          Prompt / Scenario Lab
+          {t('measurement.breadcrumbPrompts')}
         </a>
-        <a href={`/app?tenant=${tenantId}&workspace=${workspaceId}`}>Workspace</a>
+        <a href={`/app?tenant=${tenantId}&workspace=${workspaceId}`}>
+          {t('measurement.breadcrumbWorkspace')}
+        </a>
       </nav>
 
       <section aria-labelledby="measurement-execution-heading" className="shell-card">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">Run evidence</p>
-            <h2 id="measurement-execution-heading">Measurement execution</h2>
+            <p className="eyebrow">{t('measurement.runEvidenceEyebrow')}</p>
+            <h2 id="measurement-execution-heading">{t('measurement.executionHeading')}</h2>
           </div>
           <strong className="status-badge neutral" data-testid="measurement-run-status">
             {run.status}
           </strong>
         </div>
         <p data-testid="measurement-run-progress">
-          {run.completedPromptRunCount} / {run.expectedPromptRunCount} PromptRuns
+          {t('measurement.runProgress', {
+            completed: run.completedPromptRunCount,
+            expected: run.expectedPromptRunCount,
+          })}
         </p>
-        <p className="monospace break-anywhere">Run ID：{run.id}</p>
+        <p className="monospace break-anywhere">{t('measurement.runId', { id: run.id })}</p>
         <p>
-          Job：{job?.status ?? 'PENDING'} · {job?.progress ?? 0}% · expected{' '}
-          {run.scenarioSnapshot.repetitions} repetitions for each Prompt / scope
+          {t('measurement.jobLine', {
+            status: job?.status ?? 'PENDING',
+            progress: job?.progress ?? 0,
+            repetitions: run.scenarioSnapshot.repetitions,
+          })}
         </p>
         <p>
-          Started：{run.startedAt ?? '等待 Worker'} · Completed：{run.completedAt ?? '尚未完成'}
+          {t('measurement.startedLabel')}
+          {run.startedAt ?? t('measurement.awaitingWorker')}
+          {t('measurement.completedLabel')}
+          {run.completedAt ?? t('measurement.notCompleted')}
         </p>
         {dashboard === undefined ? (
-          <p className="field-help">
-            Snapshot 将在全部 fixture/manual-import PromptRuns 处理后生成。
-          </p>
+          <p className="field-help">{t('measurement.snapshotPending')}</p>
         ) : (
           <div className="table-scroll">
             <table>
-              <caption>PromptRun result counts</caption>
+              <caption>{t('measurement.resultCountsCaption')}</caption>
               <thead>
                 <tr>
                   {Object.keys(dashboard.resultCounts).map((status) => (
@@ -274,43 +283,44 @@ export default async function MeasurementPage({ searchParams }: MeasurementPageP
       </section>
 
       <section aria-labelledby="technical-health-heading" className="shell-card">
-        <p className="eyebrow">1 / 3</p>
-        <h2 id="technical-health-heading">Technical Health</h2>
+        <p className="eyebrow">{t('measurement.stepOne')}</p>
+        <h2 id="technical-health-heading">{t('measurement.technicalHeading')}</h2>
         {technicalSection?.summary.state === 'AVAILABLE' ? (
           <p>
-            Owned-site baseline {technicalSection.summary.baselineId} ·{' '}
-            {technicalSection.summary.status} · {technicalSection.summary.pageCount} pages ·{' '}
-            {technicalSection.summary.findingCount} findings.
+            {t('measurement.technicalSummary', {
+              baselineId: technicalSection.summary.baselineId,
+              status: technicalSection.summary.status,
+              pageCount: technicalSection.summary.pageCount,
+              findingCount: technicalSection.summary.findingCount,
+            })}
           </p>
         ) : (
-          <p>此 Measurement Scenario 尚未绑定 owned-site technical baseline。</p>
+          <p>{t('measurement.technicalNotLinked')}</p>
         )}
-        <p className="field-help">
-          Technical Health 只来自已验证站点的 crawl/baseline，不从 AI visibility PromptRun 推断。
-        </p>
+        <p className="field-help">{t('measurement.technicalHelp')}</p>
         <a href={`/app/sites?tenant=${tenantId}&workspace=${workspaceId}`}>
-          查看 Site Technical Baseline
+          {t('measurement.viewTechnicalBaseline')}
         </a>
       </section>
 
       <section aria-labelledby="content-evidence-heading" className="shell-card">
-        <p className="eyebrow">2 / 3</p>
-        <h2 id="content-evidence-heading">Content &amp; Evidence Readiness</h2>
+        <p className="eyebrow">{t('measurement.stepTwo')}</p>
+        <h2 id="content-evidence-heading">{t('measurement.contentHeading')}</h2>
         {contentSection?.summary.state === 'AVAILABLE' ? (
           <p>
-            Claim set {contentSection.summary.claimSetHash} · approved{' '}
-            {contentSection.summary.approvedCount} · stale {contentSection.summary.staleCount} ·
-            needs evidence {contentSection.summary.needsEvidenceCount}.
+            {t('measurement.contentSummary', {
+              hash: contentSection.summary.claimSetHash,
+              approved: contentSection.summary.approvedCount,
+              stale: contentSection.summary.staleCount,
+              needs: contentSection.summary.needsEvidenceCount,
+            })}
           </p>
         ) : (
-          <p>此 Measurement Scenario 尚未绑定 exact Claim/Evidence set。</p>
+          <p>{t('measurement.contentNotLinked')}</p>
         )}
-        <p>
-          Measurement 不会把 visibility observation 当成事实证据。公开事实仍须回到 exact approved
-          Claim revision 与 Evidence Source 核验。
-        </p>
+        <p>{t('measurement.contentNote')}</p>
         <a href={`/app/claims?tenant=${tenantId}&workspace=${workspaceId}`}>
-          查看 Approved Claim / Evidence
+          {t('measurement.viewClaims')}
         </a>
       </section>
 
@@ -319,17 +329,24 @@ export default async function MeasurementPage({ searchParams }: MeasurementPageP
         className="shell-card"
         data-testid="measured-ai-visibility"
       >
-        <p className="eyebrow">3 / 3</p>
-        <h2 id="measured-visibility-heading">Measured AI Visibility</h2>
+        <p className="eyebrow">{t('measurement.stepThree')}</p>
+        <h2 id="measured-visibility-heading">{t('measurement.visibilityHeading')}</h2>
         <p>
-          Cohort：{registryEntry?.surfaceName ?? run.surfaceKey} ·{' '}
-          {registryEntry?.providerName ?? run.providerKey} · {run.acquisitionMethod}
+          {t('measurement.cohortLine', {
+            surface: registryEntry?.surfaceName ?? run.surfaceKey,
+            provider: registryEntry?.providerName ?? run.providerKey,
+            method: run.acquisitionMethod,
+          })}
         </p>
         <p>
-          Model：{run.model} · {run.modelVersion} · Scenario v{run.scenarioVersion}
+          {t('measurement.modelLine', {
+            model: run.model,
+            version: run.modelVersion,
+            scenario: run.scenarioVersion,
+          })}
         </p>
         {dashboard === undefined ? (
-          <p className="field-help">Measured snapshot 尚未生成。</p>
+          <p className="field-help">{t('measurement.snapshotNotReady')}</p>
         ) : (
           <>
             {(measuredSection?.cohorts ?? []).map((cohortEntry, cohortIndex) => {
@@ -349,30 +366,39 @@ export default async function MeasurementPage({ searchParams }: MeasurementPageP
               );
               return (
                 <article className="nested-card manifest-panel" key={cohortEntry.cohort.scopeKey}>
-                  <h3>Surface cohort {cohortIndex + 1}</h3>
+                  <h3>{t('measurement.surfaceCohort', { index: cohortIndex + 1 })}</h3>
                   <p>
-                    Scope：{cohortEntry.cohort.scopeKey} · Provider/Surface：
-                    {cohortEntry.cohort.providerKey} / {cohortEntry.cohort.surfaceKey}
+                    {t('measurement.scopeLine', {
+                      scope: cohortEntry.cohort.scopeKey,
+                      provider: cohortEntry.cohort.providerKey,
+                      surface: cohortEntry.cohort.surfaceKey,
+                    })}
                   </p>
                   <p>
-                    Acquisition：{cohortEntry.cohort.acquisitionClass} /{' '}
-                    {cohortEntry.cohort.acquisitionMethod} · Model：{cohortEntry.cohort.model} ·{' '}
-                    {cohortEntry.cohort.modelVersion}
+                    {t('measurement.acquisitionLine', {
+                      class: cohortEntry.cohort.acquisitionClass,
+                      method: cohortEntry.cohort.acquisitionMethod,
+                      model: cohortEntry.cohort.model,
+                      version: cohortEntry.cohort.modelVersion,
+                    })}
                   </p>
                   <p>
-                    Adapter：{cohortEntry.cohort.adapterKey} / {cohortEntry.cohort.adapterVersion} ·
-                    Scenario v{cohortEntry.cohort.scenarioVersion}
+                    {t('measurement.adapterLine', {
+                      key: cohortEntry.cohort.adapterKey,
+                      version: cohortEntry.cohort.adapterVersion,
+                      scenario: cohortEntry.cohort.scenarioVersion,
+                    })}
                   </p>
                   <div className="table-scroll">
                     <table>
-                      <caption>Metrics for this exact Surface and scope cohort</caption>
+                      <caption>{t('measurement.metricsCaption')}</caption>
                       <thead>
                         <tr>
-                          <th scope="col">Metric</th>
-                          <th scope="col">Result</th>
-                          <th scope="col">Eligible denominator</th>
-                          <th scope="col">Excluded</th>
-                          <th scope="col">Method</th>
+                          <th scope="col">{t('measurement.colMetric')}</th>
+                          <th scope="col">{t('measurement.colResult')}</th>
+                          <th scope="col">{t('measurement.colDenominator')}</th>
+                          <th scope="col">{t('measurement.colExcluded')}</th>
+                          <th scope="col">{t('measurement.colMethod')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -387,10 +413,12 @@ export default async function MeasurementPage({ searchParams }: MeasurementPageP
                             </td>
                             <td>{metric.eligibleDenominator}</td>
                             <td>
-                              ERROR {metric.excludedCounts.ERROR} · NOT_CHECKED{' '}
-                              {metric.excludedCounts.NOT_CHECKED} · INCONCLUSIVE{' '}
-                              {metric.excludedCounts.INCONCLUSIVE} · NOT_APPLICABLE{' '}
-                              {metric.excludedCounts.NOT_APPLICABLE}
+                              {t('measurement.excludedLine', {
+                                error: metric.excludedCounts.ERROR,
+                                notChecked: metric.excludedCounts.NOT_CHECKED,
+                                inconclusive: metric.excludedCounts.INCONCLUSIVE,
+                                notApplicable: metric.excludedCounts.NOT_APPLICABLE,
+                              })}
                             </td>
                             <td>{metric.methodVersion}</td>
                           </tr>
@@ -398,7 +426,7 @@ export default async function MeasurementPage({ searchParams }: MeasurementPageP
                       </tbody>
                     </table>
                   </div>
-                  <nav aria-label={`Surface cohort ${cohortIndex + 1} raw evidence`}>
+                  <nav aria-label={t('measurement.rawEvidenceNavAria', { index: cohortIndex + 1 })}>
                     <ul>
                       {cohortMetrics.map((metric) => (
                         <li key={`raw-${metric.id}`}>
@@ -411,7 +439,9 @@ export default async function MeasurementPage({ searchParams }: MeasurementPageP
                               cohort: cohortEntry.cohort.scopeKey,
                             })}
                           >
-                            查看 {METRIC_LABELS[metric.metricKey]} raw PromptRuns
+                            {t('measurement.viewMetricRaw', {
+                              metric: METRIC_LABELS[metric.metricKey],
+                            })}
                           </a>
                         </li>
                       ))}
@@ -426,7 +456,7 @@ export default async function MeasurementPage({ searchParams }: MeasurementPageP
                               cohort: cohortEntry.cohort.scopeKey,
                             })}
                           >
-                            查看 {dimension} raw PromptRuns
+                            {t('measurement.viewMetricRaw', { metric: dimension })}
                           </a>
                         </li>
                       ))}
@@ -436,37 +466,38 @@ export default async function MeasurementPage({ searchParams }: MeasurementPageP
               );
             })}
             <p>
-              Cost：{formatDashboardCost(dashboard)} for this run. ERROR、NOT_CHECKED、INCONCLUSIVE
-              与 NOT_APPLICABLE 均保留并从 eligible denominator 排除。
+              {t('measurement.costLabel')}
+              {formatDashboardCost(dashboard, t('measurement.costNotConvertedSuffix'))}{' '}
+              {t('measurement.costRunSuffix')}
             </p>
           </>
         )}
-        <p className="warning-message">
-          样本仅代表上述
-          Provider、Surface、模型版本、scope、时间与采集方式；不保证排名、引用或推荐。
-        </p>
+        <p className="warning-message">{t('measurement.sampleWarning')}</p>
       </section>
 
       {rawMetric === undefined ? null : (
         <section aria-labelledby="raw-evidence-heading" className="shell-card">
-          <h2 id="raw-evidence-heading">Raw PromptRun evidence</h2>
+          <h2 id="raw-evidence-heading">{t('measurement.rawEvidenceHeading')}</h2>
           <p>
-            Dimension：<strong data-testid="raw-dimension">{rawMetric}</strong> · Cohort：
-            {rawCohort ?? 'current'} · 可审计 PromptRuns：
+            {t('measurement.dimensionLabel')}
+            <strong data-testid="raw-dimension">{rawMetric}</strong>
+            {t('measurement.cohortSeparator')}
+            {rawCohort ?? t('measurement.currentCohort')}
+            {t('measurement.auditableSeparator')}
             <strong data-testid="raw-result-total">
               {promptRunEnvelope?.meta.total ?? rawPromptRuns.length}
             </strong>
-            。当前页 offset {rawOffset}；下列清单与 total/分页均使用同一维度过滤条件。
+            {t('measurement.offsetNote', { offset: rawOffset })}
           </p>
           <div className="table-scroll">
             <table>
-              <caption>PromptRuns contributing to this exact drill-down dimension</caption>
+              <caption>{t('measurement.drillDownCaption')}</caption>
               <thead>
                 <tr>
-                  <th scope="col">PromptRun</th>
-                  <th scope="col">Dimension value</th>
-                  <th scope="col">Status</th>
-                  <th scope="col">Raw evidence</th>
+                  <th scope="col">{t('measurement.colPromptRun')}</th>
+                  <th scope="col">{t('measurement.colDimensionValue')}</th>
+                  <th scope="col">{t('measurement.colStatus')}</th>
+                  <th scope="col">{t('measurement.colRawEvidence')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -479,7 +510,7 @@ export default async function MeasurementPage({ searchParams }: MeasurementPageP
                     <th scope="row">
                       {promptRun.promptOrdinal}.{promptRun.repetition}
                     </th>
-                    <td>{rawDimensionValue(promptRun, rawMetric)}</td>
+                    <td>{rawDimensionValue(promptRun, rawMetric, t)}</td>
                     <td>{promptRun.status}</td>
                     <td>
                       <a
@@ -493,7 +524,7 @@ export default async function MeasurementPage({ searchParams }: MeasurementPageP
                           offset: rawOffset,
                         })}
                       >
-                        查看此 PromptRun raw evidence
+                        {t('measurement.viewRunEvidence')}
                       </a>
                     </td>
                   </tr>
@@ -510,37 +541,51 @@ export default async function MeasurementPage({ searchParams }: MeasurementPageP
                   key={entry.promptRun.id}
                 >
                   <h3>
-                    PromptRun {entry.promptRun.promptOrdinal}.{entry.promptRun.repetition}
+                    {t('measurement.promptRunTitle', {
+                      ordinal: entry.promptRun.promptOrdinal,
+                      repetition: entry.promptRun.repetition,
+                    })}
                   </h3>
                   <p>
-                    Status：<strong>{entry.promptRun.status}</strong>
+                    {t('measurement.statusLabel')}
+                    <strong>{entry.promptRun.status}</strong>
                   </p>
-                  <p>Raw response：{entry.rawEvidence.responseText ?? 'No response recorded.'}</p>
                   <p>
-                    Citation：
+                    {t('measurement.rawResponseLabel')}
+                    {entry.rawEvidence.responseText ?? t('measurement.noResponse')}
+                  </p>
+                  <p>
+                    {t('measurement.citationLabel')}
                     {entry.rawEvidence.citations.length === 0
-                      ? 'None recorded.'
+                      ? t('measurement.noCitations')
                       : entry.rawEvidence.citations
                           .map((citation) => `${citation.title} — ${citation.url}`)
-                          .join('；')}
+                          .join(t('measurement.citationSeparator'))}
                   </p>
                   <p>
-                    Cost：{entry.promptRun.cost.amount} {entry.promptRun.cost.currency}
+                    {t('measurement.costValue', {
+                      amount: entry.promptRun.cost.amount,
+                      currency: entry.promptRun.cost.currency,
+                    })}
                   </p>
                   <p>
-                    Error：
+                    {t('measurement.errorLabel')}
                     {entry.rawEvidence.error === null
-                      ? 'None.'
-                      : `${entry.promptRun.status} · ${entry.rawEvidence.error.code} · ${entry.rawEvidence.error.message}`}
+                      ? t('measurement.noError')
+                      : t('measurement.errorValue', {
+                          status: entry.promptRun.status,
+                          code: entry.rawEvidence.error.code,
+                          message: entry.rawEvidence.error.message,
+                        })}
                   </p>
                   <p className="monospace break-anywhere">
-                    Evidence hash：{entry.rawEvidence.contentHash}
+                    {t('measurement.evidenceHash', { hash: entry.rawEvidence.contentHash })}
                   </p>
                 </article>
               ),
             )}
           </div>
-          <nav aria-label="Raw PromptRun pagination" className="breadcrumb">
+          <nav aria-label={t('measurement.paginationNavAria')} className="breadcrumb">
             {rawOffset === 0 ? null : (
               <a
                 href={measurementLocation({
@@ -552,7 +597,7 @@ export default async function MeasurementPage({ searchParams }: MeasurementPageP
                   offset: Math.max(0, rawOffset - (promptRunEnvelope?.meta.limit ?? 100)),
                 })}
               >
-                上一页 PromptRuns
+                {t('measurement.prevPage')}
               </a>
             )}
             {promptRunEnvelope?.meta.nextOffset === null ||
@@ -567,7 +612,7 @@ export default async function MeasurementPage({ searchParams }: MeasurementPageP
                   offset: promptRunEnvelope.meta.nextOffset,
                 })}
               >
-                下一页 PromptRuns
+                {t('measurement.nextPage')}
               </a>
             )}
           </nav>
@@ -577,22 +622,39 @@ export default async function MeasurementPage({ searchParams }: MeasurementPageP
   );
 }
 
-function rawDimensionValue(promptRun: PromptRunSummary, dimension: RawDimension): string {
-  const excluded = `Excluded (${promptRun.status})`;
+function rawDimensionValue(
+  promptRun: PromptRunSummary,
+  dimension: RawDimension,
+  t: TFunction,
+): string {
+  const excluded = t('measurement.excludedStatus', { status: promptRun.status });
   switch (dimension) {
     case 'MENTION_RATE':
-      return `Mention observation：${booleanObservation(promptRun.observation.mention, excluded)}`;
+      return t('measurement.mentionObservation', {
+        value: booleanObservation(promptRun.observation.mention, excluded),
+      });
     case 'CITATION_RATE':
-      return `Citation observation：${booleanObservation(promptRun.observation.citation, excluded)}`;
+      return t('measurement.citationObservation', {
+        value: booleanObservation(promptRun.observation.citation, excluded),
+      });
     case 'ACCURACY_RATE':
-      return `Accuracy observation：${promptRun.observation.accuracy ?? excluded}`;
+      return t('measurement.accuracyObservation', {
+        value: promptRun.observation.accuracy ?? excluded,
+      });
     case 'COVERAGE_RATE':
-      return `Coverage observation：${booleanObservation(promptRun.observation.coverage, excluded)}`;
+      return t('measurement.coverageObservation', {
+        value: booleanObservation(promptRun.observation.coverage, excluded),
+      });
     case 'COST':
-      return `Cost：${promptRun.cost.amount} ${promptRun.cost.currency}`;
+      return t('measurement.costObservation', {
+        amount: promptRun.cost.amount,
+        currency: promptRun.cost.currency,
+      });
     case 'ERROR':
-      return `Error status：${promptRun.status}${
-        promptRun.policyReason === null ? '' : ` · ${promptRun.policyReason}`
+      return `${t('measurement.errorObservation', { status: promptRun.status })}${
+        promptRun.policyReason === null
+          ? ''
+          : t('measurement.errorPolicySuffix', { reason: promptRun.policyReason })
       }`;
   }
 }

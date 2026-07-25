@@ -91,7 +91,7 @@ export class InMemoryArtifactStore implements ArtifactStore, InMemoryTenantExpor
         sourceArtifactIds: [...SOURCE_IDS],
         lineage: {
           contentPlanId: FAKE_ARTIFACT_LINEAGE.contentPlanId,
-          brief: { id: input.briefId, contentHash: 'b'.repeat(64) },
+          brief: { id: FAKE_ARTIFACT_LINEAGE.briefId, contentHash: 'b'.repeat(64) },
           prompt: {
             promptSetId: FAKE_ARTIFACT_LINEAGE.promptSetId,
             promptRevisionId: SOURCE_IDS[2],

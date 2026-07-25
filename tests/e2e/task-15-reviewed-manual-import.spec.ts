@@ -52,11 +52,11 @@ test('an Analyst submits exact manual evidence and a Reviewer explicitly approve
     const ownerPage = await ownerContext.newPage();
     await loginAs(ownerPage, 'owner@example.test');
     await ownerPage.goto('/app');
-    await ownerPage.getByLabel('Tenant 名称').fill('Reviewed Manual Import Tenant');
-    await ownerPage.getByLabel('Workspace 名称').fill('Reviewed Manual Import Workspace');
-    await ownerPage.getByRole('button', { name: '创建 Workspace' }).click();
-    await ownerPage.getByRole('link', { name: 'Prompt / Scenario Lab' }).click();
-    await ownerPage.getByLabel('Prompt Set 标题').fill('Reviewed answer-surface evidence');
+    await ownerPage.getByLabel('团队名称').fill('Reviewed Manual Import Tenant');
+    await ownerPage.getByLabel('工作空间名称').fill('Reviewed Manual Import Workspace');
+    await ownerPage.getByRole('button', { name: '创建工作空间' }).click();
+    await ownerPage.getByRole('link', { name: '问题集 / 场景实验室' }).click();
+    await ownerPage.getByLabel('问题集标题').fill('Reviewed answer-surface evidence');
     await ownerPage.getByLabel('研究主题').fill('Workspace-defined offering');
     await ownerPage.getByLabel('Profile revision ID').fill('00000000-0000-7000-8000-000000000711');
     await ownerPage.getByLabel('Offering revision ID').fill('00000000-0000-7000-8000-000000000712');
@@ -97,8 +97,8 @@ test('an Analyst submits exact manual evidence and a Reviewer explicitly approve
       `${webOrigin}/app/jobs?tenant=${tenantId}&workspace=${workspaceId}` +
         '&profile=00000000-0000-7000-8000-000000000711',
     );
-    await ownerPage.getByLabel('Workspace 预算上限', { exact: true }).fill('500');
-    await ownerPage.getByRole('button', { name: '保存 Workspace 预算', exact: true }).click();
+    await ownerPage.getByLabel('工作空间预算上限', { exact: true }).fill('500');
+    await ownerPage.getByRole('button', { name: '保存工作空间预算', exact: true }).click();
     await expect(ownerPage.getByText('预算上限已更新')).toBeVisible();
     await ownerPage.goto(`${webOrigin}/app?tenant=${tenantId}&workspace=${workspaceId}`);
     const analystInvitation = await invite(ownerPage, 'editor@example.test', 'ANALYST');
@@ -107,7 +107,7 @@ test('an Analyst submits exact manual evidence and a Reviewer explicitly approve
     const analystPage = await analystContext.newPage();
     await loginAs(analystPage, 'editor@example.test');
     await analystPage.goto(`${webOrigin}${analystInvitation}`);
-    await analystPage.getByRole('button', { name: '接受 Workspace 邀请' }).click();
+    await analystPage.getByRole('button', { name: '接受工作空间邀请' }).click();
     await analystPage.goto(promptUrl);
     await expect(analystPage.getByTestId('measurement-policy-status')).toHaveText('ELIGIBLE');
     await expect(analystPage.getByRole('button', { name: '保存 Provider policy' })).toHaveCount(0);
@@ -143,7 +143,7 @@ test('an Analyst submits exact manual evidence and a Reviewer explicitly approve
     const reviewerPage = await reviewerContext.newPage();
     await loginAs(reviewerPage, 'reviewer@example.test');
     await reviewerPage.goto(`${webOrigin}${reviewerInvitation}`);
-    await reviewerPage.getByRole('button', { name: '接受 Workspace 邀请' }).click();
+    await reviewerPage.getByRole('button', { name: '接受工作空间邀请' }).click();
     await reviewerPage.goto(submittedUrl);
     await expect(reviewerPage.getByTestId('measurement-policy-status')).toHaveText('ELIGIBLE');
     await expect(reviewerPage.getByRole('button', { name: '保存 Provider policy' })).toHaveCount(0);

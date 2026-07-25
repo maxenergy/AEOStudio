@@ -1,19 +1,30 @@
 import { expect, test } from '@playwright/test';
 
+import { setupPlanPrerequisites } from './helpers.js';
+
 test('an Editor sees explainable priorities, three Brief types and Evidence tasks', async ({
   page,
 }) => {
   await page.goto('/login');
   await page.getByRole('link', { name: '安全登录' }).click();
-  await page.getByLabel('Tenant 名称').fill('Content Planning Cooperative');
-  await page.getByLabel('Workspace 名称').fill('Planning Workspace');
-  await page.getByRole('button', { name: '创建 Workspace' }).click();
+  await page.getByLabel('团队名称').fill('Content Planning Cooperative');
+  await page.getByLabel('工作空间名称').fill('Planning Workspace');
+  await page.getByRole('button', { name: '创建工作空间' }).click();
 
-  await page.getByRole('link', { name: 'Content Plan / Briefs' }).click();
-  await expect(page.getByRole('heading', { name: 'Content Plan / Briefs' })).toBeVisible();
+  // Set up prerequisites: Profile + Offering + Baseline + approved PromptSet
+  await setupPlanPrerequisites(page);
+
+  await page.getByRole('link', { name: '内容计划 / 创作摘要' }).click();
+  await expect(page.getByRole('heading', { name: '内容计划 / 创作摘要' })).toBeVisible();
   await page.getByRole('button', { name: '保存计划预算' }).click();
   await expect(page.getByText('计划预算已保存')).toBeVisible();
-  await page.getByRole('button', { name: '启动 Content Plan' }).click();
+
+  // Fill primary claim revision IDs so the plan generates Briefs (not just Evidence Tasks)
+  await page
+    .getByLabel('已批准的主要事实声明 revision IDs')
+    .fill('00000000-0000-7000-8000-000000000701');
+
+  await page.getByRole('button', { name: '启动内容计划' }).click();
   await expect(page.getByTestId('content-plan-job-status')).toHaveText('SUCCEEDED', {
     timeout: 15_000,
   });

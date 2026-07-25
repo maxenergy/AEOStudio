@@ -9,9 +9,16 @@ import type {
   MeasurementProviderPolicyStateEnvelope,
   StartMeasurementRunEnvelope,
 } from '@aeostudio/contracts/measurement';
+import type {
+  OfferingListEnvelope,
+  ProfileListEnvelope,
+} from '@aeostudio/contracts/profile-offering';
 import { randomUUID } from 'node:crypto';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+
+import { makeT } from '../../../lib/i18n';
+import { getLocale } from '../../../lib/i18n/get-locale';
 
 function apiOrigin(): string {
   return process.env.API_INTERNAL_ORIGIN ?? 'http://127.0.0.1:3200';
@@ -353,6 +360,7 @@ interface PromptsPageProps {
 }
 
 export default async function PromptsPage({ searchParams }: PromptsPageProps) {
+  const t = makeT(await getLocale());
   const query = await searchParams;
   const tenantId = typeof query.tenant === 'string' ? query.tenant : undefined;
   const workspaceId = typeof query.workspace === 'string' ? query.workspace : undefined;
@@ -411,6 +419,26 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
   const offeringId = typeof query.offering === 'string' ? query.offering : '';
   const offeringRevision =
     typeof query.offeringRevision === 'string' ? query.offeringRevision : '1';
+  let profileOptions: ProfileListEnvelope['data']['profiles'] = [];
+  let offeringOptions: OfferingListEnvelope['data']['offerings'] = [];
+  if (bundle === undefined && mayManage) {
+    const [profilesResponse, offeringsResponse] = await Promise.all([
+      fetch(`${apiOrigin()}/api/v1/tenants/${tenantId}/workspaces/${workspaceId}/profiles`, {
+        cache: 'no-store',
+        headers: { cookie },
+      }),
+      fetch(`${apiOrigin()}/api/v1/tenants/${tenantId}/workspaces/${workspaceId}/offerings`, {
+        cache: 'no-store',
+        headers: { cookie },
+      }),
+    ]);
+    if (profilesResponse.ok) {
+      profileOptions = ((await profilesResponse.json()) as ProfileListEnvelope).data.profiles;
+    }
+    if (offeringsResponse.ok) {
+      offeringOptions = ((await offeringsResponse.json()) as OfferingListEnvelope).data.offerings;
+    }
+  }
   const registryEntry =
     bundle === undefined
       ? undefined
@@ -467,57 +495,60 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
 
   return (
     <main>
-      <p className="eyebrow">AEO Studio</p>
-      <h1>Prompt / Scenario Lab</h1>
-      <p>
-        Consumer
-        Surface、Provider、模型与采集方式分别保存；这里只配置和人工批准，不执行真实测量，也不生成跨
-        Surface 总分。
-      </p>
+      <p className="eyebrow">{t('prompts.eyebrow')}</p>
+      <h1>{t('prompts.title')}</h1>
+      <p>{t('prompts.lede')}</p>
 
       {query.notice === 'manual-import-submitted' ? (
-        <p className="success-message">Manual import 已提交，等待 Reviewer / Owner 审核。</p>
+        <p className="success-message">{t('prompts.notice.manualImportSubmitted')}</p>
       ) : null}
       {query.notice === 'manual-import-reviewed' ? (
-        <p className="success-message">Manual import 已审核，可绑定到新的 baseline。</p>
+        <p className="success-message">{t('prompts.notice.manualImportReviewed')}</p>
       ) : null}
       {query.notice === 'measurement-policy' ? (
-        <p className="success-message">
-          Provider policy 已保存，并重新计算 execution eligibility。
-        </p>
+        <p className="success-message">{t('prompts.notice.policySaved')}</p>
       ) : null}
       {typeof query.error === 'string' && query.error.startsWith('manual-import') ? (
-        <p className="warning-message">
-          Manual import 操作失败，请检查 JSON、exact hash 与审核状态。
-        </p>
+        <p className="warning-message">{t('prompts.error.manualImport')}</p>
       ) : null}
       {query.error === 'measurement-policy' ? (
-        <p className="warning-message">
-          Provider policy 保存失败；未批准的数据不会发送到 Adapter。
-        </p>
+        <p className="warning-message">{t('prompts.error.policy')}</p>
       ) : null}
 
       {promptRevisionId !== undefined && bundle === undefined ? (
         <section className="shell-card">
-          <h2>Exact Prompt revision</h2>
-          <p>Exact Prompt revision ID：{promptRevisionId}</p>
-          <p className="warning-message">该 exact Prompt revision 当前不可读取。</p>
+          <h2>{t('prompts.revisionUnavailableHeading')}</h2>
+          <p>{t('prompts.revisionId', { id: promptRevisionId })}</p>
+          <p className="warning-message">{t('prompts.revisionUnavailable')}</p>
         </section>
       ) : null}
 
       {bundle === undefined && mayManage ? (
         <section className="shell-card">
-          <h2>提议可复现问题集</h2>
+          <h2>{t('prompts.proposeHeading')}</h2>
           <form action={proposePromptSet} className="stacked-form">
             <input name="tenantId" type="hidden" value={tenantId} />
             <input name="workspaceId" type="hidden" value={workspaceId} />
-            <label htmlFor="prompt-title">Prompt Set 标题</label>
+            <label htmlFor="prompt-title">{t('prompts.field.title')}</label>
             <input id="prompt-title" name="title" required />
-            <label htmlFor="prompt-subject">研究主题</label>
+            <label htmlFor="prompt-subject">{t('prompts.field.subject')}</label>
             <input id="prompt-subject" name="subject" required />
-            <label htmlFor="prompt-profile-id">Profile revision ID</label>
-            <input defaultValue={profileId} id="prompt-profile-id" name="profileId" required />
-            <label htmlFor="prompt-profile-revision">Profile revision</label>
+            <label htmlFor="prompt-profile-id">{t('prompts.field.profileRevisionId')}</label>
+            <input
+              defaultValue={profileId}
+              id="prompt-profile-id"
+              list="prompt-profile-options"
+              name="profileId"
+              required
+            />
+            <datalist id="prompt-profile-options">
+              {profileOptions.map((profile) => (
+                <option key={profile.id} value={profile.id}>
+                  {profile.displayName} (rev {profile.currentRevision})
+                </option>
+              ))}
+            </datalist>
+            <label htmlFor="prompt-profile-revision">{t('prompts.field.profileRevision')}</label>
             <input
               defaultValue={profileRevision}
               id="prompt-profile-revision"
@@ -526,9 +557,22 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
               required
               type="number"
             />
-            <label htmlFor="prompt-offering-id">Offering revision ID</label>
-            <input defaultValue={offeringId} id="prompt-offering-id" name="offeringId" required />
-            <label htmlFor="prompt-offering-revision">Offering revision</label>
+            <label htmlFor="prompt-offering-id">{t('prompts.field.offeringRevisionId')}</label>
+            <input
+              defaultValue={offeringId}
+              id="prompt-offering-id"
+              list="prompt-offering-options"
+              name="offeringId"
+              required
+            />
+            <datalist id="prompt-offering-options">
+              {offeringOptions.map((offering) => (
+                <option key={offering.id} value={offering.id}>
+                  {offering.name} [{offering.kind}] (rev {offering.currentRevision})
+                </option>
+              ))}
+            </datalist>
+            <label htmlFor="prompt-offering-revision">{t('prompts.field.offeringRevision')}</label>
             <input
               defaultValue={offeringRevision}
               id="prompt-offering-revision"
@@ -537,15 +581,15 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
               required
               type="number"
             />
-            <label htmlFor="prompt-claims">Approved Claim revision IDs</label>
+            <label htmlFor="prompt-claims">{t('prompts.field.claimRevisionIds')}</label>
             <textarea defaultValue="" id="prompt-claims" name="claimRevisionIds" />
-            <label htmlFor="prompt-market">Market</label>
+            <label htmlFor="prompt-market">{t('prompts.field.market')}</label>
             <input defaultValue="SG" id="prompt-market" name="market" required />
-            <label htmlFor="prompt-locale">Locale</label>
+            <label htmlFor="prompt-locale">{t('prompts.field.locale')}</label>
             <input defaultValue="en-SG" id="prompt-locale" name="locale" required />
-            <label htmlFor="prompt-region">Region</label>
+            <label htmlFor="prompt-region">{t('prompts.field.region')}</label>
             <input defaultValue="Singapore" id="prompt-region" name="region" required />
-            <label htmlFor="additional-scopes">Additional scopes (market | locale | region)</label>
+            <label htmlFor="additional-scopes">{t('prompts.field.additionalScopes')}</label>
             <textarea
               aria-describedby="additional-scopes-help"
               id="additional-scopes"
@@ -553,8 +597,8 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
               placeholder={'US | en-US | United States\nDE | de-DE | Germany'}
               rows={2}
             />
-            <p id="additional-scopes-help">批准时总计必须为 1–3 个完整 scope。</p>
-            <label htmlFor="provider-surface">Provider / Consumer Surface</label>
+            <p id="additional-scopes-help">{t('prompts.additionalScopesHelp')}</p>
+            <label htmlFor="provider-surface">{t('prompts.field.providerSurface')}</label>
             <select id="provider-surface" name="providerSurface">
               {registry.map((entry) => (
                 <option
@@ -565,23 +609,23 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
                 </option>
               ))}
             </select>
-            <label htmlFor="scenario-model">Model</label>
+            <label htmlFor="scenario-model">{t('prompts.field.model')}</label>
             <input id="scenario-model" name="model" placeholder="e.g. gpt-4o" required />
-            <label htmlFor="scenario-model-version">Model version</label>
+            <label htmlFor="scenario-model-version">{t('prompts.field.modelVersion')}</label>
             <input
               defaultValue="2026-07"
               id="scenario-model-version"
               name="modelVersion"
               required
             />
-            <label htmlFor="scenario-account">Account</label>
+            <label htmlFor="scenario-account">{t('prompts.field.account')}</label>
             <input
               id="scenario-account"
               name="account"
               placeholder="e.g. workspace account"
               required
             />
-            <label htmlFor="scenario-repetitions">Repetitions</label>
+            <label htmlFor="scenario-repetitions">{t('prompts.field.repetitions')}</label>
             <input
               defaultValue="3"
               id="scenario-repetitions"
@@ -591,13 +635,15 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
               type="number"
             />
             <label>
-              <input defaultChecked name="freshSession" type="checkbox" /> Fresh session
+              <input defaultChecked name="freshSession" type="checkbox" />{' '}
+              {t('prompts.field.freshSession')}
             </label>
             <label>
-              <input defaultChecked name="searchEnabled" type="checkbox" /> Search enabled
+              <input defaultChecked name="searchEnabled" type="checkbox" />{' '}
+              {t('prompts.field.searchEnabled')}
             </label>
             <button className="primary-action" type="submit">
-              生成 20 个确定性问题草稿
+              {t('prompts.proposeAction')}
             </button>
           </form>
         </section>
@@ -606,35 +652,45 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
       {bundle === undefined ? null : (
         <>
           <section className="shell-card">
-            <h2>Prompt revision {bundle.revision.revision}</h2>
-            <p>Exact Prompt revision ID：{bundle.revision.id}</p>
-            <p>Title：{bundle.revision.title}</p>
-            <p>Subject：{bundle.revision.subject}</p>
+            <h2>{t('prompts.revisionHeading', { revision: bundle.revision.revision })}</h2>
+            <p>{t('prompts.revisionId', { id: bundle.revision.id })}</p>
+            <p>{t('prompts.revisionTitle', { value: bundle.revision.title })}</p>
+            <p>{t('prompts.revisionSubject', { value: bundle.revision.subject })}</p>
             <p>
-              状态：<strong data-testid="prompt-status">{bundle.revision.status}</strong>
+              {t('prompts.statusLabel')}
+              <strong data-testid="prompt-status">{bundle.revision.status}</strong>
             </p>
             <p>
-              Prompt 数量：
+              {t('prompts.promptCountLabel')}
               <strong data-testid="prompt-count">{bundle.revision.prompts.length}</strong>
             </p>
-            <p>Prompt hash：{bundle.revision.contentHash}</p>
-            <p>Scenario hash：{bundle.scenario.contentHash}</p>
-            <p>Provider：{bundle.scenario.providerKey}</p>
-            <p>Consumer Surface：{bundle.scenario.surfaceKey}</p>
+            <p>{t('prompts.promptHash', { hash: bundle.revision.contentHash })}</p>
+            <p>{t('prompts.scenarioHash', { hash: bundle.scenario.contentHash })}</p>
+            <p>{t('prompts.providerValue', { value: bundle.scenario.providerKey })}</p>
+            <p>{t('prompts.consumerSurfaceValue', { value: bundle.scenario.surfaceKey })}</p>
             <p>
-              Model/version：{bundle.scenario.model} / {bundle.scenario.modelVersion}
+              {t('prompts.modelVersionValue', {
+                model: bundle.scenario.model,
+                version: bundle.scenario.modelVersion,
+              })}
             </p>
             <p>
-              Scope：
-              {bundle.revision.scopes
-                .map((scope) => `${scope.market}/${scope.locale}/${scope.region}`)
-                .join(', ')}
+              {t('prompts.scopeValue', {
+                value: bundle.revision.scopes
+                  .map((scope) => `${scope.market}/${scope.locale}/${scope.region}`)
+                  .join(', '),
+              })}
             </p>
             <p>
-              Fresh session/search/repetitions：{String(bundle.scenario.freshSession)} /{' '}
-              {String(bundle.scenario.searchEnabled)} / {bundle.scenario.repetitions}
+              {t('prompts.scenarioFlags', {
+                fresh: String(bundle.scenario.freshSession),
+                search: String(bundle.scenario.searchEnabled),
+                repetitions: bundle.scenario.repetitions,
+              })}
             </p>
-            {bundle.previousApprovalStale ? <p className="warning-message">旧批准已失效</p> : null}
+            {bundle.previousApprovalStale ? (
+              <p className="warning-message">{t('prompts.approvalStale')}</p>
+            ) : null}
           </section>
 
           {mayApprove && bundle.revision.status === 'DRAFT' ? (
@@ -647,7 +703,7 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
                 <input name="promptHash" type="hidden" value={bundle.revision.contentHash} />
                 <input name="scenarioHash" type="hidden" value={bundle.scenario.contentHash} />
                 <button className="primary-action" type="submit">
-                  批准 exact Prompt / Scenario hash
+                  {t('prompts.approveAction')}
                 </button>
               </form>
             </section>
@@ -655,35 +711,46 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
 
           {registryEntry !== undefined && measurementPolicyState !== undefined ? (
             <section className="shell-card" data-testid="measurement-policy-card">
-              <h2>Provider policy &amp; execution eligibility</h2>
+              <h2>{t('prompts.policy.heading')}</h2>
               <p>
-                Provider / Surface：{registryEntry.providerName} / {registryEntry.surfaceName}（
-                {registryEntry.providerKey} / {registryEntry.surfaceKey}）
+                {t('prompts.policy.providerSurface', {
+                  providerName: registryEntry.providerName,
+                  surfaceName: registryEntry.surfaceName,
+                  providerKey: registryEntry.providerKey,
+                  surfaceKey: registryEntry.surfaceKey,
+                })}
               </p>
               <p>
-                Execution：
+                {t('prompts.policy.executionLabel')}
                 <strong data-testid="measurement-policy-status">
-                  {measurementPolicyState.eligible ? 'ELIGIBLE' : 'NOT ELIGIBLE'}
+                  {measurementPolicyState.eligible
+                    ? t('prompts.policy.eligible')
+                    : t('prompts.policy.notEligible')}
                 </strong>
               </p>
               <p>
-                Required Adapter：{measurementPolicyState.requiredAdapterVersion} · Terms：
-                {measurementPolicyState.requiredTermsVersion ?? 'Adapter descriptor unavailable'}
+                {t('prompts.policy.required', {
+                  adapter: measurementPolicyState.requiredAdapterVersion,
+                  terms:
+                    measurementPolicyState.requiredTermsVersion ??
+                    t('prompts.policy.termsUnavailable'),
+                })}
               </p>
               {measurementPolicyState.eligible ? (
-                <p className="success-message">
-                  Exact Adapter、terms、authorization 与 cross-border approval 均已满足。
-                </p>
+                <p className="success-message">{t('prompts.policy.eligibleMessage')}</p>
               ) : (
                 <p className="warning-message">
-                  当前 baseline 只会安全记录 NOT_CHECKED，不会把数据发送给 Adapter。原因：
-                  {measurementPolicyState.reasons.join(', ')}
+                  {t('prompts.policy.notEligibleMessage', {
+                    reasons: measurementPolicyState.reasons.join(', '),
+                  })}
                 </p>
               )}
               {measurementPolicyState.policy === null ? null : (
                 <p>
-                  Current policy：{measurementPolicyState.policy.policyVersion} · approved{' '}
-                  {measurementPolicyState.policy.approvedAt}
+                  {t('prompts.policy.current', {
+                    version: measurementPolicyState.policy.policyVersion,
+                    approvedAt: measurementPolicyState.policy.approvedAt,
+                  })}
                 </p>
               )}
               {mayManageMeasurementPolicy ? (
@@ -696,14 +763,18 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
                   {manualImportId === undefined ? null : (
                     <input name="manualImportId" type="hidden" value={manualImportId} />
                   )}
-                  <label htmlFor="measurement-policy-adapter-version">Adapter version</label>
+                  <label htmlFor="measurement-policy-adapter-version">
+                    {t('prompts.policy.field.adapterVersion')}
+                  </label>
                   <input
                     id="measurement-policy-adapter-version"
                     name="adapterVersion"
                     readOnly
                     value={measurementPolicyState.requiredAdapterVersion}
                   />
-                  <label htmlFor="measurement-policy-terms-version">Provider terms version</label>
+                  <label htmlFor="measurement-policy-terms-version">
+                    {t('prompts.policy.field.termsVersion')}
+                  </label>
                   <input
                     defaultValue={
                       measurementPolicyState.policy?.termsVersion ??
@@ -720,7 +791,7 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
                       name="termsApproved"
                       type="checkbox"
                     />{' '}
-                    Terms approved
+                    {t('prompts.policy.field.termsApproved')}
                   </label>
                   <label>
                     <input
@@ -728,7 +799,7 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
                       name="authorizationApproved"
                       type="checkbox"
                     />{' '}
-                    Authorization approved
+                    {t('prompts.policy.field.authorizationApproved')}
                   </label>
                   <label>
                     <input
@@ -736,9 +807,11 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
                       name="crossBorderApproved"
                       type="checkbox"
                     />{' '}
-                    Cross-border approved
+                    {t('prompts.policy.field.crossBorderApproved')}
                   </label>
-                  <label htmlFor="measurement-policy-purpose">Policy purpose</label>
+                  <label htmlFor="measurement-policy-purpose">
+                    {t('prompts.policy.field.purpose')}
+                  </label>
                   <textarea
                     defaultValue={measurementPolicyState.policy?.purpose ?? ''}
                     id="measurement-policy-purpose"
@@ -746,7 +819,9 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
                     required
                     rows={3}
                   />
-                  <label htmlFor="measurement-policy-version">Policy version</label>
+                  <label htmlFor="measurement-policy-version">
+                    {t('prompts.policy.field.policyVersion')}
+                  </label>
                   <input
                     defaultValue={measurementPolicyState.policy?.policyVersion ?? ''}
                     id="measurement-policy-version"
@@ -754,7 +829,7 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
                     required
                   />
                   <button className="primary-action" type="submit">
-                    保存 Provider policy
+                    {t('prompts.policy.saveAction')}
                   </button>
                 </form>
               ) : null}
@@ -766,11 +841,8 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
           bundle.revision.status === 'APPROVED' &&
           bundle.approvalCurrent ? (
             <section className="shell-card">
-              <h2>Reviewed manual import</h2>
-              <p>
-                提交人工采集的 exact Prompt / scope / repetition
-                证据。服务端会补齐完整槽位集；未提供的槽位只会记录为 NOT_CHECKED，不会伪造成功。
-              </p>
+              <h2>{t('prompts.manualImport.heading')}</h2>
+              <p>{t('prompts.manualImport.help')}</p>
               <form action={submitManualMeasurementImport} className="stacked-form">
                 <input name="tenantId" type="hidden" value={tenantId} />
                 <input name="workspaceId" type="hidden" value={workspaceId} />
@@ -788,7 +860,9 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
                   value={bundle.scenario.contentHash}
                 />
                 <input name="idempotencyKey" type="hidden" value={randomUUID()} />
-                <label htmlFor="manual-import-entries">Manual import entries JSON</label>
+                <label htmlFor="manual-import-entries">
+                  {t('prompts.manualImport.field.entries')}
+                </label>
                 <textarea
                   defaultValue={exampleManualEntries}
                   id="manual-import-entries"
@@ -797,7 +871,7 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
                   rows={20}
                 />
                 <button className="primary-action" type="submit">
-                  提交 Manual import 待审核
+                  {t('prompts.manualImport.submitAction')}
                 </button>
               </form>
             </section>
@@ -805,28 +879,30 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
 
           {manualImport !== undefined ? (
             <section className="shell-card" data-testid="manual-import-card">
-              <h2>Manual import review</h2>
-              <p>Import ID：{manualImport.id}</p>
+              <h2>{t('prompts.manualImport.reviewHeading')}</h2>
+              <p>{t('prompts.manualImport.id', { id: manualImport.id })}</p>
               <p>
-                Exact import hash：
+                {t('prompts.manualImport.hashLabel')}
                 <span className="monospace break-anywhere" data-testid="manual-import-exact-hash">
                   {manualImport.contentHash}
                 </span>
               </p>
               <p>
-                状态：<strong data-testid="manual-import-status">{manualImport.status}</strong>
+                {t('prompts.manualImport.statusLabel')}
+                <strong data-testid="manual-import-status">{manualImport.status}</strong>
               </p>
               <p>
-                槽位：
+                {t('prompts.manualImport.slotsLabel')}
                 <strong data-testid="manual-import-provided-count">
                   {manualImport.providedSlotCount}
                 </strong>{' '}
-                provided /{' '}
+                {t('prompts.manualImport.provided')} /{' '}
                 <strong data-testid="manual-import-expected-count">
                   {manualImport.expectedSlotCount}
                 </strong>{' '}
-                expected。以下 manifest 绑定 exact Prompt hash{' '}
-                <span className="monospace break-anywhere">{manualImport.promptContentHash}</span>。
+                {t('prompts.manualImport.expectedManifest')}{' '}
+                <span className="monospace break-anywhere">{manualImport.promptContentHash}</span>
+                {t('prompts.manualImport.manifestSuffix')}
               </p>
               <div className="channel-grid">
                 {(manualImportDetail?.slots ?? []).map((slot) => (
@@ -837,35 +913,50 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
                     key={`${slot.prompt.id}:${slot.scopeKey}:${slot.repetition}`}
                   >
                     <h3>
-                      Prompt {slot.prompt.ordinal} · repetition {slot.repetition}
+                      {t('prompts.manualImport.slotHeading', {
+                        ordinal: slot.prompt.ordinal,
+                        repetition: slot.repetition,
+                      })}
                     </h3>
                     <p>{slot.prompt.text}</p>
-                    <p className="monospace break-anywhere">Prompt ID：{slot.prompt.id}</p>
-                    <p>
-                      Scope：{slot.scope.market} / {slot.scope.locale} / {slot.scope.region}
+                    <p className="monospace break-anywhere">
+                      {t('prompts.manualImport.promptId', { id: slot.prompt.id })}
                     </p>
-                    <p>Repetition：{slot.repetition}</p>
                     <p>
-                      Provided：<strong>{slot.provided ? 'YES' : 'NO'}</strong> · Observed：
-                      {slot.observedAt ?? 'Not provided'}
+                      {t('prompts.manualImport.scope', {
+                        market: slot.scope.market,
+                        locale: slot.scope.locale,
+                        region: slot.scope.region,
+                      })}
+                    </p>
+                    <p>{t('prompts.manualImport.repetition', { repetition: slot.repetition })}</p>
+                    <p>
+                      {t('prompts.manualImport.providedLabel')}
+                      <strong>
+                        {slot.provided
+                          ? t('prompts.manualImport.yes')
+                          : t('prompts.manualImport.no')}
+                      </strong>
+                      {t('prompts.manualImport.observedLabel')}
+                      {slot.observedAt ?? t('prompts.manualImport.notProvided')}
                     </p>
                     {slot.result === null ? (
-                      <p className="warning-message">
-                        Status：NOT_CHECKED candidate · 此 exact slot 未提供人工证据。
-                      </p>
+                      <p className="warning-message">{t('prompts.manualImport.unchecked')}</p>
                     ) : (
                       <>
                         <p>
-                          Status：<strong>{slot.result.status}</strong>
+                          {t('prompts.manualImport.resultStatusLabel')}
+                          <strong>{slot.result.status}</strong>
                         </p>
                         <p>
-                          Response：
-                          {slot.result.rawEvidence.responseText ?? 'No response recorded.'}
+                          {t('prompts.manualImport.responseLabel')}
+                          {slot.result.rawEvidence.responseText ??
+                            t('prompts.manualImport.noResponse')}
                         </p>
                         <p>
-                          Citations：
+                          {t('prompts.manualImport.citationsLabel')}
                           {slot.result.rawEvidence.citations.length === 0
-                            ? 'None'
+                            ? t('prompts.manualImport.none')
                             : slot.result.rawEvidence.citations
                                 .map(
                                   (citation) =>
@@ -874,24 +965,27 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
                                 .join('；')}
                         </p>
                         <p>
-                          Error：
+                          {t('prompts.manualImport.errorLabel')}
                           {slot.result.rawEvidence.error === null
-                            ? 'None'
+                            ? t('prompts.manualImport.none')
                             : `${slot.result.rawEvidence.error.code} — ${slot.result.rawEvidence.error.message}`}
                         </p>
                         <p>
-                          Cost：{slot.result.cost.amount} {slot.result.cost.currency}
+                          {t('prompts.manualImport.cost', {
+                            amount: slot.result.cost.amount,
+                            currency: slot.result.cost.currency,
+                          })}
                         </p>
                       </>
                     )}
                     <p className="monospace break-anywhere">
-                      Raw evidence hash：
+                      {t('prompts.manualImport.rawHashLabel')}
                       <span data-testid="manual-import-raw-hash">
-                        {slot.rawEvidenceContentHash ?? 'Not provided'}
+                        {slot.rawEvidenceContentHash ?? t('prompts.manualImport.notProvided')}
                       </span>
                     </p>
                     <p className="monospace break-anywhere">
-                      Slot hash：
+                      {t('prompts.manualImport.slotHashLabel')}
                       <span data-testid="manual-import-slot-hash">{slot.contentHash}</span>
                     </p>
                   </article>
@@ -908,13 +1002,15 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
                     type="hidden"
                     value={manualImport.contentHash}
                   />
-                  <label htmlFor="manual-import-review-note">审核备注</label>
+                  <label htmlFor="manual-import-review-note">
+                    {t('prompts.manualImport.field.reviewNote')}
+                  </label>
                   <textarea id="manual-import-review-note" name="note" required rows={3} />
                   <button className="primary-action" name="decision" type="submit" value="APPROVE">
-                    审核并批准 Manual import
+                    {t('prompts.manualImport.approveAction')}
                   </button>
                   <button name="decision" type="submit" value="REJECT">
-                    审核并拒绝 Manual import
+                    {t('prompts.manualImport.rejectAction')}
                   </button>
                 </form>
               ) : null}
@@ -923,9 +1019,7 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
 
           {requiresReviewedManualImport && manualImport?.status !== 'APPROVED' ? (
             <section className="shell-card">
-              <p className="warning-message">
-                新 baseline 需先绑定经 Reviewer / Owner 明确批准的 Manual import。
-              </p>
+              <p className="warning-message">{t('prompts.manualImport.requiredWarning')}</p>
             </section>
           ) : null}
 
@@ -934,11 +1028,8 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
           bundle.approvalCurrent &&
           (!requiresReviewedManualImport || manualImport?.status === 'APPROVED') ? (
             <section className="shell-card">
-              <h2>Approved Measurement Scenario</h2>
-              <p>
-                Baseline 将绑定当前 exact Prompt 与 Scenario hash，并为每个 Prompt / scope
-                执行配置的 repetitions。运行结果按单一 Surface cohort 报告。
-              </p>
+              <h2>{t('prompts.measurement.heading')}</h2>
+              <p>{t('prompts.measurement.help')}</p>
               <form action={startMeasurementRun}>
                 <input name="tenantId" type="hidden" value={tenantId} />
                 <input name="workspaceId" type="hidden" value={workspaceId} />
@@ -973,7 +1064,7 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
                   </>
                 ) : null}
                 <button className="primary-action" type="submit">
-                  启动 Measurement baseline
+                  {t('prompts.measurement.baselineAction')}
                 </button>
               </form>
               <form action={startMeasurementRun}>
@@ -1009,14 +1100,14 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
                     />
                   </>
                 ) : null}
-                <button type="submit">启动 Measurement remeasurement</button>
+                <button type="submit">{t('prompts.measurement.remeasurementAction')}</button>
               </form>
             </section>
           ) : null}
 
           {mayManage ? (
             <section className="shell-card">
-              <h2>编辑问题</h2>
+              <h2>{t('prompts.edit.heading')}</h2>
               <form action={revisePromptSet} className="stacked-form">
                 <input name="tenantId" type="hidden" value={tenantId} />
                 <input name="workspaceId" type="hidden" value={workspaceId} />
@@ -1043,7 +1134,7 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
                     repetitions: bundle.scenario.repetitions,
                   })}
                 />
-                <label htmlFor="scope-editor">Scope editor (market | locale | region)</label>
+                <label htmlFor="scope-editor">{t('prompts.edit.field.scopeEditor')}</label>
                 <textarea
                   defaultValue={bundle.revision.scopes
                     .map((scope) => `${scope.market} | ${scope.locale} | ${scope.region}`)
@@ -1053,8 +1144,8 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
                   required
                   rows={3}
                 />
-                <label htmlFor="prompt-editor">Prompt 编辑器</label>
-                <p>每行格式：问题 + Tab + persona + Tab + journey stage + Tab + query type。</p>
+                <label htmlFor="prompt-editor">{t('prompts.edit.field.promptEditor')}</label>
+                <p>{t('prompts.edit.promptEditorHelp')}</p>
                 <textarea
                   defaultValue={bundle.revision.prompts
                     .map(
@@ -1067,7 +1158,7 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
                   required
                   rows={24}
                 />
-                <button type="submit">保存为新修订</button>
+                <button type="submit">{t('prompts.edit.saveAction')}</button>
               </form>
             </section>
           ) : null}

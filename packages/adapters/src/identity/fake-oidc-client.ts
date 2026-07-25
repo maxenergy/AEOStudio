@@ -37,9 +37,11 @@ export class FakeOidcClient implements OidcClient {
           ? { subject: 'fake-reviewer-subject', email: 'reviewer@example.test' }
           : input.code === 'fake-code-publisher'
             ? { subject: 'fake-publisher-subject', email: 'publisher@example.test' }
-            : input.code === 'fake-code'
-              ? { subject: 'fake-cognito-subject', email: 'owner@example.test' }
-              : null;
+            : input.code === 'fake-code-brief-reviewer'
+              ? { subject: 'fake-brief-reviewer-subject', email: 'brief-reviewer@example.test' }
+              : input.code === 'fake-code'
+                ? { subject: 'fake-cognito-subject', email: 'owner@example.test' }
+                : null;
     if (identity === null) {
       return Promise.reject(new Error('The deterministic fake OIDC exchange was rejected.'));
     }

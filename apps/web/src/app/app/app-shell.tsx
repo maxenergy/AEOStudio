@@ -4,66 +4,69 @@ import type { WorkspaceListEnvelope } from '@aeostudio/contracts';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import type { ReactNode } from 'react';
 
+import { makeT } from '../../lib/i18n';
+import type { Locale, MessageKey } from '../../lib/i18n';
+
 type WorkspaceEntry = WorkspaceListEnvelope['data']['workspaces'][number];
 type Role = WorkspaceEntry['activeRole'];
 
 interface NavItem {
   path: string;
-  label: string;
+  labelKey: MessageKey;
   roles?: readonly Role[];
 }
 
 interface NavGroup {
-  title: string;
+  titleKey: MessageKey;
   items: NavItem[];
 }
 
 const NAV_GROUPS: NavGroup[] = [
   {
-    title: '概览',
-    items: [{ path: '/app', label: '工作台' }],
+    titleKey: 'navGroup.overview',
+    items: [{ path: '/app', labelKey: 'nav.workbench' }],
   },
   {
-    title: '知识建设',
+    titleKey: 'navGroup.knowledge',
     items: [
       {
         path: '/app/onboarding',
-        label: '业务资料 Onboarding',
+        labelKey: 'nav.onboarding',
         roles: ['OWNER', 'ADMIN', 'EDITOR'],
       },
     ],
   },
   {
-    title: '证据与内容',
+    titleKey: 'navGroup.evidence',
     items: [
       {
         path: '/app/claims',
-        label: 'Evidence / Claims',
+        labelKey: 'nav.claims',
         roles: ['OWNER', 'ADMIN', 'EDITOR', 'REVIEWER'],
       },
       {
         path: '/app/prompts',
-        label: 'Prompt / Scenario Lab',
+        labelKey: 'nav.prompts',
         roles: ['OWNER', 'ADMIN', 'EDITOR', 'REVIEWER', 'ANALYST'],
       },
       {
         path: '/app/plans',
-        label: 'Content Plan / Briefs',
+        labelKey: 'nav.plans',
         roles: ['OWNER', 'ADMIN', 'EDITOR', 'REVIEWER'],
       },
     ],
   },
   {
-    title: '发布与实验',
+    titleKey: 'navGroup.publish',
     items: [
-      { path: '/app/artifacts', label: 'Artifact Studio' },
-      { path: '/app/channels', label: 'Channel Packages' },
-      { path: '/app/experiments', label: 'Experiment Comparison' },
+      { path: '/app/artifacts', labelKey: 'nav.artifacts' },
+      { path: '/app/channels', labelKey: 'nav.channels' },
+      { path: '/app/experiments', labelKey: 'nav.experiments' },
     ],
   },
   {
-    title: '治理',
-    items: [{ path: '/app/privacy', label: 'Privacy & Audit', roles: ['OWNER'] }],
+    titleKey: 'navGroup.governance',
+    items: [{ path: '/app/privacy', labelKey: 'nav.privacy', roles: ['OWNER'] }],
   },
 ];
 
@@ -78,14 +81,17 @@ function visibleGroups(role: Role | undefined): NavGroup[] {
 
 export function AppShell({
   workspaces,
+  locale,
   children,
 }: {
   workspaces: WorkspaceEntry[];
+  locale: Locale;
   children: ReactNode;
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const t = makeT(locale);
   const tenantParam = searchParams.get('tenant');
   const workspaceParam = searchParams.get('workspace');
   const current =
@@ -98,11 +104,11 @@ export function AppShell({
 
   return (
     <div className="app-shell">
-      <aside className="app-sidebar" aria-label="主导航">
+      <aside className="app-sidebar" aria-label={t('sidebar.navPrimary')}>
         <div className="sidebar-header">
-          <p className="sidebar-brand">AEO Studio</p>
+          <p className="sidebar-brand">{t('sidebar.brand')}</p>
           {current === undefined ? (
-            <p className="sidebar-workspace">尚未加入 Workspace</p>
+            <p className="sidebar-workspace">{t('sidebar.noWorkspace')}</p>
           ) : (
             <>
               <p className="sidebar-workspace">{current.workspace.name}</p>
@@ -112,7 +118,7 @@ export function AppShell({
         </div>
         {workspaces.length > 1 && current !== undefined ? (
           <div className="sidebar-switcher">
-            <label htmlFor="sidebar-workspace-switcher">切换 Workspace</label>
+            <label htmlFor="sidebar-workspace-switcher">{t('sidebar.switchWorkspace')}</label>
             <select
               id="sidebar-workspace-switcher"
               onChange={(event) => {
@@ -138,10 +144,10 @@ export function AppShell({
             </select>
           </div>
         ) : null}
-        <nav className="sidebar-nav" aria-label="功能模块">
+        <nav className="sidebar-nav" aria-label={t('sidebar.navModules')}>
           {groups.map((group) => (
-            <div className="sidebar-group" key={group.title}>
-              <p className="sidebar-group-title">{group.title}</p>
+            <div className="sidebar-group" key={group.titleKey}>
+              <p className="sidebar-group-title">{t(group.titleKey)}</p>
               <ul>
                 {group.items.map((item) => {
                   const active = pathname === item.path;
@@ -152,7 +158,7 @@ export function AppShell({
                         className={active ? 'sidebar-link active' : 'sidebar-link'}
                         href={`${item.path}${contextQuery}`}
                       >
-                        {item.label}
+                        {t(item.labelKey)}
                       </a>
                     </li>
                   );

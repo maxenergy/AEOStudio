@@ -12,7 +12,7 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: 'pnpm --filter @aeostudio/api dev',
+      command: 'corepack pnpm --filter @aeostudio/api dev',
       env: {
         NODE_ENV: 'test',
         AEOSTUDIO_ALLOW_FAKE_RUNTIME: 'true',
@@ -31,7 +31,7 @@ export default defineConfig({
       timeout: 120_000,
     },
     {
-      command: 'pnpm --filter @aeostudio/web dev',
+      command: 'corepack pnpm --filter @aeostudio/web dev',
       env: {
         API_INTERNAL_ORIGIN: 'http://127.0.0.1:3200',
         API_PUBLIC_ORIGIN: 'http://127.0.0.1:3200',

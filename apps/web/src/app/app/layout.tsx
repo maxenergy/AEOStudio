@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import type { ReactNode } from 'react';
 
+import { makeT } from '../../lib/i18n';
+import { getLocale } from '../../lib/i18n/get-locale';
 import { AppShell } from './app-shell';
 
 function apiOrigin(): string {
@@ -11,6 +13,8 @@ function apiOrigin(): string {
 }
 
 export default async function AppLayout({ children }: Readonly<{ children: ReactNode }>) {
+  const locale = await getLocale();
+  const t = makeT(locale);
   const cookieHeader = (await cookies()).toString();
   const sessionResponse = await fetch(`${apiOrigin()}/api/v1/auth/session`, {
     cache: 'no-store',
@@ -28,8 +32,10 @@ export default async function AppLayout({ children }: Readonly<{ children: React
     : undefined;
 
   return (
-    <Suspense fallback={<div className="app-shell-loading">加载中…</div>}>
-      <AppShell workspaces={workspaceList?.data.workspaces ?? []}>{children}</AppShell>
+    <Suspense fallback={<div className="app-shell-loading">{t('common.loading')}</div>}>
+      <AppShell workspaces={workspaceList?.data.workspaces ?? []} locale={locale}>
+        {children}
+      </AppShell>
     </Suspense>
   );
 }

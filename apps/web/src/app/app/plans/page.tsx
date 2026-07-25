@@ -16,6 +16,8 @@ import type { SiteBaselineListEnvelope } from '@aeostudio/contracts/site-crawl';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
+import { makeT } from '../../../lib/i18n';
+import { getLocale } from '../../../lib/i18n/get-locale';
 import { JobPoller } from '../jobs/job-poller';
 
 function apiOrigin(): string {
@@ -148,6 +150,7 @@ interface PlansPageProps {
 }
 
 export default async function PlansPage({ searchParams }: PlansPageProps) {
+  const t = makeT(await getLocale());
   const query = await searchParams;
   const tenantId = typeof query.tenant === 'string' ? query.tenant : undefined;
   const workspaceId = typeof query.workspace === 'string' ? query.workspace : undefined;
@@ -213,24 +216,21 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
 
   return (
     <main>
-      <p className="eyebrow">AEO Studio</p>
-      <h1>Content Plan / Briefs</h1>
-      <p>
-        由批准的业务资料、Claims、Prompt Set 与 site baseline 生成可解释优先级；visibility
-        尚未测量时明确标记 UNKNOWN，不把它混入分数。
-      </p>
+      <p className="eyebrow">{t('plans.eyebrow')}</p>
+      <h1>{t('plans.title')}</h1>
+      <p>{t('plans.lede')}</p>
 
       {membership.activeRole === 'OWNER' ? (
         <section className="shell-card">
-          <h2>计划预算</h2>
-          {query.notice === 'budget' ? <p role="status">计划预算已保存</p> : null}
+          <h2>{t('plans.budgetHeading')}</h2>
+          {query.notice === 'budget' ? <p role="status">{t('plans.budgetSaved')}</p> : null}
           <form action={saveBudget} className="stacked-form">
             <input name="tenantId" type="hidden" value={tenantId} />
             <input name="workspaceId" type="hidden" value={workspaceId} />
-            <label htmlFor="plan-budget">预算上限</label>
+            <label htmlFor="plan-budget">{t('plans.budgetLimit')}</label>
             <input defaultValue="1000" id="plan-budget" min="1" name="limitUnits" type="number" />
             <button className="secondary-action" type="submit">
-              保存计划预算
+              {t('plans.budgetSaveAction')}
             </button>
           </form>
         </section>
@@ -238,18 +238,15 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
 
       {planId === undefined && mayStart ? (
         <section className="shell-card">
-          <h2>冻结计划输入</h2>
-          <p>所有 ID 都会作为 input artifact revision snapshot 保存，生成过程不调用真实 LLM。</p>
+          <h2>{t('plans.freezeHeading')}</h2>
+          <p>{t('plans.freezeHelp')}</p>
           {profiles.length === 0 && promptSets.length === 0 ? (
-            <p role="alert">
-              尚无可用资源。请先完成 Profile/Offering 创建、Prompt Set 审批、Claim 审批和 Site
-              Baseline 爬取。
-            </p>
+            <p role="alert">{t('plans.noResources')}</p>
           ) : (
             <form action={startPlan} className="stacked-form">
               <input name="tenantId" type="hidden" value={tenantId} />
               <input name="workspaceId" type="hidden" value={workspaceId} />
-              <label htmlFor="plan-profile">Profile</label>
+              <label htmlFor="plan-profile">{t('plans.field.profile')}</label>
               <select id="plan-profile" name="profileId" required>
                 {profiles.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -257,7 +254,7 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
                   </option>
                 ))}
               </select>
-              <label htmlFor="plan-profile-revision">Profile revision</label>
+              <label htmlFor="plan-profile-revision">{t('plans.field.profileRevision')}</label>
               <input
                 defaultValue={profiles[0]?.currentRevision ?? 1}
                 id="plan-profile-revision"
@@ -265,7 +262,7 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
                 name="profileRevision"
                 type="number"
               />
-              <label htmlFor="plan-offering">Offering</label>
+              <label htmlFor="plan-offering">{t('plans.field.offering')}</label>
               <select id="plan-offering" name="offeringId" required>
                 {offerings.map((o) => (
                   <option key={o.id} value={o.id}>
@@ -273,7 +270,7 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
                   </option>
                 ))}
               </select>
-              <label htmlFor="plan-offering-revision">Offering revision</label>
+              <label htmlFor="plan-offering-revision">{t('plans.field.offeringRevision')}</label>
               <input
                 defaultValue={offerings[0]?.currentRevision ?? 1}
                 id="plan-offering-revision"
@@ -281,7 +278,7 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
                 name="offeringRevision"
                 type="number"
               />
-              <label htmlFor="plan-prompt-set">Approved Prompt Set</label>
+              <label htmlFor="plan-prompt-set">{t('plans.field.promptSet')}</label>
               <select id="plan-prompt-set" name="promptSetId" required>
                 {promptSets.map((ps) => (
                   <option key={ps.promptSetId} value={ps.promptSetId}>
@@ -289,7 +286,7 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
                   </option>
                 ))}
               </select>
-              <label htmlFor="plan-prompt-revision">Approved Prompt revision ID</label>
+              <label htmlFor="plan-prompt-revision">{t('plans.field.promptRevision')}</label>
               <select id="plan-prompt-revision" name="promptRevisionId" required>
                 {promptSets.map((ps) => (
                   <option key={ps.revisionId} value={ps.revisionId}>
@@ -297,21 +294,19 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
                   </option>
                 ))}
               </select>
-              <label htmlFor="plan-primary-claims">Approved primary Claim revision IDs</label>
+              <label htmlFor="plan-primary-claims">{t('plans.field.primaryClaims')}</label>
               <textarea
                 defaultValue={claims.map((c) => c.revisionId).join('\n')}
                 id="plan-primary-claims"
                 name="primaryClaimRevisionIds"
               />
-              <label htmlFor="plan-comparison-claims">
-                Independently evidenced comparison Claim revision IDs
-              </label>
+              <label htmlFor="plan-comparison-claims">{t('plans.field.comparisonClaims')}</label>
               <textarea
                 defaultValue=""
                 id="plan-comparison-claims"
                 name="comparisonClaimRevisionIds"
               />
-              <label htmlFor="plan-baseline">Site baseline</label>
+              <label htmlFor="plan-baseline">{t('plans.field.baseline')}</label>
               <select id="plan-baseline" name="baselineId" required>
                 {baselines.map((b) => (
                   <option key={b.id} value={b.id}>
@@ -320,7 +315,7 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
                 ))}
               </select>
               <button className="primary-action" type="submit">
-                启动 Content Plan
+                {t('plans.startAction')}
               </button>
             </form>
           )}
@@ -329,41 +324,54 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
 
       {job === undefined ? null : (
         <section className="shell-card" aria-labelledby="plan-job-heading">
-          <h2 id="plan-job-heading">Plan Job</h2>
+          <h2 id="plan-job-heading">{t('plans.jobHeading')}</h2>
           <JobPoller status={job.status} />
           <p>
-            状态：<strong data-testid="content-plan-job-status">{job.status}</strong>
+            {t('plans.jobStatusLabel')}
+            <strong data-testid="content-plan-job-status">{job.status}</strong>
           </p>
-          <p>进度：{job.progress}%</p>
+          <p>{t('plans.jobProgress', { progress: job.progress })}</p>
         </section>
       )}
 
       {bundle === undefined ? null : (
         <>
           <section className="shell-card">
-            <h2>Plan {bundle.plan.status}</h2>
-            <p>Method policy：{bundle.plan.methodPolicyVersion}</p>
-            <p>Content hash：{bundle.plan.contentHash ?? 'pending'}</p>
-            <p>Visibility gap：UNKNOWN（尚未执行真实多 Surface measurement）</p>
+            <h2>{t('plans.planHeading', { status: bundle.plan.status })}</h2>
+            <p>{t('plans.methodPolicy', { version: bundle.plan.methodPolicyVersion })}</p>
+            <p>
+              {t('plans.planContentHash', { hash: bundle.plan.contentHash ?? t('plans.pending') })}
+            </p>
+            <p>{t('plans.planVisibilityGap')}</p>
           </section>
 
           {bundle.opportunities.length === 0 ? null : (
             <section className="shell-card">
-              <h2>Explainable opportunities</h2>
+              <h2>{t('plans.opportunitiesHeading')}</h2>
               <ol>
                 {bundle.opportunities.map((opportunity) => (
                   <li key={opportunity.id}>
                     <h3>
-                      #{opportunity.rank} {opportunity.assetKind}
+                      {t('plans.opportunityRank', {
+                        rank: opportunity.rank,
+                        assetKind: opportunity.assetKind,
+                      })}
                     </h3>
                     <p>
-                      Business value {opportunity.businessValue} · Evidence readiness{' '}
-                      {opportunity.evidenceReadiness} · Effort {opportunity.effort} · Risk{' '}
-                      {opportunity.risk}
+                      {t('plans.opportunityMetrics', {
+                        businessValue: opportunity.businessValue,
+                        evidenceReadiness: opportunity.evidenceReadiness,
+                        effort: opportunity.effort,
+                        risk: opportunity.risk,
+                      })}
                     </p>
-                    <p>Visibility gap：{opportunity.visibilityGap.status}</p>
+                    <p>
+                      {t('plans.opportunityVisibilityGap', {
+                        status: opportunity.visibilityGap.status,
+                      })}
+                    </p>
                     <p>{opportunity.rankReason}</p>
-                    <p>下一步：{opportunity.action}</p>
+                    <p>{t('plans.opportunityNextStep', { action: opportunity.action })}</p>
                   </li>
                 ))}
               </ol>
@@ -372,9 +380,9 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
 
           {bundle.briefs.length === 0 ? null : (
             <section className="shell-card">
-              <h2>Evidence-ready Briefs</h2>
+              <h2>{t('plans.briefsHeading')}</h2>
               {selectedBriefId === undefined ? null : (
-                <p role="status">Selected exact Brief ID：{selectedBriefId}</p>
+                <p role="status">{t('plans.selectedBriefId', { id: selectedBriefId })}</p>
               )}
               {bundle.briefs.map((brief) => {
                 const isSelected = brief.id === selectedBriefId;
@@ -396,17 +404,21 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
                   >
                     {isSelected ? (
                       <p>
-                        <strong>Selected exact Brief</strong>
+                        <strong>{t('plans.selectedBrief')}</strong>
                       </p>
                     ) : null}
                     <h3>{brief.assetKind}</h3>
                     <p>{brief.title}</p>
                     <p>
-                      审批状态：<strong>{brief.status}</strong> · Publish ready：false
+                      {t('plans.briefStatusLabel')}
+                      <strong>{brief.status}</strong>
+                      {t('plans.briefPublishReady')}
                     </p>
-                    <p>Prompt refs：{brief.promptIds.join(', ')}</p>
-                    <p>Claim refs：{brief.claimRevisionIds.join(', ')}</p>
-                    <p>Source artifact refs：{brief.sourceArtifactIds.join(', ')}</p>
+                    <p>{t('plans.briefPromptRefs', { refs: brief.promptIds.join(', ') })}</p>
+                    <p>{t('plans.briefClaimRefs', { refs: brief.claimRevisionIds.join(', ') })}</p>
+                    <p>
+                      {t('plans.briefSourceRefs', { refs: brief.sourceArtifactIds.join(', ') })}
+                    </p>
                     {mayReview && brief.status === 'REVIEW_REQUIRED' && jobId !== undefined ? (
                       <form action={reviewBrief} className="stacked-form">
                         <input name="tenantId" type="hidden" value={tenantId} />
@@ -416,9 +428,11 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
                         <input name="briefId" type="hidden" value={brief.id} />
                         <input name="contentHash" type="hidden" value={brief.contentHash} />
                         <input name="decision" type="hidden" value="APPROVE" />
-                        <label htmlFor={`brief-note-${brief.id}`}>Review note</label>
+                        <label htmlFor={`brief-note-${brief.id}`}>
+                          {t('plans.briefReviewNote')}
+                        </label>
                         <input id={`brief-note-${brief.id}`} name="note" required />
-                        <button type="submit">批准 exact Brief hash</button>
+                        <button type="submit">{t('plans.briefApproveAction')}</button>
                       </form>
                     ) : null}
                   </article>
@@ -429,13 +443,13 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
 
           {bundle.evidenceTasks.length === 0 ? null : (
             <section className="shell-card">
-              <h2>Evidence tasks</h2>
+              <h2>{t('plans.evidenceTasksHeading')}</h2>
               {bundle.evidenceTasks.map((task) => (
                 <article key={task.id}>
                   <h3>{task.assetKind}</h3>
                   <p>{task.reasonCode}</p>
                   <p>{task.detail}</p>
-                  <p>Publish ready：false</p>
+                  <p>{t('plans.evidenceTaskPublishReady')}</p>
                 </article>
               ))}
             </section>

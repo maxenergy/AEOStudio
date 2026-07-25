@@ -13,6 +13,8 @@ import {
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
+import { makeT } from '../../../lib/i18n';
+import { getLocale } from '../../../lib/i18n/get-locale';
 import { auditTimelineNavigation } from './privacy-navigation';
 
 function apiOrigin(): string {
@@ -258,6 +260,7 @@ export default async function PrivacyPage({ searchParams }: PrivacyPageProps) {
   const workspaceId = typeof query.workspace === 'string' ? query.workspace : undefined;
   if (tenantId === undefined || workspaceId === undefined) redirect('/app');
 
+  const t = makeT(await getLocale());
   const cookieHeader = (await cookies()).toString();
   const now = new Date();
   const exportFrom = new Date(0).toISOString();
@@ -310,96 +313,90 @@ export default async function PrivacyPage({ searchParams }: PrivacyPageProps) {
   });
   return (
     <main>
-      <p className="eyebrow">Tenant privacy control</p>
-      <h1>Privacy &amp; Audit</h1>
-      <nav aria-label="Privacy breadcrumb" className="breadcrumb">
+      <p className="eyebrow">{t('privacy.eyebrow')}</p>
+      <h1>{t('privacy.title')}</h1>
+      <nav aria-label={t('privacy.breadcrumbAria')} className="breadcrumb">
         {activeScope ? (
           <a href={`/app?tenant=${tenantId}&workspace=${workspaceId}`}>{current.workspace.name}</a>
         ) : (
-          <span className="monospace">Frozen workspace {workspaceId}</span>
+          <span className="monospace">{t('privacy.frozenWorkspace', { id: workspaceId })}</span>
         )}
-        <span aria-current="page">Privacy &amp; Audit</span>
+        <span aria-current="page">{t('privacy.title')}</span>
       </nav>
 
       {!activeScope ? (
         <p className="warning-message" data-testid="frozen-governance-mode" role="status">
-          此 Tenant 已冻结。仅保留 Owner 的隐私治理视图、Audit timeline 与 exact-version Legal Hold
-          释放能力；业务访问、导出、封存和删除写操作均已关闭。
+          {t('privacy.frozenWarning')}
         </p>
       ) : null}
 
       {query.notice === 'export-request-returned' ? (
         <section className="field-help" role="status">
-          <p>导出请求已返回；是否可下载以服务端校验结果为准。</p>
+          <p>{t('privacy.exportReturned')}</p>
           {activeScope && typeof query.export === 'string' ? (
             <a
               href={`${publicApiOrigin()}/api/v1/tenants/${tenantId}/workspaces/${workspaceId}/privacy/exports/${encodeURIComponent(query.export)}/download`}
             >
-              验证并下载 JSON bundle
+              {t('privacy.downloadBundle')}
             </a>
           ) : null}
         </section>
       ) : null}
       {query.notice === 'legal-hold-request-returned' ? (
         <p className="field-help" role="status">
-          Legal Hold 请求已返回；以下服务端列表是当前生效状态。
+          {t('privacy.holdRequestReturned')}
         </p>
       ) : null}
       {query.notice === 'legal-hold-release-returned' ? (
         <p className="field-help" role="status">
-          Legal Hold 释放请求已返回；以下服务端列表是当前生效状态。
+          {t('privacy.holdReleaseReturned')}
         </p>
       ) : null}
       {query.notice === 'audit-digest-request-returned' ? (
         <p className="field-help" role="status">
-          Audit digest 请求已返回；完整性状态以服务端重新读取结果为准。
+          {t('privacy.digestReturned')}
         </p>
       ) : null}
       {typeof query.error === 'string' ? (
         <p className="error-message" role="alert">
-          Privacy 操作未完成：{query.error}
+          {t('privacy.errorGeneric', { code: query.error })}
         </p>
       ) : null}
 
       <section aria-labelledby="retention-heading" className="shell-card">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">Current state</p>
-            <h2 id="retention-heading">数据生命周期</h2>
+            <p className="eyebrow">{t('privacy.currentStateEyebrow')}</p>
+            <h2 id="retention-heading">{t('privacy.lifecycleHeading')}</h2>
           </div>
           <strong className="status-badge neutral">
             {overview?.lifecycleState ?? 'UNAVAILABLE'}
           </strong>
         </div>
         <dl>
-          <dt>Active data deletion</dt>
-          <dd>删除请求后最多 30 天</dd>
-          <dt>Backup expiry</dt>
-          <dd>删除请求后最多 90 天</dd>
-          <dt>Connector secret</dt>
-          <dd>立即撤销且不可读取，24 小时内强制删除</dd>
-          <dt>Raw response / crawl snapshot</dt>
-          <dd>180 天</dd>
-          <dt>Screenshot</dt>
-          <dd>90 天</dd>
-          <dt>Ordinary application log</dt>
-          <dd>30 天；不作为 tamper-evident Audit Evidence</dd>
-          <dt>Audit Evidence digest</dt>
-          <dd>365 天，独立 Object Lock 端口</dd>
+          <dt>{t('privacy.lifecycleActiveDeletion')}</dt>
+          <dd>{t('privacy.lifecycleActiveDeletionValue')}</dd>
+          <dt>{t('privacy.lifecycleBackup')}</dt>
+          <dd>{t('privacy.lifecycleBackupValue')}</dd>
+          <dt>{t('privacy.lifecycleConnectorSecret')}</dt>
+          <dd>{t('privacy.lifecycleConnectorSecretValue')}</dd>
+          <dt>{t('privacy.lifecycleRawSnapshot')}</dt>
+          <dd>{t('privacy.lifecycleRawSnapshotValue')}</dd>
+          <dt>{t('privacy.lifecycleScreenshot')}</dt>
+          <dd>{t('privacy.lifecycleScreenshotValue')}</dd>
+          <dt>{t('privacy.lifecycleAppLog')}</dt>
+          <dd>{t('privacy.lifecycleAppLogValue')}</dd>
+          <dt>{t('privacy.lifecycleAuditDigest')}</dt>
+          <dd>{t('privacy.lifecycleAuditDigestValue')}</dd>
         </dl>
         {overview === undefined ? (
-          <p className="warning-message">
-            当前 lifecycle 读模型不可用；写操作仍由 API fail closed。
-          </p>
+          <p className="warning-message">{t('privacy.lifecycleUnavailable')}</p>
         ) : null}
       </section>
 
       <section aria-labelledby="export-heading" className="shell-card">
-        <h2 id="export-heading">Tenant-only export</h2>
-        <p>
-          导出仅包含当前 Tenant 的安全投影；manifest 列出 schema version、时间范围、对象 hash 与
-          checksum，且不包含凭据或其他 Tenant 对象。
-        </p>
+        <h2 id="export-heading">{t('privacy.exportHeading')}</h2>
+        <p>{t('privacy.exportDescription')}</p>
         {activeScope ? (
           <form action={exportTenant} className="stacked-form">
             <input name="tenantId" type="hidden" value={tenantId} />
@@ -407,29 +404,24 @@ export default async function PrivacyPage({ searchParams }: PrivacyPageProps) {
             <input name="from" type="hidden" value={exportFrom} />
             <input name="to" type="hidden" value={exportTo} />
             <button className="primary-action" type="submit">
-              生成 Tenant export
+              {t('privacy.exportAction')}
             </button>
           </form>
         ) : (
-          <p className="warning-message">冻结后不能创建或下载新的 Tenant export。</p>
+          <p className="warning-message">{t('privacy.exportFrozen')}</p>
         )}
-        <p className="field-help">
-          Point-in-time export 只用于完整性核对，不构成法律认证，也不保证未来排名、引用或业务结果。
-        </p>
+        <p className="field-help">{t('privacy.exportHelp')}</p>
       </section>
 
       <section aria-labelledby="audit-heading" className="shell-card">
-        <h2 id="audit-heading">Audit timeline</h2>
-        <p>
-          登录、角色、审批、发布、预算、export、deletion 与具名限时 break-glass 位于 append-only
-          hash chain；普通应用日志不冒充 Audit Evidence。
-        </p>
+        <h2 id="audit-heading">{t('privacy.auditHeading')}</h2>
+        <p>{t('privacy.auditDescription')}</p>
         <dl>
-          <dt>Chain integrity</dt>
+          <dt>{t('privacy.chainIntegrity')}</dt>
           <dd data-testid="audit-integrity-status">
             {integrity === undefined ? 'UNAVAILABLE' : integrity.valid ? 'VALID' : 'TAMPERED'}
           </dd>
-          <dt>Verified event count</dt>
+          <dt>{t('privacy.verifiedEventCount')}</dt>
           <dd>{integrity?.eventCount ?? '—'}</dd>
         </dl>
         {integrity?.valid === false && integrity.reason !== null ? (
@@ -444,26 +436,26 @@ export default async function PrivacyPage({ searchParams }: PrivacyPageProps) {
             <input name="from" type="hidden" value={auditFrom} />
             <input name="to" type="hidden" value={exportTo} />
             <button disabled={integrity?.valid !== true} type="submit">
-              封存 Audit digest
+              {t('privacy.sealDigestAction')}
             </button>
           </form>
         ) : (
-          <p className="field-help">冻结治理模式只允许验证与查看，不允许生成新的 Audit digest。</p>
+          <p className="field-help">{t('privacy.auditFrozen')}</p>
         )}
         {timeline === undefined || timeline.events.length === 0 ? (
-          <p>当前时间范围内没有可显示的 Audit Event。</p>
+          <p>{t('privacy.noAuditEvents')}</p>
         ) : (
           <div className="table-scroll">
             <table>
-              <caption>最近 365 天 Tenant Audit Events</caption>
+              <caption>{t('privacy.auditCaption')}</caption>
               <thead>
                 <tr>
-                  <th scope="col">Sequence</th>
-                  <th scope="col">Time</th>
-                  <th scope="col">Actor</th>
-                  <th scope="col">Action</th>
-                  <th scope="col">Outcome</th>
-                  <th scope="col">Hash</th>
+                  <th scope="col">{t('privacy.colSequence')}</th>
+                  <th scope="col">{t('privacy.colTime')}</th>
+                  <th scope="col">{t('privacy.colActor')}</th>
+                  <th scope="col">{t('privacy.colAction')}</th>
+                  <th scope="col">{t('privacy.colOutcome')}</th>
+                  <th scope="col">{t('privacy.colHash')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -484,19 +476,19 @@ export default async function PrivacyPage({ searchParams }: PrivacyPageProps) {
         {auditNavigation.latestHref === null && auditNavigation.nextHref === null ? null : (
           <nav aria-label="Audit timeline pages" className="inline-actions">
             {auditNavigation.latestHref === null ? null : (
-              <a href={auditNavigation.latestHref}>返回最新 Audit Events</a>
+              <a href={auditNavigation.latestHref}>{t('privacy.auditLatest')}</a>
             )}
             {auditNavigation.nextHref === null ? null : (
-              <a href={auditNavigation.nextHref}>查看更早 Audit Events</a>
+              <a href={auditNavigation.nextHref}>{t('privacy.auditOlder')}</a>
             )}
           </nav>
         )}
       </section>
 
       <section aria-labelledby="holds-heading" className="shell-card">
-        <h2 id="holds-heading">Visible exact-version Legal Holds</h2>
+        <h2 id="holds-heading">{t('privacy.holdsHeading')}</h2>
         {visibleHolds.length === 0 ? (
-          <p>没有生效中的 Legal Hold。</p>
+          <p>{t('privacy.noHolds')}</p>
         ) : (
           <ul>
             {visibleHolds.map((hold) => (
@@ -511,7 +503,7 @@ export default async function PrivacyPage({ searchParams }: PrivacyPageProps) {
                   <input name="workspaceId" type="hidden" value={workspaceId} />
                   <input name="holdId" type="hidden" value={hold.id} />
                   <button className="danger-action" type="submit">
-                    释放 Legal Hold：{hold.name}
+                    {t('privacy.releaseHoldAction', { name: hold.name })}
                   </button>
                 </form>
               </li>
@@ -522,58 +514,58 @@ export default async function PrivacyPage({ searchParams }: PrivacyPageProps) {
           <form action={createLegalHold} className="stacked-form">
             <input name="tenantId" type="hidden" value={tenantId} />
             <input name="workspaceId" type="hidden" value={workspaceId} />
-            <label htmlFor="legal-hold-name">Legal Hold 名称</label>
+            <label htmlFor="legal-hold-name">{t('privacy.holdNameLabel')}</label>
             <input id="legal-hold-name" maxLength={200} name="name" required />
-            <label htmlFor="legal-hold-reason">Legal Hold 理由</label>
+            <label htmlFor="legal-hold-reason">{t('privacy.holdReasonLabel')}</label>
             <textarea id="legal-hold-reason" maxLength={2000} name="reason" required />
-            <label htmlFor="legal-hold-object-key">Object key</label>
+            <label htmlFor="legal-hold-object-key">{t('privacy.holdObjectKeyLabel')}</label>
             <input id="legal-hold-object-key" name="objectKey" required />
-            <label htmlFor="legal-hold-version">Object version ID</label>
+            <label htmlFor="legal-hold-version">{t('privacy.holdObjectVersionLabel')}</label>
             <input id="legal-hold-version" name="objectVersionId" required />
-            <button type="submit">保留这个确切对象版本</button>
+            <button type="submit">{t('privacy.holdSubmitAction')}</button>
           </form>
         ) : null}
-        <p className="field-help">
-          Legal Hold 必须具名、说明理由并对 Tenant 可见；不会恢复已冻结访问，也不会自动保留同 key
-          的其他版本。
-        </p>
+        <p className="field-help">{t('privacy.holdHelp')}</p>
       </section>
 
       <section aria-labelledby="break-glass-heading" className="shell-card">
-        <h2 id="break-glass-heading">Named expiring break-glass</h2>
+        <h2 id="break-glass-heading">{t('privacy.breakGlassHeading')}</h2>
         {(overview?.breakGlassGrants ?? []).length === 0 ? (
-          <p>没有登记中的 break-glass grant。</p>
+          <p>{t('privacy.noBreakGlass')}</p>
         ) : (
           <ul>
             {overview?.breakGlassGrants.map((grant) => (
               <li key={grant.id}>
-                {grant.operatorName} — {grant.reason} — expires {grant.expiresAt}
-                {grant.revokedAt === null ? '' : ` — revoked ${grant.revokedAt}`}
+                {t('privacy.breakGlassLine', {
+                  operator: grant.operatorName,
+                  reason: grant.reason,
+                  expires: grant.expiresAt,
+                })}
+                {grant.revokedAt === null
+                  ? ''
+                  : t('privacy.breakGlassRevoked', { revoked: grant.revokedAt })}
               </li>
             ))}
           </ul>
         )}
-        <p className="warning-message">
-          Tenant Owner 不能签发 break-glass。具名操作者身份必须来自受信的平台支持控制面，并绑定确切
-          Workspace、操作与资源；默认配置为拒绝。
-        </p>
+        <p className="warning-message">{t('privacy.breakGlassWarning')}</p>
       </section>
 
       {activeScope ? (
         <section aria-labelledby="deletion-heading" className="shell-card">
-          <h2 id="deletion-heading">Deletion freeze</h2>
-          <p>
-            发起删除会先在同一生命周期边界冻结业务访问，并撤销 Session、Job 与
-            Connector；后续外部清理失败时 Tenant 仍保持 frozen。Legal Hold
-            只阻止目标对象版本的销毁。
-          </p>
+          <h2 id="deletion-heading">{t('privacy.deletionHeading')}</h2>
+          <p>{t('privacy.deletionDescription')}</p>
           <form action={requestWorkspaceDeletion} className="stacked-form">
             <input name="tenantId" type="hidden" value={tenantId} />
             <input name="workspaceId" type="hidden" value={workspaceId} />
-            <h3>只删除当前 Workspace</h3>
-            <label htmlFor="workspace-deletion-reason">Workspace 删除原因</label>
+            <h3>{t('privacy.workspaceDeletionHeading')}</h3>
+            <label htmlFor="workspace-deletion-reason">
+              {t('privacy.workspaceDeletionReasonLabel')}
+            </label>
             <textarea id="workspace-deletion-reason" maxLength={2000} name="reason" required />
-            <label htmlFor="workspace-deletion-confirmation">确认删除 Workspace</label>
+            <label htmlFor="workspace-deletion-confirmation">
+              {t('privacy.workspaceDeletionConfirmLabel')}
+            </label>
             <input
               autoComplete="off"
               id="workspace-deletion-confirmation"
@@ -583,16 +575,18 @@ export default async function PrivacyPage({ searchParams }: PrivacyPageProps) {
               required
             />
             <button className="danger-action" type="submit">
-              发起 Workspace 删除并冻结访问
+              {t('privacy.workspaceDeletionAction')}
             </button>
           </form>
           <form action={requestTenantDeletion} className="stacked-form">
             <input name="tenantId" type="hidden" value={tenantId} />
             <input name="workspaceId" type="hidden" value={workspaceId} />
-            <h3>删除整个 Tenant</h3>
-            <label htmlFor="tenant-deletion-reason">删除原因</label>
+            <h3>{t('privacy.tenantDeletionHeading')}</h3>
+            <label htmlFor="tenant-deletion-reason">{t('privacy.tenantDeletionReasonLabel')}</label>
             <textarea id="tenant-deletion-reason" maxLength={2000} name="reason" required />
-            <label htmlFor="tenant-deletion-confirmation">确认删除 Tenant</label>
+            <label htmlFor="tenant-deletion-confirmation">
+              {t('privacy.tenantDeletionConfirmLabel')}
+            </label>
             <input
               autoComplete="off"
               id="tenant-deletion-confirmation"
@@ -602,7 +596,7 @@ export default async function PrivacyPage({ searchParams }: PrivacyPageProps) {
               required
             />
             <button className="danger-action" type="submit">
-              发起 Tenant 删除并冻结访问
+              {t('privacy.tenantDeletionAction')}
             </button>
           </form>
         </section>

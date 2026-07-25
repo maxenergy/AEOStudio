@@ -1,5 +1,7 @@
 import { expect, test, type Locator } from '@playwright/test';
 
+import { setupArtifactPrerequisites } from './helpers.js';
+
 async function linkUrl(link: Locator): Promise<URL> {
   const href = await link.getAttribute('href');
   if (href === null) throw new Error('EXPECTED_LINK_HREF');
@@ -24,20 +26,24 @@ test('an Owner reviews exact R1 and a one-character R2 makes that approval stale
 
   await page.goto('/login');
   await page.getByRole('link', { name: '安全登录' }).click();
-  await page.getByLabel('Tenant 名称').fill('Artifact Studio Cooperative');
-  await page.getByLabel('Workspace 名称').fill('Artifact Workspace');
-  await page.getByRole('button', { name: '创建 Workspace' }).click();
+  await page.getByLabel('团队名称').fill('Artifact Studio Cooperative');
+  await page.getByLabel('工作空间名称').fill('Artifact Workspace');
+  await page.getByRole('button', { name: '创建工作空间' }).click();
 
-  await page.getByRole('link', { name: 'Artifact Studio' }).click();
-  await expect(page.getByRole('heading', { name: 'Artifact Studio' })).toBeVisible();
+  await setupArtifactPrerequisites(page);
+
+  await page.getByRole('link', { name: '内容稿件工作室' }).click();
+  await expect(page.getByRole('heading', { name: '内容稿件工作室' })).toBeVisible();
   await page.getByRole('button', { name: '保存 Artifact 预算' }).click();
-  await page.getByRole('button', { name: '生成 Artifact Draft' }).click();
+  await page.getByRole('button', { name: '生成内容稿件草稿' }).click();
 
   await expect(page.getByTestId('artifact-job-status')).toHaveText('SUCCEEDED', {
     timeout: 15_000,
   });
   await expect(
-    page.getByRole('heading', { name: /Preview · Definition and offering/ }),
+    page.getByRole('heading', {
+      name: /Preview · (Definition and offering|Evidence-balanced comparison|Technical and evidence)/,
+    }),
   ).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Lineage / Claim map' })).toBeVisible();
   await expect(page.getByText(/Artifact .* · revision 1/)).toBeVisible();
@@ -58,7 +64,7 @@ test('an Owner reviews exact R1 and a one-character R2 makes that approval stale
   });
   expect(approvedBriefUrl.hash).toBe(`#brief-${briefId}`);
   await approvedBriefLink.click();
-  await expect(page.getByRole('heading', { name: 'Content Plan / Briefs' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '内容计划 / 创作摘要' })).toBeVisible();
   await expect(page.getByText(`Selected exact Brief ID：${briefId}`)).toBeVisible();
   const selectedBriefCard = page.locator(`#brief-${briefId}`);
   await expect(selectedBriefCard).toHaveAttribute('aria-current', 'true');
@@ -67,7 +73,7 @@ test('an Owner reviews exact R1 and a one-character R2 makes that approval stale
   const selectedPromptRefs = await selectedBriefCard.getByText(/^Prompt refs：/).innerText();
   expect(selectedPromptRefs.replace('Prompt refs：', '').split(', ')).toHaveLength(20);
   await page.goBack();
-  await expect(page.getByRole('heading', { name: 'Artifact Studio' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '内容稿件工作室' })).toBeVisible();
   const approvedPromptLink = page.getByRole('link', { name: /^查看 approved Prompt revision / });
   const approvedPromptText = await approvedPromptLink.innerText();
   const promptRevisionId = approvedPromptText.replace('查看 approved Prompt revision ', '');
@@ -83,7 +89,7 @@ test('an Owner reviews exact R1 and a one-character R2 makes that approval stale
   await expect(page.getByRole('heading', { name: 'Prompt revision 1' })).toBeVisible();
   await expect(page.getByText('Approved artifact lineage prompt fixture')).toBeVisible();
   await page.goBack();
-  await expect(page.getByRole('heading', { name: 'Artifact Studio' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '内容稿件工作室' })).toBeVisible();
 
   await page.getByText('Resolved source Artifacts').click();
   const sourceLinks = page.locator('details li a');
@@ -158,7 +164,7 @@ test('an Owner reviews exact R1 and a one-character R2 makes that approval stale
     page.getByText('The approved fixture claim is traceable to current evidence.'),
   ).toBeVisible();
   await page.goBack();
-  await expect(page.getByRole('heading', { name: 'Artifact Studio' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '内容稿件工作室' })).toBeVisible();
 
   const evidenceDrillDown = evidenceDrillDowns[0];
   if (evidenceDrillDown === undefined) throw new Error('EXPECTED_EVIDENCE_DRILL_DOWN');
@@ -173,7 +179,7 @@ test('an Owner reviews exact R1 and a one-character R2 makes that approval stale
   await expect(page.getByRole('heading', { name: 'Exact Evidence drill-down' })).toBeVisible();
   await expect(page.getByText('Artifact lineage evidence fixture')).toBeVisible();
   await page.goBack();
-  await expect(page.getByRole('heading', { name: 'Artifact Studio' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '内容稿件工作室' })).toBeVisible();
 
   await expect(page.getByText('Current approval：APPROVAL_REQUIRED')).toBeVisible();
 

@@ -11,6 +11,9 @@ import {
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
+import { makeT, type TFunction } from '../../../lib/i18n';
+import { getLocale } from '../../../lib/i18n/get-locale';
+
 function apiOrigin(): string {
   return process.env.API_INTERNAL_ORIGIN ?? 'http://127.0.0.1:3200';
 }
@@ -90,6 +93,7 @@ interface ExperimentPageProps {
 }
 
 export default async function ExperimentPage({ searchParams }: ExperimentPageProps) {
+  const t = makeT(await getLocale());
   const query = await searchParams;
   const tenantId = typeof query.tenant === 'string' ? query.tenant : undefined;
   const workspaceId = typeof query.workspace === 'string' ? query.workspace : undefined;
@@ -136,113 +140,137 @@ export default async function ExperimentPage({ searchParams }: ExperimentPagePro
 
   return (
     <main>
-      <p className="eyebrow">AEO Studio · Measurement</p>
-      <h1>Experiment Comparison</h1>
-      <p>
-        只比较完全兼容的 immutable MetricSnapshot，并把一次 exact published 或 approved intervention
-        event 放在 baseline 与 remeasurement 之间解释。结果仅为描述性 observed association。
-      </p>
-      <a href={`/app?tenant=${tenantId}&workspace=${workspaceId}`}>返回 Workspace</a>
+      <p className="eyebrow">{t('experiments.eyebrow')}</p>
+      <h1>{t('experiments.title')}</h1>
+      <p>{t('experiments.lede')}</p>
+      <a href={`/app?tenant=${tenantId}&workspace=${workspaceId}`}>
+        {t('experiments.backToWorkspace')}
+      </a>
 
       {query.notice === 'created' ? (
         <p className="success-message" role="status">
-          Experiment 已按 exact snapshots 与 intervention 封存。
+          {t('experiments.createdNotice')}
         </p>
       ) : null}
       {typeof query.error === 'string' ? (
         <p className="error-message" role="alert">
-          Experiment 未创建：{query.error}。不兼容时请建立新 baseline 或按 scope 分层。
+          {t('experiments.createError', { error: query.error })}
         </p>
       ) : null}
 
       <section aria-labelledby="experiment-input-heading" className="shell-card">
-        <h2 id="experiment-input-heading">选择可比较输入</h2>
-        <p>
-          Baseline 必须早于 intervention event；remeasurement 必须晚于 event，且
-          scenario、method、Provider、Surface、model、scope 与采集方式必须兼容。
-        </p>
+        <h2 id="experiment-input-heading">{t('experiments.inputHeading')}</h2>
+        <p>{t('experiments.inputHelp')}</p>
         {!candidatesAvailable ? (
-          <p data-testid="experiment-options-empty">
-            尚缺 COMPLETED baseline、COMPLETED remeasurement，或时间窗口内的 exact PUBLISHED /
-            APPROVED intervention event。
-          </p>
+          <p data-testid="experiment-options-empty">{t('experiments.optionsEmpty')}</p>
         ) : null}
         {canCreate && candidatesAvailable ? (
           <form action={createExperiment} className="stacked-form">
             <input name="tenantId" type="hidden" value={tenantId} />
             <input name="workspaceId" type="hidden" value={workspaceId} />
             <input name="idempotencyKey" type="hidden" value={randomUUID()} />
-            <label htmlFor="experiment-compatible-inputs">Compatible Experiment inputs</label>
+            <label htmlFor="experiment-compatible-inputs">
+              {t('experiments.compatibleInputsField')}
+            </label>
             <select id="experiment-compatible-inputs" name="combination" required>
               {options.compatibleCombinations.map((combination) => (
                 <option
                   key={`${combination.baselineRunId}:${combination.intervention.kind}:${interventionOptionId(combination.intervention)}:${combination.remeasurementRunId}`}
                   value={JSON.stringify(combination)}
                 >
-                  Baseline {combination.baselineRunId} ·{' '}
                   {combination.intervention.kind === 'PUBLISHED_PUBLICATION'
-                    ? `Publication ${combination.intervention.publicationRecordId} / attempt ${combination.intervention.publicationAttemptId} / review ${combination.intervention.artifactReviewId}`
-                    : `Approval ${combination.intervention.artifactReviewId}`}{' '}
-                  · Remeasurement {combination.remeasurementRunId}
+                    ? t('experiments.optionPublished', {
+                        baseline: combination.baselineRunId,
+                        publication: combination.intervention.publicationRecordId,
+                        attempt: combination.intervention.publicationAttemptId,
+                        review: combination.intervention.artifactReviewId,
+                        remeasurement: combination.remeasurementRunId,
+                      })
+                    : t('experiments.optionApproved', {
+                        baseline: combination.baselineRunId,
+                        review: combination.intervention.artifactReviewId,
+                        remeasurement: combination.remeasurementRunId,
+                      })}
                 </option>
               ))}
             </select>
             <button className="primary-action" type="submit">
-              创建 Experiment comparison
+              {t('experiments.createAction')}
             </button>
           </form>
         ) : null}
       </section>
 
-      {experiment === undefined ? null : <ExperimentReport experiment={experiment} />}
+      {experiment === undefined ? null : <ExperimentReport experiment={experiment} t={t} />}
 
-      <p className="warning-message">
-        本报告不证明 intervention 导致任何变化，也不保证排名、引用、推荐、流量或业务结果。
-      </p>
+      <p className="warning-message">{t('experiments.noCausationWarning')}</p>
     </main>
   );
 }
 
-function ExperimentReport({ experiment }: { experiment: Experiment }) {
+function ExperimentReport({ experiment, t }: { experiment: Experiment; t: TFunction }) {
   return (
     <section
       aria-labelledby="experiment-report-heading"
       className="shell-card"
       data-testid="experiment-report"
     >
-      <p className="eyebrow">COMPARABLE · immutable snapshot report</p>
-      <h2 id="experiment-report-heading">Observed association（描述性，不是因果）</h2>
+      <p className="eyebrow">{t('experiments.reportEyebrow')}</p>
+      <h2 id="experiment-report-heading">{t('experiments.reportHeading')}</h2>
       <p data-testid="experiment-scenario-version">
-        Scenario version：{experiment.scenarioVersion}
+        {t('experiments.scenarioVersion', { version: experiment.scenarioVersion })}
       </p>
       <section data-testid="experiment-measurement-context">
-        <h3>Sealed measurement context</h3>
-        <p>Scenario：{experiment.measurementContext.scenarioId}</p>
-        <p>Provider：{experiment.measurementContext.providerKey}</p>
-        <p>Surface：{experiment.measurementContext.surfaceKey}</p>
+        <h3>{t('experiments.contextHeading')}</h3>
+        <p>{t('experiments.scenarioValue', { value: experiment.measurementContext.scenarioId })}</p>
         <p>
-          Model：{experiment.measurementContext.model} /{' '}
-          {experiment.measurementContext.modelVersion}
+          {t('experiments.providerValue', { value: experiment.measurementContext.providerKey })}
+        </p>
+        <p>{t('experiments.surfaceValue', { value: experiment.measurementContext.surfaceKey })}</p>
+        <p>
+          {t('experiments.modelValue', {
+            model: experiment.measurementContext.model,
+            version: experiment.measurementContext.modelVersion,
+          })}
         </p>
         <article data-testid="experiment-baseline-timeline">
-          <h4>Baseline timeline</h4>
-          <p>Run started：{experiment.measurementContext.timeline.baseline.startedAt}</p>
-          <p>Run completed：{experiment.measurementContext.timeline.baseline.completedAt}</p>
+          <h4>{t('experiments.baselineTimelineHeading')}</h4>
           <p>
-            Evidence window：
-            {experiment.measurementContext.timeline.baseline.evidenceWindow.minObservedAt} →{' '}
-            {experiment.measurementContext.timeline.baseline.evidenceWindow.maxObservedAt}
+            {t('experiments.runStarted', {
+              value: experiment.measurementContext.timeline.baseline.startedAt,
+            })}
+          </p>
+          <p>
+            {t('experiments.runCompleted', {
+              value: experiment.measurementContext.timeline.baseline.completedAt,
+            })}
+          </p>
+          <p>
+            {t('experiments.evidenceWindow', {
+              from: experiment.measurementContext.timeline.baseline.evidenceWindow.minObservedAt,
+              until: experiment.measurementContext.timeline.baseline.evidenceWindow.maxObservedAt,
+            })}
           </p>
         </article>
         <article data-testid="experiment-remeasurement-timeline">
-          <h4>Remeasurement timeline</h4>
-          <p>Run started：{experiment.measurementContext.timeline.remeasurement.startedAt}</p>
-          <p>Run completed：{experiment.measurementContext.timeline.remeasurement.completedAt}</p>
+          <h4>{t('experiments.remeasurementTimelineHeading')}</h4>
           <p>
-            Evidence window：
-            {
-              experiment.measurementContext.timeline.remeasurement.evidenceWindow.minObservedAt
-            } → {experiment.measurementContext.timeline.remeasurement.evidenceWindow.maxObservedAt}
+            {t('experiments.runStarted', {
+              value: experiment.measurementContext.timeline.remeasurement.startedAt,
+            })}
+          </p>
+          <p>
+            {t('experiments.runCompleted', {
+              value: experiment.measurementContext.timeline.remeasurement.completedAt,
+            })}
+          </p>
+          <p>
+            {t('experiments.evidenceWindow', {
+              from: experiment.measurementContext.timeline.remeasurement.evidenceWindow
+                .minObservedAt,
+              until:
+                experiment.measurementContext.timeline.remeasurement.evidenceWindow.maxObservedAt,
+            })}
           </p>
         </article>
       </section>
@@ -253,30 +281,54 @@ function ExperimentReport({ experiment }: { experiment: Experiment }) {
       <article data-testid="experiment-intervention">
         <h3>
           {experiment.intervention.kind === 'PUBLISHED_PUBLICATION'
-            ? 'Exact published intervention'
-            : 'Exact approved Artifact event'}
+            ? t('experiments.interventionPublishedHeading')
+            : t('experiments.interventionApprovedHeading')}
         </h3>
-        <p>State：{experiment.intervention.applicationState}</p>
-        <p>Event recorded at：{experiment.intervention.observedAt}</p>
-        <p>Artifact：{experiment.intervention.artifactId}</p>
-        <p>Artifact revision：{experiment.intervention.artifactRevisionId}</p>
-        <p>Artifact hash：{experiment.intervention.artifactContentHash}</p>
+        <p>{t('experiments.stateValue', { value: experiment.intervention.applicationState })}</p>
+        <p>{t('experiments.eventRecordedAt', { value: experiment.intervention.observedAt })}</p>
+        <p>{t('experiments.artifactValue', { value: experiment.intervention.artifactId })}</p>
+        <p>
+          {t('experiments.artifactRevisionValue', {
+            value: experiment.intervention.artifactRevisionId,
+          })}
+        </p>
+        <p>
+          {t('experiments.artifactHashValue', {
+            value: experiment.intervention.artifactContentHash,
+          })}
+        </p>
         {experiment.intervention.kind === 'PUBLISHED_PUBLICATION' ? (
           <>
-            <p>Publication：{experiment.intervention.publicationRecordId}</p>
-            <p>Applied attempt：{experiment.intervention.publicationAttemptId}</p>
-            <p>Approval review：{experiment.intervention.artifactReviewId}</p>
+            <p>
+              {t('experiments.publicationValue', {
+                value: experiment.intervention.publicationRecordId,
+              })}
+            </p>
+            <p>
+              {t('experiments.appliedAttemptValue', {
+                value: experiment.intervention.publicationAttemptId,
+              })}
+            </p>
+            <p>
+              {t('experiments.approvalReviewValue', {
+                value: experiment.intervention.artifactReviewId,
+              })}
+            </p>
           </>
         ) : (
           <>
-            <p>Approval review：{experiment.intervention.artifactReviewId}</p>
+            <p>
+              {t('experiments.approvalReviewValue', {
+                value: experiment.intervention.artifactReviewId,
+              })}
+            </p>
             <p>{experiment.intervention.applicationDisclosure}</p>
           </>
         )}
         <a href={experiment.drillDown.interventionHref}>
           {experiment.intervention.kind === 'PUBLISHED_PUBLICATION'
-            ? '查看 exact published intervention'
-            : '查看 exact approved Artifact'}
+            ? t('experiments.viewPublishedIntervention')
+            : t('experiments.viewApprovedArtifact')}
         </a>
       </article>
 
@@ -288,33 +340,57 @@ function ExperimentReport({ experiment }: { experiment: Experiment }) {
             key={comparison.compatibilityHash}
           >
             <h3>{comparison.metricKey}</h3>
-            <p>Scope：{comparison.scopeKey}</p>
-            <p>Compatibility：{comparison.compatibilityHash}</p>
+            <p>{t('experiments.scopeValue', { value: comparison.scopeKey })}</p>
+            <p>{t('experiments.compatibilityValue', { value: comparison.compatibilityHash })}</p>
             <p>
-              Descriptive delta：
-              {comparison.delta.value === null
-                ? 'NOT_COMPUTABLE'
-                : comparison.delta.value.toFixed(6)}
+              {t('experiments.descriptiveDelta', {
+                value:
+                  comparison.delta.value === null
+                    ? 'NOT_COMPUTABLE'
+                    : comparison.delta.value.toFixed(6),
+              })}
             </p>
             <p>
-              Sample：baseline {comparison.baseline.sampleSize} / remeasurement{' '}
-              {comparison.remeasurement.sampleSize}
+              {t('experiments.sample', {
+                baseline: comparison.baseline.sampleSize,
+                remeasurement: comparison.remeasurement.sampleSize,
+              })}
             </p>
             <p>
-              Eligible denominator：{comparison.baseline.eligibleDenominator} →{' '}
-              {comparison.remeasurement.eligibleDenominator}
+              {t('experiments.eligibleDenominator', {
+                baseline: comparison.baseline.eligibleDenominator,
+                remeasurement: comparison.remeasurement.eligibleDenominator,
+              })}
             </p>
-            <p>Excluded baseline：{formatExcluded(comparison.baseline.excludedCounts)}</p>
-            <p>Excluded remeasurement：{formatExcluded(comparison.remeasurement.excludedCounts)}</p>
-            <p>Cost baseline：{formatCosts(comparison.costBreakdown.baseline)}</p>
-            <p>Cost remeasurement：{formatCosts(comparison.costBreakdown.remeasurement)}</p>
+            <p>
+              {t('experiments.excludedBaseline', {
+                value: formatExcluded(comparison.baseline.excludedCounts),
+              })}
+            </p>
+            <p>
+              {t('experiments.excludedRemeasurement', {
+                value: formatExcluded(comparison.remeasurement.excludedCounts),
+              })}
+            </p>
+            <p>
+              {t('experiments.costBaseline', {
+                value: formatCosts(comparison.costBreakdown.baseline, t),
+              })}
+            </p>
+            <p>
+              {t('experiments.costRemeasurement', {
+                value: formatCosts(comparison.costBreakdown.remeasurement, t),
+              })}
+            </p>
           </article>
         ))}
       </div>
 
-      <nav aria-label="Experiment evidence drill-down">
-        <a href={experiment.drillDown.baselineRunHref}>查看 baseline raw evidence</a>
-        <a href={experiment.drillDown.remeasurementRunHref}>查看 remeasurement raw evidence</a>
+      <nav aria-label={t('experiments.drillDownNavAria')}>
+        <a href={experiment.drillDown.baselineRunHref}>{t('experiments.viewBaselineEvidence')}</a>
+        <a href={experiment.drillDown.remeasurementRunHref}>
+          {t('experiments.viewRemeasurementEvidence')}
+        </a>
       </nav>
     </section>
   );
@@ -324,10 +400,10 @@ function formatExcluded(counts: Experiment['excludedCounts']['baseline']): strin
   return `ERROR ${counts.ERROR} · NOT_CHECKED ${counts.NOT_CHECKED} · INCONCLUSIVE ${counts.INCONCLUSIVE} · NOT_APPLICABLE ${counts.NOT_APPLICABLE}`;
 }
 
-function formatCosts(costs: Experiment['costBreakdown']['baseline']): string {
+function formatCosts(costs: Experiment['costBreakdown']['baseline'], t: TFunction): string {
   return costs.length === 0
-    ? 'none recorded'
-    : `${costs.map((entry) => `${entry.amount} ${entry.currency}`).join(' + ')}（未换汇）`;
+    ? t('experiments.noCosts')
+    : `${costs.map((entry) => `${entry.amount} ${entry.currency}`).join(' + ')}${t('experiments.costSuffix')}`;
 }
 
 function interventionOptionId(

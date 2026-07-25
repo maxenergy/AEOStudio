@@ -29,12 +29,12 @@ test('an Owner can export Tenant data and deletion immediately revokes the busin
   await page.goto(`${apiOrigin}/api/v1/auth/login`);
   await expect(page).toHaveURL(/\/app(?:\?|$)/u);
 
-  await page.getByLabel('Tenant 名称').fill('Privacy RED Tenant');
-  await page.getByLabel('Workspace 名称').fill('Privacy RED Workspace');
-  await page.getByRole('button', { name: '创建 Workspace' }).click();
+  await page.getByLabel('团队名称').fill('Privacy RED Tenant');
+  await page.getByLabel('工作空间名称').fill('Privacy RED Workspace');
+  await page.getByRole('button', { name: '创建工作空间' }).click();
   await expect(page.getByRole('heading', { name: 'Privacy RED Workspace' })).toBeVisible();
 
-  const scopeHref = await page.getByRole('link', { name: 'Artifact Studio' }).getAttribute('href');
+  const scopeHref = await page.getByRole('link', { name: '内容稿件工作室' }).getAttribute('href');
   if (scopeHref === null) throw new Error('PRIVACY_SCOPE_LINK_MISSING');
   const scope = new URL(scopeHref, page.url());
   const tenantId = scope.searchParams.get('tenant');
@@ -44,8 +44,8 @@ test('an Owner can export Tenant data and deletion immediately revokes the busin
   const privacyHref = `/app/privacy?tenant=${tenantId}&workspace=${workspaceId}`;
   await expect
     .soft(
-      page.getByRole('link', { name: 'Privacy & Audit' }),
-      'expected scoped navigation to expose Privacy & Audit',
+      page.getByRole('link', { name: '隐私与审计' }),
+      'expected scoped navigation to expose 隐私与审计',
     )
     .toHaveAttribute('href', privacyHref);
 
@@ -56,8 +56,8 @@ test('an Owner can export Tenant data and deletion immediately revokes the busin
   await page.getByLabel('Locale').fill('zh-CN');
   await page.getByLabel('Market').fill('TW');
   await page.getByRole('button', { name: '保存 Profile' }).click();
-  await page.getByLabel('Offering 类型').fill('tenant-defined-service');
-  await page.getByLabel('Offering 名称').fill('Task 17 Export Offering');
+  await page.getByLabel('产品/服务类型').fill('tenant-defined-service');
+  await page.getByLabel('产品/服务名称').fill('Task 17 Export Offering');
   await page.getByLabel('原理').fill('Tenant-defined operating principles.');
   await page.getByLabel('功能').fill('Feature A\nFeature B');
   await page.getByLabel('使用方法').fill('Step one\nStep two');
@@ -67,7 +67,7 @@ test('an Owner can export Tenant data and deletion immediately revokes the busin
   await page.getByLabel('自定义维度 Key').fill('delivery_model');
   await page.getByLabel('自定义维度名称').fill('Delivery model');
   await page.getByLabel('自定义维度值').fill('Tenant-defined');
-  await page.getByRole('button', { name: '保存 Offering' }).click();
+  await page.getByRole('button', { name: '保存产品/服务' }).click();
   await expect(page.getByText('Onboarding 已保存')).toBeVisible();
 
   await page.goto(privacyHref);
@@ -236,7 +236,7 @@ test('an Owner can export Tenant data and deletion immediately revokes the busin
 
   await page.goto(scopeHref);
   await expect(page).toHaveURL(/\/app(?:\?|$)/u);
-  await expect(page.getByRole('heading', { name: 'Artifact Studio' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: '内容稿件工作室' })).toHaveCount(0);
 
   await page.goto(privacyHref);
   const releaseHoldButton = page.getByRole('button', {

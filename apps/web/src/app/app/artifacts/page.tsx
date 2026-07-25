@@ -9,6 +9,8 @@ import type { ApprovedBriefListEnvelope } from '@aeostudio/contracts/content-pla
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
+import { makeT } from '../../../lib/i18n';
+import { getLocale } from '../../../lib/i18n/get-locale';
 import { JobPoller } from '../jobs/job-poller';
 
 function apiOrigin(): string {
@@ -195,6 +197,7 @@ interface ArtifactsPageProps {
 }
 
 export default async function ArtifactsPage({ searchParams }: ArtifactsPageProps) {
+  const t = makeT(await getLocale());
   const query = await searchParams;
   const tenantId = typeof query.tenant === 'string' ? query.tenant : undefined;
   const workspaceId = typeof query.workspace === 'string' ? query.workspace : undefined;
@@ -255,20 +258,17 @@ export default async function ArtifactsPage({ searchParams }: ArtifactsPageProps
 
   return (
     <main>
-      <p className="eyebrow">AEO Studio</p>
-      <h1>Artifact Studio</h1>
-      <p>
-        从 approved Brief 与 Approved Claims 生成三类可审计
-        Draft；这里只审核内容，不生成渠道包或执行发布。
-      </p>
+      <p className="eyebrow">{t('artifacts.eyebrow')}</p>
+      <h1>{t('artifacts.title')}</h1>
+      <p>{t('artifacts.lede')}</p>
 
       {membership.activeRole === 'OWNER' ? (
         <section className="shell-card">
-          <h2>Artifact 预算</h2>
+          <h2>{t('artifacts.budgetHeading')}</h2>
           <form action={saveBudget} className="stacked-form">
             <input name="tenantId" type="hidden" value={tenantId} />
             <input name="workspaceId" type="hidden" value={workspaceId} />
-            <label htmlFor="artifact-budget">预算上限</label>
+            <label htmlFor="artifact-budget">{t('artifacts.budgetLimit')}</label>
             <input
               defaultValue="1000"
               id="artifact-budget"
@@ -277,7 +277,7 @@ export default async function ArtifactsPage({ searchParams }: ArtifactsPageProps
               type="number"
             />
             <button className="secondary-action" type="submit">
-              保存 Artifact 预算
+              {t('artifacts.budgetSaveAction')}
             </button>
           </form>
         </section>
@@ -285,14 +285,14 @@ export default async function ArtifactsPage({ searchParams }: ArtifactsPageProps
 
       {artifactId === undefined && mayEdit ? (
         <section className="shell-card">
-          <h2>生成 auditable Draft</h2>
+          <h2>{t('artifacts.generateHeading')}</h2>
           {approvedBriefs.length === 0 ? (
-            <p role="alert">尚无已批准的 Brief。请先在 Content Plan 页面审批 Brief。</p>
+            <p role="alert">{t('artifacts.noBriefs')}</p>
           ) : (
             <form action={startArtifact} className="stacked-form">
               <input name="tenantId" type="hidden" value={tenantId} />
               <input name="workspaceId" type="hidden" value={workspaceId} />
-              <label htmlFor="artifact-brief">Approved Brief</label>
+              <label htmlFor="artifact-brief">{t('artifacts.briefLabel')}</label>
               <select id="artifact-brief" name="briefId" required>
                 {approvedBriefs.map((b) => (
                   <option key={b.briefId} value={b.briefId}>
@@ -300,12 +300,12 @@ export default async function ArtifactsPage({ searchParams }: ArtifactsPageProps
                   </option>
                 ))}
               </select>
-              <label htmlFor="artifact-locale">Locale</label>
+              <label htmlFor="artifact-locale">{t('artifacts.localeLabel')}</label>
               <input defaultValue="zh-CN" id="artifact-locale" name="locale" required />
-              <label htmlFor="artifact-market">Market</label>
+              <label htmlFor="artifact-market">{t('artifacts.marketLabel')}</label>
               <input defaultValue="Global" id="artifact-market" name="market" required />
               <button className="primary-action" type="submit">
-                生成 Artifact Draft
+                {t('artifacts.generateAction')}
               </button>
             </form>
           )}
@@ -314,12 +314,13 @@ export default async function ArtifactsPage({ searchParams }: ArtifactsPageProps
 
       {job === undefined ? null : (
         <section className="shell-card">
-          <h2>Generation Job</h2>
+          <h2>{t('artifacts.jobHeading')}</h2>
           <JobPoller status={job.status} />
           <p>
-            状态：<strong data-testid="artifact-job-status">{job.status}</strong>
+            {t('artifacts.jobStatusLabel')}
+            <strong data-testid="artifact-job-status">{job.status}</strong>
           </p>
-          <p>进度：{job.progress}%</p>
+          <p>{t('artifacts.jobProgress', { progress: job.progress })}</p>
         </section>
       )}
 
@@ -328,7 +329,7 @@ export default async function ArtifactsPage({ searchParams }: ArtifactsPageProps
       bundle.payload === null ? null : (
         <>
           <section className="shell-card">
-            <h2>Preview · {bundle.payload.title}</h2>
+            <h2>{t('artifacts.previewHeading', { title: bundle.payload.title })}</h2>
             <p>{bundle.payload.summary}</p>
             {bundle.payload.sections.map((section) => (
               <article className="nested-card" key={section.heading}>
@@ -338,36 +339,44 @@ export default async function ArtifactsPage({ searchParams }: ArtifactsPageProps
             ))}
             <p>{bundle.payload.disclosure}</p>
             <p>
-              Current approval：<strong>{bundle.approvalState}</strong>
+              {t('artifacts.currentApproval')}
+              <strong>{bundle.approvalState}</strong>
             </p>
           </section>
 
           <section className="shell-card">
-            <h2>Lineage / Claim map</h2>
+            <h2>{t('artifacts.lineageHeading')}</h2>
             <p>
-              Artifact {bundle.artifact.id} · revision {bundle.revision.revision}
+              {t('artifacts.artifactRevisionLine', {
+                id: bundle.artifact.id,
+                revision: bundle.revision.revision,
+              })}
             </p>
-            <p>Content hash：{bundle.revision.contentHash}</p>
+            <p>{t('artifacts.contentHash', { hash: bundle.revision.contentHash })}</p>
             <p>
-              Schema / method：{bundle.revision.schemaVersion} /{' '}
-              {bundle.revision.methodPolicyVersion}
+              {t('artifacts.schemaMethod', {
+                schema: bundle.revision.schemaVersion,
+                method: bundle.revision.methodPolicyVersion,
+              })}
             </p>
             <p>
               <a
                 href={`/app/plans?tenant=${tenantId}&workspace=${workspaceId}&plan=${bundle.revision.lineage.contentPlanId}&brief=${bundle.revision.lineage.brief.id}#brief-${bundle.revision.lineage.brief.id}`}
               >
-                查看 approved Brief {bundle.revision.lineage.brief.id}
+                {t('artifacts.viewApprovedBrief', { id: bundle.revision.lineage.brief.id })}
               </a>
             </p>
             <p>
               <a
                 href={`/app/prompts?tenant=${tenantId}&workspace=${workspaceId}&promptSet=${bundle.revision.lineage.prompt.promptSetId}&promptRevision=${bundle.revision.lineage.prompt.promptRevisionId}`}
               >
-                查看 approved Prompt revision {bundle.revision.lineage.prompt.promptRevisionId}
+                {t('artifacts.viewApprovedPromptRevision', {
+                  id: bundle.revision.lineage.prompt.promptRevisionId,
+                })}
               </a>
             </p>
             <details>
-              <summary>Resolved source Artifacts</summary>
+              <summary>{t('artifacts.resolvedSources')}</summary>
               <ul>
                 {bundle.revision.lineage.sourceReferences.map((reference) => {
                   const href =
@@ -380,8 +389,9 @@ export default async function ArtifactsPage({ searchParams }: ArtifactsPageProps
                           : `/app/sites?tenant=${tenantId}&workspace=${workspaceId}&profile=${profileSource?.aggregateId ?? ''}&site=${reference.aggregateId}`;
                   return (
                     <li key={reference.id}>
-                      <a href={href}>{reference.kind}</a> · {reference.id} · hash{' '}
-                      {reference.contentHash ?? 'not-applicable'}
+                      <a href={href}>{reference.kind}</a>
+                      {t('artifacts.sourceMeta', { id: reference.id })}{' '}
+                      {reference.contentHash ?? t('artifacts.hashNotApplicable')}
                     </li>
                   );
                 })}
@@ -393,16 +403,20 @@ export default async function ArtifactsPage({ searchParams }: ArtifactsPageProps
                   <a
                     href={`/app/claims?tenant=${tenantId}&workspace=${workspaceId}&claim=${binding.claimId}&claimRevision=${binding.claimRevisionId}`}
                   >
-                    Claim revision {binding.claimRevisionId}
+                    {t('artifacts.claimRevision', { id: binding.claimRevisionId })}
                   </a>
                 </h3>
-                <p>Claim hash：{binding.claimContentHash}</p>
+                <p>{t('artifacts.claimHash', { hash: binding.claimContentHash })}</p>
                 {binding.evidence.map((evidence) => (
                   <p key={evidence.snapshotId}>
                     <a
                       href={`/app/claims?tenant=${tenantId}&workspace=${workspaceId}&claim=${binding.claimId}&claimRevision=${binding.claimRevisionId}&source=${evidence.sourceId}&snapshot=${evidence.snapshotId}`}
                     >
-                      Evidence {evidence.sourceId} / {evidence.snapshotId} / {evidence.sourceHash}
+                      {t('artifacts.evidenceLink', {
+                        source: evidence.sourceId,
+                        snapshot: evidence.snapshotId,
+                        hash: evidence.sourceHash,
+                      })}
                     </a>
                   </p>
                 ))}
@@ -411,20 +425,24 @@ export default async function ArtifactsPage({ searchParams }: ArtifactsPageProps
           </section>
 
           <section className="shell-card">
-            <h2>Revision diff</h2>
+            <h2>{t('artifacts.diffHeading')}</h2>
             {bundle.revisions.length < 2 ? (
-              <p>这是首个 revision，暂无前一版本。</p>
+              <p>{t('artifacts.firstRevision')}</p>
             ) : (
               <>
                 <p>
-                  R{bundle.revisions.at(-2)?.revision} {bundle.revisions.at(-2)?.contentHash} → R
-                  {bundle.revision.revision} {bundle.revision.contentHash}
+                  {t('artifacts.revisionDiffLine', {
+                    prevRevision: bundle.revisions.at(-2)?.revision ?? '',
+                    prevHash: bundle.revisions.at(-2)?.contentHash ?? '',
+                    revision: bundle.revision.revision,
+                    hash: bundle.revision.contentHash,
+                  })}
                 </p>
                 {bundle.previousPayload === null ? (
-                  <p>前一 revision payload 无法用于内容比较。</p>
+                  <p>{t('artifacts.prevPayloadUnavailable')}</p>
                 ) : (
-                  <div aria-label="Summary content diff" className="nested-card">
-                    <p>Summary content diff</p>
+                  <div aria-label={t('artifacts.summaryDiffAria')} className="nested-card">
+                    <p>{t('artifacts.summaryDiffLabel')}</p>
                     <p>
                       <del data-testid="artifact-previous-summary">
                         {bundle.previousPayload.summary}
@@ -438,9 +456,9 @@ export default async function ArtifactsPage({ searchParams }: ArtifactsPageProps
               </>
             )}
             <p>
-              仍可选择的 approved revisions：
+              {t('artifacts.selectableRevisions')}
               {bundle.selectableApprovedRevisions.map((entry) => `R${entry.revision}`).join(', ') ||
-                'none'}
+                t('artifacts.selectableNone')}
             </p>
             {mayPackage &&
             bundle.selectableApprovedRevisions.some(
@@ -452,7 +470,7 @@ export default async function ArtifactsPage({ searchParams }: ArtifactsPageProps
                 className="primary-action"
                 href={`/app/channels?tenant=${tenantId}&workspace=${workspaceId}&artifact=${bundle.artifact.id}&artifactRevision=${bundle.revision.id}`}
               >
-                创建渠道适配包
+                {t('artifacts.createPackageAction')}
               </a>
             ) : null}
           </section>
@@ -461,20 +479,20 @@ export default async function ArtifactsPage({ searchParams }: ArtifactsPageProps
           ['DRAFT', 'APPROVED', 'REJECTED'].includes(bundle.revision.status) &&
           effectiveJobId !== undefined ? (
             <section className="shell-card">
-              <h2>Revision 操作</h2>
+              <h2>{t('artifacts.revisionOpsHeading')}</h2>
               <form action={reviseArtifact} className="stacked-form">
                 <input name="tenantId" type="hidden" value={tenantId} />
                 <input name="workspaceId" type="hidden" value={workspaceId} />
                 <input name="artifactId" type="hidden" value={bundle.artifact.id} />
                 <input name="jobId" type="hidden" value={effectiveJobId} />
-                <label htmlFor="artifact-summary">Summary（保存会创建新 revision）</label>
+                <label htmlFor="artifact-summary">{t('artifacts.summaryLabel')}</label>
                 <textarea
                   defaultValue={bundle.payload.summary}
                   id="artifact-summary"
                   name="summary"
                   required
                 />
-                <button type="submit">创建 immutable next revision</button>
+                <button type="submit">{t('artifacts.createRevisionAction')}</button>
               </form>
               {bundle.revision.status === 'DRAFT' ? (
                 <form action={submitRevision} className="stacked-form">
@@ -485,7 +503,7 @@ export default async function ArtifactsPage({ searchParams }: ArtifactsPageProps
                   <input name="revision" type="hidden" value={bundle.revision.revision} />
                   <input name="contentHash" type="hidden" value={bundle.revision.contentHash} />
                   <button className="primary-action" type="submit">
-                    提交 exact revision/hash 审核
+                    {t('artifacts.submitReviewAction')}
                   </button>
                 </form>
               ) : null}
@@ -494,7 +512,7 @@ export default async function ArtifactsPage({ searchParams }: ArtifactsPageProps
 
           {mayReview && bundle.revision.status === 'IN_REVIEW' && effectiveJobId !== undefined ? (
             <section className="shell-card">
-              <h2>Exact-revision review</h2>
+              <h2>{t('artifacts.reviewHeading')}</h2>
               <form action={reviewRevision} className="stacked-form">
                 <input name="tenantId" type="hidden" value={tenantId} />
                 <input name="workspaceId" type="hidden" value={workspaceId} />
@@ -502,13 +520,13 @@ export default async function ArtifactsPage({ searchParams }: ArtifactsPageProps
                 <input name="jobId" type="hidden" value={effectiveJobId} />
                 <input name="revision" type="hidden" value={bundle.revision.revision} />
                 <input name="contentHash" type="hidden" value={bundle.revision.contentHash} />
-                <label htmlFor="artifact-review-note">Review note</label>
+                <label htmlFor="artifact-review-note">{t('artifacts.reviewNoteLabel')}</label>
                 <input id="artifact-review-note" name="note" required />
                 <button name="decision" type="submit" value="APPROVE">
-                  批准 exact revision/hash
+                  {t('artifacts.approveAction')}
                 </button>
                 <button name="decision" type="submit" value="REJECT">
-                  拒绝 exact revision/hash
+                  {t('artifacts.rejectAction')}
                 </button>
               </form>
             </section>

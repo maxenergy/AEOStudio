@@ -1,6 +1,7 @@
 import { expect, test, type APIResponse, type Locator, type Page } from '@playwright/test';
 import { ArtifactBundleEnvelopeSchema } from '@aeostudio/contracts/artifacts';
 import { PublicationDetailEnvelopeSchema } from '@aeostudio/contracts/channels';
+import { setupArtifactPrerequisites } from './helpers.js';
 
 const apiOrigin = 'http://127.0.0.1:3200';
 const webOrigin = 'http://127.0.0.1:3100';
@@ -56,14 +57,16 @@ async function selectRegistryEntry(select: Locator, displayName: string): Promis
 
 async function createApprovedArtifact(page: Page): Promise<ApprovedArtifactScope> {
   await page.goto('/app');
-  await page.getByLabel('Tenant 名称').fill('Shopify Draft Tenant');
-  await page.getByLabel('Workspace 名称').fill('Shopify Draft Workspace');
-  await page.getByRole('button', { name: '创建 Workspace' }).click();
+  await page.getByLabel('团队名称').fill('Shopify Draft Tenant');
+  await page.getByLabel('工作空间名称').fill('Shopify Draft Workspace');
+  await page.getByRole('button', { name: '创建工作空间' }).click();
   await expect(page.getByRole('heading', { name: 'Shopify Draft Workspace' })).toBeVisible();
 
-  await page.getByRole('link', { name: 'Artifact Studio' }).click();
+  await setupArtifactPrerequisites(page);
+
+  await page.getByRole('link', { name: '内容稿件工作室' }).click();
   await page.getByRole('button', { name: '保存 Artifact 预算' }).click();
-  await page.getByRole('button', { name: '生成 Artifact Draft' }).click();
+  await page.getByRole('button', { name: '生成内容稿件草稿' }).click();
   await expect(page.getByTestId('artifact-job-status')).toHaveText('SUCCEEDED', {
     timeout: 15_000,
   });
@@ -99,7 +102,7 @@ async function openChannels(page: Page, scope: ApprovedArtifactScope): Promise<v
     `${webOrigin}/app/channels?tenant=${scope.tenantId}&workspace=${scope.workspaceId}&artifact=${scope.artifactId}`,
   );
   await expect(
-    page.getByRole('heading', { name: /Channel Packages? \/ Publications?/ }),
+    page.getByRole('heading', { name: /渠道包 \/ 发布/ }),
   ).toBeVisible();
 }
 
@@ -154,8 +157,8 @@ async function setWorkspaceBudget(page: Page, scope: ApprovedArtifactScope): Pro
   await page.goto(
     `${webOrigin}/app/jobs?tenant=${scope.tenantId}&workspace=${scope.workspaceId}&profile=${scope.artifactId}`,
   );
-  await page.getByLabel('Workspace 预算上限', { exact: true }).fill('100');
-  await page.getByRole('button', { name: '保存 Workspace 预算', exact: true }).click();
+  await page.getByLabel('工作空间预算上限', { exact: true }).fill('100');
+  await page.getByRole('button', { name: '保存工作空间预算', exact: true }).click();
   await expect(page.getByText('预算上限已更新')).toBeVisible();
 }
 
@@ -175,7 +178,7 @@ async function inviteAsOwner(
 
 async function acceptInvitation(page: Page, href: string, role: string): Promise<void> {
   await page.goto(`${webOrigin}${href}`);
-  await page.getByRole('button', { name: '接受 Workspace 邀请' }).click();
+  await page.getByRole('button', { name: '接受工作空间邀请' }).click();
   await expect(page.getByText(`当前角色：${role}`)).toBeVisible();
 }
 

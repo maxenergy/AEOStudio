@@ -5,9 +5,9 @@ test('an Editor-facing wizard saves an arbitrary service with a custom dimension
 }) => {
   await page.goto('/app');
   await page.getByRole('link', { name: '安全登录' }).click();
-  await page.getByLabel('Tenant 名称').fill('Northstar Cooperative');
-  await page.getByLabel('Workspace 名称').fill('Learning Services');
-  await page.getByRole('button', { name: '创建 Workspace' }).click();
+  await page.getByLabel('团队名称').fill('Northstar Cooperative');
+  await page.getByLabel('工作空间名称').fill('Learning Services');
+  await page.getByRole('button', { name: '创建工作空间' }).click();
 
   await page.getByRole('link', { name: '开始业务资料 Onboarding' }).click();
   await expect(page.getByRole('heading', { name: '业务资料 Onboarding' })).toBeVisible();
@@ -20,9 +20,9 @@ test('an Editor-facing wizard saves an arbitrary service with a custom dimension
   await page.getByLabel('Market').fill('CN');
   await page.getByRole('button', { name: '保存 Profile' }).click();
 
-  await expect(page.getByRole('heading', { name: '描述 Offering' })).toBeVisible();
-  await page.getByLabel('Offering 类型').fill('community-membership-service');
-  await page.getByLabel('Offering 名称').fill('社区语言会话会员服务');
+  await expect(page.getByRole('heading', { name: '描述产品/服务' })).toBeVisible();
+  await page.getByLabel('产品/服务类型').fill('community-membership-service');
+  await page.getByLabel('产品/服务名称').fill('社区语言会话会员服务');
   await page.getByLabel('原理').fill('通过小组引导练习与个别反馈建立会话信心。');
   await page.getByLabel('规格名称 1').fill('会话时长');
   await page.getByLabel('规格值 1').fill('60');
@@ -40,7 +40,7 @@ test('an Editor-facing wizard saves an arbitrary service with a custom dimension
   await page.getByLabel('自定义维度名称 2').fill('每周场次');
   await page.getByLabel('自定义维度类型 2').selectOption('number');
   await page.getByLabel('自定义维度值 2').fill('3');
-  await page.getByRole('button', { name: '保存 Offering' }).click();
+  await page.getByRole('button', { name: '保存产品/服务' }).click();
 
   await expect(page.getByText('Onboarding 已保存')).toBeVisible();
   await expect(page.getByText('社区语言会话会员服务')).toBeVisible();
@@ -52,10 +52,10 @@ test('an Editor-facing wizard saves an arbitrary service with a custom dimension
 
   const revisionOneHash = await page.getByText(/^内容哈希：/).textContent();
   await page.getByRole('link', { name: '编辑并创建新 Revision' }).click();
-  await expect(page.getByRole('heading', { name: '编辑 Offering' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '编辑产品/服务' })).toBeVisible();
   await expect(page.getByLabel('规格值 1')).toHaveValue('60');
   await expect(page.getByLabel('自定义维度值 2')).toHaveValue('3');
-  await page.getByLabel('Offering 名称').fill('社区语言会话会员服务进阶版');
+  await page.getByLabel('产品/服务名称').fill('社区语言会话会员服务进阶版');
   await page.getByLabel('规格值 1').fill('75');
   await page.getByLabel('自定义维度值 2').fill('4');
   await page.getByRole('button', { name: '保存为新 Revision' }).click();

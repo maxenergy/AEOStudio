@@ -2,6 +2,8 @@ import type { OfferingEnvelope, ProfileEnvelope } from '@aeostudio/contracts';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
+import { makeT } from '../../../lib/i18n';
+import { getLocale } from '../../../lib/i18n/get-locale';
 import { OfferingAttributesFields } from './offering-attributes-fields';
 
 function apiOrigin(): string {
@@ -334,6 +336,8 @@ interface OnboardingPageProps {
 }
 
 export default async function OnboardingPage({ searchParams }: OnboardingPageProps) {
+  const locale = await getLocale();
+  const t = makeT(locale);
   const query = await searchParams;
   const tenantId = typeof query.tenant === 'string' ? query.tenant : undefined;
   const workspaceId = typeof query.workspace === 'string' ? query.workspace : undefined;
@@ -379,28 +383,28 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
 
   return (
     <main>
-      <p className="eyebrow">AEO Studio</p>
-      <h1>业务资料 Onboarding</h1>
-      <p>用开放字段描述公司、品牌、产品、服务或解决方案；类型与自定义维度不受行业枚举限制。</p>
+      <p className="eyebrow">{t('onboarding.eyebrow')}</p>
+      <h1>{t('onboarding.title')}</h1>
+      <p>{t('onboarding.lede')}</p>
 
       {profile !== undefined && viewProfileMode ? (
         <section className="shell-card">
-          <h2>Profile Revision {profile.revision}</h2>
+          <h2>{t('onboarding.profileRevisionHeading', { revision: profile.revision })}</h2>
           <p>{profile.displayName}</p>
           <p>{profile.description}</p>
-          <p>Profile 内容哈希：{profile.contentHash}</p>
+          <p>{t('onboarding.profileHash', { hash: profile.contentHash })}</p>
           <a
             className="secondary-action"
             href={`/app/onboarding?tenant=${tenantId}&workspace=${workspaceId}&profile=${profile.profileId}&profileRevision=${profile.revision}&editProfile=1${returnOffering === undefined || returnOfferingRevision === undefined ? '' : `&returnOffering=${returnOffering}&returnOfferingRevision=${returnOfferingRevision}`}`}
           >
-            编辑并创建新 Profile Revision
+            {t('onboarding.editProfileRevision')}
           </a>
           {profile.revision <= 1 ? null : (
             <a
               className="secondary-action"
               href={`/app/onboarding?tenant=${tenantId}&workspace=${workspaceId}&profile=${profile.profileId}&profileRevision=${profile.revision - 1}&viewProfile=1${returnOffering === undefined || returnOfferingRevision === undefined ? '' : `&returnOffering=${returnOffering}&returnOfferingRevision=${returnOfferingRevision}`}`}
             >
-              查看 Profile Revision {profile.revision - 1}
+              {t('onboarding.viewProfileRevision', { revision: profile.revision - 1 })}
             </a>
           )}
           {returnOffering === undefined || returnOfferingRevision === undefined ? null : (
@@ -408,31 +412,41 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
               className="primary-action"
               href={`/app/onboarding?tenant=${tenantId}&workspace=${workspaceId}&profile=${profile.profileId}&profileRevision=${profile.revision}&offering=${returnOffering}&revision=${returnOfferingRevision}`}
             >
-              返回 Offering Revision {returnOfferingRevision}
+              {t('onboarding.backToOffering', { revision: returnOfferingRevision })}
             </a>
           )}
         </section>
       ) : offering !== undefined && !editMode && !editProfileMode ? (
         <section className="shell-card">
           <p className="success-message" role="status">
-            Onboarding 已保存
+            {t('onboarding.saved')}
           </p>
           <h2>{offering.name}</h2>
-          <p>Revision {offering.revision}</p>
+          <p>{t('onboarding.revision', { revision: offering.revision })}</p>
           {attrValue(offering, 'industry') === '' &&
           attrValue(offering, 'company_size') === '' &&
           attrValue(offering, 'competitors') === '' ? null : (
             <>
-              <h3>企业与行业</h3>
+              <h3>{t('onboarding.businessSection')}</h3>
               <ul>
                 {attrValue(offering, 'industry') === '' ? null : (
-                  <li>行业：{attrValue(offering, 'industry')}</li>
+                  <li>
+                    {t('onboarding.industryValue', { value: attrValue(offering, 'industry') })}
+                  </li>
                 )}
                 {attrValue(offering, 'company_size') === '' ? null : (
-                  <li>公司规模：{attrValue(offering, 'company_size')}</li>
+                  <li>
+                    {t('onboarding.companySizeValue', {
+                      value: attrValue(offering, 'company_size'),
+                    })}
+                  </li>
                 )}
                 {attrValue(offering, 'competitors') === '' ? null : (
-                  <li>主要竞品：{attrValue(offering, 'competitors').replace(/\n/g, '、')}</li>
+                  <li>
+                    {t('onboarding.competitorsValue', {
+                      value: attrValue(offering, 'competitors').replace(/\n/g, '、'),
+                    })}
+                  </li>
                 )}
               </ul>
             </>
@@ -441,38 +455,45 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
           attrValue(offering, 'geo_target_engines') === '' &&
           attrValue(offering, 'optimization_goals') === '' ? null : (
             <>
-              <h3>AEO / GEO 优化配置</h3>
+              <h3>{t('onboarding.aeoConfigSection')}</h3>
               <ul>
                 {attrValue(offering, 'aeo_target_keywords') === '' ? null : (
                   <li>
-                    AEO 目标关键词：
-                    {attrValue(offering, 'aeo_target_keywords').replace(/\n/g, '、')}
+                    {t('onboarding.aeoKeywordsValue', {
+                      value: attrValue(offering, 'aeo_target_keywords').replace(/\n/g, '、'),
+                    })}
                   </li>
                 )}
                 {attrValue(offering, 'geo_target_engines') === '' ? null : (
                   <li>
-                    GEO 目标引擎：
-                    {attrValue(offering, 'geo_target_engines').replace(/\n/g, '、')}
+                    {t('onboarding.geoEnginesValue', {
+                      value: attrValue(offering, 'geo_target_engines').replace(/\n/g, '、'),
+                    })}
                   </li>
                 )}
                 {attrValue(offering, 'optimization_goals') === '' ? null : (
                   <li>
-                    优化目标：{attrValue(offering, 'optimization_goals').replace(/\n/g, '、')}
+                    {t('onboarding.goalsValue', {
+                      value: attrValue(offering, 'optimization_goals').replace(/\n/g, '、'),
+                    })}
                   </li>
                 )}
               </ul>
             </>
           )}
-          <h3>规格</h3>
+          <h3>{t('onboarding.specsSection')}</h3>
           <ul>
             {offering.specifications.map((specification) => (
               <li key={`${specification.name}:${specification.value}`}>
-                {specification.name}：{specification.value}
+                {t('onboarding.nameValue', {
+                  name: specification.name,
+                  value: specification.value,
+                })}
                 {specification.unit === undefined ? '' : ` ${specification.unit}`}
               </li>
             ))}
           </ul>
-          <h3>自定义维度</h3>
+          <h3>{t('onboarding.customDimensionsSection')}</h3>
           <ul>
             {offering.attributes
               .filter(
@@ -490,61 +511,69 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
               )
               .map((attribute) => (
                 <li key={attribute.key}>
-                  {attribute.label}：
-                  {Array.isArray(attribute.value)
-                    ? attribute.value.join('、')
-                    : String(attribute.value)}
+                  {t('onboarding.nameValue', {
+                    name: attribute.label,
+                    value: Array.isArray(attribute.value)
+                      ? attribute.value.join('、')
+                      : String(attribute.value),
+                  })}
                 </li>
               ))}
           </ul>
-          <p>完整度 {offering.completeness.percent}%</p>
-          <p>内容哈希：{offering.contentHash}</p>
+          <p>{t('onboarding.completeness', { percent: offering.completeness.percent })}</p>
+          <p>{t('onboarding.contentHash', { hash: offering.contentHash })}</p>
           <a
             className="secondary-action"
             href={`/app/onboarding?tenant=${tenantId}&workspace=${workspaceId}&profile=${profileId}&profileRevision=${profileRevision ?? 1}&offering=${offering.offeringId}&revision=${offering.revision}&edit=1`}
           >
-            编辑并创建新 Revision
+            {t('onboarding.editNewRevision')}
           </a>
           <a
             className="secondary-action"
             href={`/app/onboarding?tenant=${tenantId}&workspace=${workspaceId}&profile=${profileId}&profileRevision=${profileRevision ?? 1}&editProfile=1&returnOffering=${offering.offeringId}&returnOfferingRevision=${offering.revision}`}
           >
-            编辑 Profile 并创建新 Revision
+            {t('onboarding.editProfileNewRevision')}
           </a>
           {offering.revision <= 1 ? null : (
             <a
               className="secondary-action"
               href={`/app/onboarding?tenant=${tenantId}&workspace=${workspaceId}&profile=${profileId}&profileRevision=${profileRevision ?? 1}&offering=${offering.offeringId}&revision=${offering.revision - 1}`}
             >
-              查看 Revision {offering.revision - 1}
+              {t('onboarding.viewRevision', { revision: offering.revision - 1 })}
             </a>
           )}
           <a
             className="secondary-action"
             href={`/app/prompts?tenant=${tenantId}&workspace=${workspaceId}&profile=${profileId}&profileRevision=${profileRevision ?? 1}&offering=${offering.offeringId}&offeringRevision=${offering.revision}`}
           >
-            使用此知识建立 Prompt / Scenario
+            {t('onboarding.useKnowledge')}
           </a>
           <a
             className="primary-action"
             href={`/app/jobs?tenant=${tenantId}&workspace=${workspaceId}&profile=${profileId}`}
           >
-            启动 Profile Readiness
+            {t('onboarding.startReadiness')}
           </a>
           <br />
           <a
             className="primary-action"
             href={`/app/sites?tenant=${tenantId}&workspace=${workspaceId}&profile=${profileId}`}
           >
-            验证并抓取 Site
+            {t('onboarding.verifySite')}
           </a>
           <br />
-          <a href={`/app?tenant=${tenantId}&workspace=${workspaceId}`}>返回 Workspace</a>
+          <a href={`/app?tenant=${tenantId}&workspace=${workspaceId}`}>
+            {t('onboarding.backToWorkspace')}
+          </a>
         </section>
       ) : profileId === undefined || (profile !== undefined && editProfileMode) ? (
         <section className="shell-card">
-          <h2>{profile === undefined ? '建立 Profile' : '编辑 Profile'}</h2>
-          {profile === undefined ? null : <p>当前 Profile 内容哈希：{profile.contentHash}</p>}
+          <h2>
+            {profile === undefined ? t('onboarding.createProfile') : t('onboarding.editProfile')}
+          </h2>
+          {profile === undefined ? null : (
+            <p>{t('onboarding.currentProfileHash', { hash: profile.contentHash })}</p>
+          )}
           <form action={saveProfile} className="stacked-form">
             <input name="tenantId" type="hidden" value={tenantId} />
             <input name="workspaceId" type="hidden" value={workspaceId} />
@@ -557,14 +586,14 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
                 <input name="returnOfferingRevision" type="hidden" value={returnOfferingRevision} />
               </>
             )}
-            <label htmlFor="profile-name">公司或品牌名称</label>
+            <label htmlFor="profile-name">{t('onboarding.profileName')}</label>
             <input
               defaultValue={profile?.displayName}
               id="profile-name"
               name="displayName"
               required
             />
-            <label htmlFor="profile-description">简介</label>
+            <label htmlFor="profile-description">{t('onboarding.profileDescription')}</label>
             <textarea
               defaultValue={profile?.description}
               id="profile-description"
@@ -572,21 +601,21 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
               required
               rows={4}
             />
-            <label htmlFor="profile-website">网站</label>
+            <label htmlFor="profile-website">{t('onboarding.profileWebsite')}</label>
             <input
               defaultValue={profile?.digitalAssets[0]?.url}
               id="profile-website"
               name="website"
               type="url"
             />
-            <label htmlFor="profile-locale">Locale</label>
+            <label htmlFor="profile-locale">{t('onboarding.profileLocale')}</label>
             <input
               defaultValue={profile?.targetMarkets[0]?.locale ?? 'zh-CN'}
               id="profile-locale"
               name="locale"
               required
             />
-            <label htmlFor="profile-market">Market</label>
+            <label htmlFor="profile-market">{t('onboarding.profileMarket')}</label>
             <input
               defaultValue={profile?.targetMarkets[0]?.market ?? 'CN'}
               id="profile-market"
@@ -594,14 +623,20 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
               required
             />
             <button className="primary-action" type="submit">
-              {profile === undefined ? '保存 Profile' : '保存为新 Profile Revision'}
+              {profile === undefined
+                ? t('onboarding.saveProfile')
+                : t('onboarding.saveProfileRevision')}
             </button>
           </form>
         </section>
       ) : (
         <section className="shell-card">
-          <h2>{offering === undefined ? '描述 Offering' : '编辑 Offering'}</h2>
-          <p>可填写产品、服务或解决方案；以下维度均为可编辑建议。</p>
+          <h2>
+            {offering === undefined
+              ? t('onboarding.describeOffering')
+              : t('onboarding.editOffering')}
+          </h2>
+          <p>{t('onboarding.offeringHelp')}</p>
           <form action={saveOffering} className="stacked-form">
             <input name="tenantId" type="hidden" value={tenantId} />
             <input name="workspaceId" type="hidden" value={workspaceId} />
@@ -620,57 +655,57 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
               type="hidden"
               value={offering?.market ?? String(query.market ?? 'CN')}
             />
-            <label htmlFor="offering-kind">Offering 类型</label>
+            <label htmlFor="offering-kind">{t('onboarding.offeringKind')}</label>
             <input defaultValue={offering?.kind} id="offering-kind" name="kind" required />
-            <label htmlFor="offering-name">Offering 名称</label>
+            <label htmlFor="offering-name">{t('onboarding.offeringName')}</label>
             <input defaultValue={offering?.name} id="offering-name" name="name" required />
-            <h3>企业与行业信息</h3>
-            <label htmlFor="offering-industry">行业</label>
+            <h3>{t('onboarding.businessInfoSection')}</h3>
+            <label htmlFor="offering-industry">{t('onboarding.industry')}</label>
             <select
               defaultValue={attrValue(offering, 'industry')}
               id="offering-industry"
               name="industry"
             >
-              <option value="">请选择行业（可选）</option>
-              <option value="software">软件 / SaaS</option>
-              <option value="ai">人工智能 / 大模型</option>
-              <option value="hardware">硬件 / 智能制造</option>
-              <option value="ecommerce">电商 / 零售</option>
-              <option value="finance">金融 / 保险</option>
-              <option value="healthcare">医疗 / 健康</option>
-              <option value="education">教育 / 培训</option>
-              <option value="manufacturing">制造业</option>
-              <option value="logistics">物流 / 供应链</option>
-              <option value="energy">能源 / 环保</option>
-              <option value="media">媒体 / 文娱</option>
-              <option value="food">餐饮 / 食品</option>
-              <option value="realestate">房地产 / 建筑</option>
-              <option value="legal">法律 / 咨询</option>
-              <option value="other">其他</option>
+              <option value="">{t('onboarding.industryPlaceholder')}</option>
+              <option value="software">{t('onboarding.industry.software')}</option>
+              <option value="ai">{t('onboarding.industry.ai')}</option>
+              <option value="hardware">{t('onboarding.industry.hardware')}</option>
+              <option value="ecommerce">{t('onboarding.industry.ecommerce')}</option>
+              <option value="finance">{t('onboarding.industry.finance')}</option>
+              <option value="healthcare">{t('onboarding.industry.healthcare')}</option>
+              <option value="education">{t('onboarding.industry.education')}</option>
+              <option value="manufacturing">{t('onboarding.industry.manufacturing')}</option>
+              <option value="logistics">{t('onboarding.industry.logistics')}</option>
+              <option value="energy">{t('onboarding.industry.energy')}</option>
+              <option value="media">{t('onboarding.industry.media')}</option>
+              <option value="food">{t('onboarding.industry.food')}</option>
+              <option value="realestate">{t('onboarding.industry.realestate')}</option>
+              <option value="legal">{t('onboarding.industry.legal')}</option>
+              <option value="other">{t('onboarding.industry.other')}</option>
             </select>
-            <label htmlFor="offering-company-size">公司规模</label>
+            <label htmlFor="offering-company-size">{t('onboarding.companySize')}</label>
             <select
               defaultValue={attrValue(offering, 'company_size')}
               id="offering-company-size"
               name="companySize"
             >
-              <option value="">请选择规模（可选）</option>
-              <option value="1-10">1–10 人</option>
-              <option value="11-50">11–50 人</option>
-              <option value="51-200">51–200 人</option>
-              <option value="201-500">201–500 人</option>
-              <option value="501-1000">501–1000 人</option>
-              <option value="1000+">1000 人以上</option>
+              <option value="">{t('onboarding.companySizePlaceholder')}</option>
+              <option value="1-10">{t('onboarding.size.1-10')}</option>
+              <option value="11-50">{t('onboarding.size.11-50')}</option>
+              <option value="51-200">{t('onboarding.size.51-200')}</option>
+              <option value="201-500">{t('onboarding.size.201-500')}</option>
+              <option value="501-1000">{t('onboarding.size.501-1000')}</option>
+              <option value="1000+">{t('onboarding.size.1000plus')}</option>
             </select>
-            <label htmlFor="offering-competitors">主要竞品（每行一个，或逗号分隔）</label>
+            <label htmlFor="offering-competitors">{t('onboarding.competitors')}</label>
             <textarea
               defaultValue={attrValue(offering, 'competitors')}
               id="offering-competitors"
               name="competitors"
-              placeholder={'例如：\nCompetitorA\nCompetitorB'}
+              placeholder={t('onboarding.competitorsPlaceholder')}
               rows={3}
             />
-            <label htmlFor="offering-principle">原理</label>
+            <label htmlFor="offering-principle">{t('onboarding.principle')}</label>
             <textarea
               defaultValue={offering?.principle}
               id="offering-principle"
@@ -678,103 +713,101 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
               required
               rows={4}
             />
-            <h3>规格</h3>
-            <label htmlFor="specification-name-1">规格名称 1</label>
+            <h3>{t('onboarding.specsSection')}</h3>
+            <label htmlFor="specification-name-1">{t('onboarding.specName1')}</label>
             <input
               defaultValue={offering?.specifications[0]?.name}
               id="specification-name-1"
               name="specificationName"
             />
-            <label htmlFor="specification-value-1">规格值 1</label>
+            <label htmlFor="specification-value-1">{t('onboarding.specValue1')}</label>
             <input
               defaultValue={offering?.specifications[0]?.value}
               id="specification-value-1"
               name="specificationValue"
             />
-            <label htmlFor="specification-unit-1">规格单位 1</label>
+            <label htmlFor="specification-unit-1">{t('onboarding.specUnit1')}</label>
             <input
               defaultValue={offering?.specifications[0]?.unit}
               id="specification-unit-1"
               name="specificationUnit"
             />
-            <label htmlFor="offering-taxonomy">Taxonomy（每行一个标签）</label>
+            <label htmlFor="offering-taxonomy">{t('onboarding.taxonomy')}</label>
             <textarea
               defaultValue={offering?.taxonomy.join('\n')}
               id="offering-taxonomy"
               name="taxonomy"
               rows={3}
             />
-            <label htmlFor="offering-features">功能</label>
+            <label htmlFor="offering-features">{t('onboarding.features')}</label>
             <textarea
               defaultValue={offering?.features.join('\n')}
               id="offering-features"
               name="features"
               rows={3}
             />
-            <label htmlFor="offering-usage">使用方法</label>
+            <label htmlFor="offering-usage">{t('onboarding.usage')}</label>
             <textarea
               defaultValue={offering?.usage.join('\n')}
               id="offering-usage"
               name="usage"
               rows={3}
             />
-            <label htmlFor="offering-scenarios">应用场景</label>
+            <label htmlFor="offering-scenarios">{t('onboarding.scenarios')}</label>
             <textarea
               defaultValue={offering?.applicationScenarios.join('\n')}
               id="offering-scenarios"
               name="applicationScenarios"
               rows={3}
             />
-            <label htmlFor="offering-compatibility">兼容性</label>
+            <label htmlFor="offering-compatibility">{t('onboarding.compatibility')}</label>
             <textarea
               defaultValue={offering?.compatibility.join('\n')}
               id="offering-compatibility"
               name="compatibility"
               rows={3}
             />
-            <label htmlFor="offering-evidence">证据提示</label>
+            <label htmlFor="offering-evidence">{t('onboarding.evidenceHints')}</label>
             <textarea
               defaultValue={offering?.evidenceHints.join('\n')}
               id="offering-evidence"
               name="evidenceHints"
               rows={3}
             />
-            <h3>AEO / GEO 优化配置</h3>
-            <p className="field-help">
-              AEO（Answer Engine Optimization）关注 AI 回答中的可见度；GEO（Generative Engine
-              Optimization）关注生成式引擎的引用与推荐。
-            </p>
-            <label htmlFor="offering-aeo-keywords">AEO 目标关键词 / 问题（每行一个）</label>
+            <h3>{t('onboarding.aeoConfigSection')}</h3>
+            <p className="field-help">{t('onboarding.aeoGeoHelp')}</p>
+            <label htmlFor="offering-aeo-keywords">{t('onboarding.aeoKeywords')}</label>
             <textarea
               defaultValue={attrValue(offering, 'aeo_target_keywords')}
               id="offering-aeo-keywords"
               name="aeoKeywords"
-              placeholder={'例如：\n最好的企业AI平台是哪个\nAIBOX 和竞品对比如何'}
+              placeholder={t('onboarding.aeoKeywordsPlaceholder')}
               rows={3}
             />
-            <label htmlFor="offering-geo-engines">GEO 目标引擎（每行一个）</label>
+            <label htmlFor="offering-geo-engines">{t('onboarding.geoEngines')}</label>
             <textarea
               defaultValue={attrValue(offering, 'geo_target_engines')}
               id="offering-geo-engines"
               name="geoEngines"
-              placeholder={'例如：\nChatGPT\nClaude\nGemini\nPerplexity\n豆包\nKimi'}
+              placeholder={t('onboarding.geoEnginesPlaceholder')}
               rows={3}
             />
-            <label htmlFor="offering-goals">优化目标（每行一个）</label>
+            <label htmlFor="offering-goals">{t('onboarding.goals')}</label>
             <textarea
               defaultValue={attrValue(offering, 'optimization_goals')}
               id="offering-goals"
               name="optimizationGoals"
-              placeholder={
-                '例如：\n提升品牌在AI回答中的引用率\n增加官网自然流量\n建立行业权威内容资产'
-              }
+              placeholder={t('onboarding.goalsPlaceholder')}
               rows={3}
             />
             <OfferingAttributesFields
               {...(offering === undefined ? {} : { initialAttributes: offering.attributes })}
+              locale={locale}
             />
             <button className="primary-action" type="submit">
-              {offering === undefined ? '保存 Offering' : '保存为新 Revision'}
+              {offering === undefined
+                ? t('onboarding.saveOffering')
+                : t('onboarding.saveOfferingRevision')}
             </button>
           </form>
         </section>

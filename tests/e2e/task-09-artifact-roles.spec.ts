@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { setupArtifactPrerequisites } from './helpers.js';
 
 const apiOrigin = 'http://127.0.0.1:3200';
 const webOrigin = 'http://127.0.0.1:3100';
@@ -27,21 +28,22 @@ async function inviteAsOwner(
 test('an Editor generates and revises while an independent Reviewer approves the exact deep-link', async ({
   browser,
 }) => {
-  test.setTimeout(90_000);
+  test.setTimeout(150_000);
   const ownerContext = await browser.newContext();
   const editorContext = await browser.newContext();
   const reviewerContext = await browser.newContext();
   try {
     const ownerPage = await ownerContext.newPage();
     await loginAs(ownerPage);
-    await ownerPage.getByLabel('Tenant 名称').fill('Role-separated Artifact Tenant');
-    await ownerPage.getByLabel('Workspace 名称').fill('Role-separated Workspace');
-    await ownerPage.getByRole('button', { name: '创建 Workspace' }).click();
+    await ownerPage.getByLabel('团队名称').fill('Role-separated Artifact Tenant');
+    await ownerPage.getByLabel('工作空间名称').fill('Role-separated Workspace');
+    await ownerPage.getByRole('button', { name: '创建工作空间' }).click();
     await expect(
       ownerPage.getByRole('heading', { name: 'Role-separated Workspace' }),
     ).toBeVisible();
+    await setupArtifactPrerequisites(ownerPage);
     const artifactStudioHref = await ownerPage
-      .getByRole('link', { name: 'Artifact Studio' })
+      .getByRole('link', { name: '内容稿件工作室' })
       .getAttribute('href');
     if (artifactStudioHref === null) throw new Error('WORKSPACE_SCOPE_LINK_MISSING');
     const workspaceScope = new URL(artifactStudioHref, webOrigin);
@@ -55,18 +57,18 @@ test('an Editor generates and revises while an independent Reviewer approves the
       'reviewer@example.test',
       'REVIEWER',
     );
-    await ownerPage.getByRole('link', { name: 'Artifact Studio' }).click();
+    await ownerPage.getByRole('link', { name: '内容稿件工作室' }).click();
     await ownerPage.getByRole('button', { name: '保存 Artifact 预算' }).click();
 
     const editorPage = await editorContext.newPage();
     await loginAs(editorPage, 'editor@example.test');
     await editorPage.goto(`${webOrigin}${editorAcceptanceHref}`);
-    await editorPage.getByRole('button', { name: '接受 Workspace 邀请' }).click();
+    await editorPage.getByRole('button', { name: '接受工作空间邀请' }).click();
     await expect(editorPage.getByText('当前角色：Editor')).toBeVisible();
     await editorPage.goto(`${webOrigin}/app/artifacts?tenant=${tenantId}&workspace=${workspaceId}`);
     await expect(editorPage.getByRole('heading', { name: 'Artifact 预算' })).toHaveCount(0);
-    await expect(editorPage.getByRole('button', { name: '生成 Artifact Draft' })).toBeVisible();
-    await editorPage.getByRole('button', { name: '生成 Artifact Draft' }).click();
+    await expect(editorPage.getByRole('button', { name: '生成内容稿件草稿' })).toBeVisible();
+    await editorPage.getByRole('button', { name: '生成内容稿件草稿' }).click();
     await expect(editorPage.getByTestId('artifact-job-status')).toHaveText('SUCCEEDED', {
       timeout: 15_000,
     });
@@ -80,7 +82,7 @@ test('an Editor generates and revises while an independent Reviewer approves the
     const reviewerPage = await reviewerContext.newPage();
     await loginAs(reviewerPage, 'reviewer@example.test');
     await reviewerPage.goto(`${webOrigin}${reviewerAcceptanceHref}`);
-    await reviewerPage.getByRole('button', { name: '接受 Workspace 邀请' }).click();
+    await reviewerPage.getByRole('button', { name: '接受工作空间邀请' }).click();
     await expect(reviewerPage.getByText('当前角色：Reviewer')).toBeVisible();
     await reviewerPage.goto(
       `${webOrigin}/app/artifacts?tenant=${tenantId}&workspace=${workspaceId}&artifact=${artifactId}`,

@@ -22,12 +22,12 @@ async function createApprovedScenario(page: Page): Promise<{
   workspaceId: string;
 }> {
   await page.goto('/app');
-  await page.getByLabel('Tenant 名称').fill('Measurement Evidence Tenant');
-  await page.getByLabel('Workspace 名称').fill('Measurement Evidence Workspace');
-  await page.getByRole('button', { name: '创建 Workspace' }).click();
-  await page.getByRole('link', { name: 'Prompt / Scenario Lab' }).click();
+  await page.getByLabel('团队名称').fill('Measurement Evidence Tenant');
+  await page.getByLabel('工作空间名称').fill('Measurement Evidence Workspace');
+  await page.getByRole('button', { name: '创建工作空间' }).click();
+  await page.getByRole('link', { name: '问题集 / 场景实验室' }).click();
 
-  await page.getByLabel('Prompt Set 标题').fill('Evidence-backed discovery baseline');
+  await page.getByLabel('问题集标题').fill('Evidence-backed discovery baseline');
   await page.getByLabel('研究主题').fill('Accessible professional learning service');
   await page.getByLabel('Profile revision ID').fill('00000000-0000-7000-8000-000000000711');
   await page.getByLabel('Offering revision ID').fill('00000000-0000-7000-8000-000000000712');
@@ -59,8 +59,8 @@ async function setBudgetAndInviteAnalyst(
     `${webOrigin}/app/jobs?tenant=${scope.tenantId}&workspace=${scope.workspaceId}` +
       '&profile=00000000-0000-7000-8000-000000000711',
   );
-  await page.getByLabel('Workspace 预算上限', { exact: true }).fill('500');
-  await page.getByRole('button', { name: '保存 Workspace 预算', exact: true }).click();
+  await page.getByLabel('工作空间预算上限', { exact: true }).fill('500');
+  await page.getByRole('button', { name: '保存工作空间预算', exact: true }).click();
   await expect(page.getByText('预算上限已更新')).toBeVisible();
 
   await page.goto(`${webOrigin}/app?tenant=${scope.tenantId}&workspace=${scope.workspaceId}`);
@@ -89,7 +89,7 @@ test('an Analyst runs a reproducible baseline and drills through separated metri
     const analystPage = await analystContext.newPage();
     await loginAs(analystPage, 'editor@example.test');
     await analystPage.goto(`${webOrigin}${invitationHref}`);
-    await analystPage.getByRole('button', { name: '接受 Workspace 邀请' }).click();
+    await analystPage.getByRole('button', { name: '接受工作空间邀请' }).click();
     await expect(analystPage.getByText('当前角色：Analyst')).toBeVisible();
 
     await analystPage.goto(scope.promptUrl);

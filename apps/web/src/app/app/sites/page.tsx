@@ -10,6 +10,8 @@ import type {
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
+import { makeT } from '../../../lib/i18n';
+import { getLocale } from '../../../lib/i18n/get-locale';
 import { JobPoller } from '../jobs/job-poller';
 
 function apiOrigin(): string {
@@ -174,6 +176,7 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
   if (tenantId === undefined || workspaceId === undefined || profileId === undefined) {
     redirect('/app');
   }
+  const t = makeT(await getLocale());
   const cookieHeader = (await cookies()).toString();
   const workspaceResponse = await fetch(`${apiOrigin()}/api/v1/tenants`, {
     cache: 'no-store',
@@ -232,16 +235,16 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
 
   return (
     <main>
-      <p className="eyebrow">AEO Studio</p>
-      <h1>Site Baseline</h1>
-      <p>只抓取已验证的自有 Site；每次 redirect 和 DNS 解析均重新执行 SSRF policy。</p>
+      <p className="eyebrow">{t('sites.eyebrow')}</p>
+      <h1>{t('sites.title')}</h1>
+      <p>{t('sites.lede')}</p>
 
       {site === undefined ? (
         <section className="shell-card">
-          <h2>登记自有 Site</h2>
+          <h2>{t('sites.registerHeading')}</h2>
           <form action={registerSite} className="stacked-form">
             {hidden}
-            <label htmlFor="site-origin">Site Origin</label>
+            <label htmlFor="site-origin">{t('sites.originLabel')}</label>
             <input
               id="site-origin"
               name="origin"
@@ -250,7 +253,7 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
               type="url"
             />
             <button className="primary-action" type="submit">
-              登记 Site
+              {t('sites.registerAction')}
             </button>
           </form>
         </section>
@@ -259,11 +262,12 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
           <section className="shell-card">
             <h2>{site.origin}</h2>
             <p>
-              状态：<strong data-testid="site-status">{site.status}</strong>
+              {t('sites.statusLabel')}
+              <strong data-testid="site-status">{site.status}</strong>
             </p>
             {site.status === 'UNVERIFIED' && typeof query.verification === 'string' ? (
               <>
-                <p>请将以下 challenge 放到：</p>
+                <p>{t('sites.challengeInstruction')}</p>
                 <code>{String(query.path ?? '')}</code>
                 <p>
                   <code data-testid="challenge-token">{String(query.token ?? '')}</code>
@@ -272,7 +276,7 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
                   {hidden}
                   <input name="verificationId" type="hidden" value={query.verification} />
                   <button className="primary-action" type="submit">
-                    验证所有权
+                    {t('sites.verifyAction')}
                   </button>
                 </form>
               </>
@@ -281,11 +285,11 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
 
           {site.status === 'VERIFIED' ? (
             <section className="shell-card">
-              <h2>Crawl policy 与预算</h2>
+              <h2>{t('sites.crawlBudgetHeading')}</h2>
               {membership.activeRole === 'OWNER' ? (
                 <form action={setBudget} className="stacked-form">
                   {hidden}
-                  <label htmlFor="crawl-budget">Crawl 预算上限</label>
+                  <label htmlFor="crawl-budget">{t('sites.crawlBudgetLabel')}</label>
                   <input
                     defaultValue="100"
                     id="crawl-budget"
@@ -295,14 +299,14 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
                     type="number"
                   />
                   <button className="primary-action" type="submit">
-                    保存 Crawl 预算
+                    {t('sites.crawlBudgetSaveAction')}
                   </button>
                 </form>
               ) : null}
               <form action={startCrawl}>
                 {hidden}
                 <button className="primary-action" type="submit">
-                  启动 Site Crawl
+                  {t('sites.startCrawlAction')}
                 </button>
               </form>
             </section>
@@ -313,40 +317,52 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
       {job === undefined ? null : (
         <section className="shell-card">
           <JobPoller status={job.status} />
-          <h2>Crawl Job</h2>
-          <p>Job ID：{job.id}</p>
+          <h2>{t('sites.crawlJobHeading')}</h2>
+          <p>{t('sites.jobId', { id: job.id })}</p>
           <p>
-            状态：<strong data-testid="job-status">{job.status}</strong>
+            {t('sites.statusLabel')}
+            <strong data-testid="job-status">{job.status}</strong>
           </p>
-          <p>进度：{job.progress}%</p>
-          {job.errorCode === null ? null : <p>失败原因：{job.errorCode}</p>}
+          <p>{t('sites.jobProgress', { progress: job.progress })}</p>
+          {job.errorCode === null ? null : <p>{t('sites.jobError', { code: job.errorCode })}</p>}
         </section>
       )}
 
       {baseline === undefined ? null : (
         <section className="shell-card">
-          <h2>Technical / Content Baseline</h2>
+          <h2>{t('sites.baselineHeading')}</h2>
           <p>
-            状态：<strong data-testid="baseline-status">{baseline.status}</strong>
+            {t('sites.statusLabel')}
+            <strong data-testid="baseline-status">{baseline.status}</strong>
           </p>
-          <p>Pages：{baseline.pageCount}</p>
-          <p>Raw bytes：{baseline.totalBytes}</p>
-          {baseline.errorCode === null ? null : <p>限制/失败原因：{baseline.errorCode}</p>}
-          <h3>Snapshots</h3>
+          <p>{t('sites.baselinePages', { count: baseline.pageCount })}</p>
+          <p>{t('sites.baselineBytes', { bytes: baseline.totalBytes })}</p>
+          {baseline.errorCode === null ? null : (
+            <p>{t('sites.baselineError', { code: baseline.errorCode })}</p>
+          )}
+          <h3>{t('sites.snapshotsHeading')}</h3>
           <ul>
             {baseline.snapshots.map((snapshot) => (
               <li key={snapshot.id}>
-                {snapshot.url} — Snapshot SHA-256 {snapshot.checksum} — {snapshot.contentType} —{' '}
-                {snapshot.sizeBytes} bytes
+                {t('sites.snapshotLine', {
+                  url: snapshot.url,
+                  checksum: snapshot.checksum,
+                  contentType: snapshot.contentType,
+                  sizeBytes: snapshot.sizeBytes,
+                })}
               </li>
             ))}
           </ul>
-          <h3>Findings</h3>
+          <h3>{t('sites.findingsHeading')}</h3>
           <ul>
             {baseline.findings.map((finding) => (
               <li key={finding.id}>
-                <strong>{finding.findingType}</strong> [{finding.severity}] {finding.detail} —
-                snapshot {finding.snapshotId}
+                <strong>{finding.findingType}</strong>{' '}
+                {t('sites.findingLine', {
+                  severity: finding.severity,
+                  detail: finding.detail,
+                  snapshotId: finding.snapshotId,
+                })}
               </li>
             ))}
           </ul>

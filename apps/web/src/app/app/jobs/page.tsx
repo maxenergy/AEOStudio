@@ -8,6 +8,8 @@ import type {
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
+import { makeT } from '../../../lib/i18n';
+import { getLocale } from '../../../lib/i18n/get-locale';
 import { JobPoller } from './job-poller';
 
 function apiOrigin(): string {
@@ -157,6 +159,7 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
   if (tenantId === undefined || workspaceId === undefined || profileId === undefined) {
     redirect('/app');
   }
+  const t = makeT(await getLocale());
   const cookieHeader = (await cookies()).toString();
   const workspaceResponse = await fetch(`${apiOrigin()}/api/v1/tenants`, {
     cache: 'no-store',
@@ -196,25 +199,25 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
 
   return (
     <main>
-      <p className="eyebrow">AEO Studio</p>
-      <h1>Profile Readiness</h1>
-      <p>异步检查 Profile 的结构化资料覆盖度，不调用真实 AI Provider。</p>
+      <p className="eyebrow">{t('jobs.eyebrow')}</p>
+      <h1>{t('jobs.title')}</h1>
+      <p>{t('jobs.lede')}</p>
 
       {membership.activeRole === 'OWNER' ? (
         <section className="shell-card">
-          <h2>预算策略</h2>
+          <h2>{t('jobs.budgetHeading')}</h2>
           {['budget', 'tenant-budget', 'provider-budget'].includes(
             typeof query.notice === 'string' ? query.notice : '',
           ) ? (
             <p className="success-message" role="status">
-              预算上限已更新
+              {t('jobs.budgetUpdated')}
             </p>
           ) : null}
           <form action={setBudget} className="stacked-form">
             <input name="tenantId" type="hidden" value={tenantId} />
             <input name="workspaceId" type="hidden" value={workspaceId} />
             <input name="profileId" type="hidden" value={profileId} />
-            <label htmlFor="budget-limit">Workspace 预算上限</label>
+            <label htmlFor="budget-limit">{t('jobs.workspaceBudgetLabel')}</label>
             <input
               defaultValue="100"
               id="budget-limit"
@@ -224,14 +227,14 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
               type="number"
             />
             <button className="primary-action" type="submit">
-              保存 Workspace 预算
+              {t('jobs.saveWorkspaceBudgetAction')}
             </button>
           </form>
           <form action={setTenantBudget} className="stacked-form">
             <input name="tenantId" type="hidden" value={tenantId} />
             <input name="workspaceId" type="hidden" value={workspaceId} />
             <input name="profileId" type="hidden" value={profileId} />
-            <label htmlFor="tenant-budget-limit">Tenant 预算上限</label>
+            <label htmlFor="tenant-budget-limit">{t('jobs.tenantBudgetLabel')}</label>
             <input
               defaultValue="100"
               id="tenant-budget-limit"
@@ -241,16 +244,16 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
               type="number"
             />
             <button className="secondary-action" type="submit">
-              保存 Tenant 预算
+              {t('jobs.saveTenantBudgetAction')}
             </button>
           </form>
           <form action={setProviderBudget} className="stacked-form">
             <input name="tenantId" type="hidden" value={tenantId} />
             <input name="workspaceId" type="hidden" value={workspaceId} />
             <input name="profileId" type="hidden" value={profileId} />
-            <label htmlFor="provider-key">Provider Key</label>
+            <label htmlFor="provider-key">{t('jobs.providerKeyLabel')}</label>
             <input id="provider-key" maxLength={160} name="providerKey" required type="text" />
-            <label htmlFor="provider-budget-limit">Provider 预算上限</label>
+            <label htmlFor="provider-budget-limit">{t('jobs.providerBudgetLabel')}</label>
             <input
               defaultValue="100"
               id="provider-budget-limit"
@@ -260,7 +263,7 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
               type="number"
             />
             <button className="secondary-action" type="submit">
-              保存 Provider 预算
+              {t('jobs.saveProviderBudgetAction')}
             </button>
           </form>
         </section>
@@ -268,17 +271,20 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
 
       {membership.activeRole === 'OWNER' ? (
         <section aria-labelledby="budget-alert-heading" className="shell-card">
-          <h2 id="budget-alert-heading">Tenant Owner 预算告警</h2>
+          <h2 id="budget-alert-heading">{t('jobs.budgetAlertHeading')}</h2>
           {budgetAlerts.length === 0 ? (
-            <p>目前没有 Tenant 或 Provider 预算告警。</p>
+            <p>{t('jobs.noBudgetAlerts')}</p>
           ) : (
             <ul>
               {budgetAlerts.map((alert) => (
                 <li data-testid="owner-budget-alert" key={alert.id}>
                   {alert.budgetScope === 'TENANT'
-                    ? `Tenant 预算已达到 ${alert.thresholdPercent}%`
-                    : `Provider ${alert.providerKey ?? ''} 预算已达到 ${alert.thresholdPercent}%`}
-                  ，来源 Workspace：{alert.sourceWorkspaceId}
+                    ? t('jobs.tenantBudgetAlert', { percent: alert.thresholdPercent })
+                    : t('jobs.providerBudgetAlert', {
+                        provider: alert.providerKey ?? '',
+                        percent: alert.thresholdPercent,
+                      })}
+                  {t('jobs.alertSource', { workspace: alert.sourceWorkspaceId })}
                 </li>
               ))}
             </ul>
@@ -287,27 +293,30 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
       ) : null}
 
       <section className="shell-card">
-        <h2>Readiness Job</h2>
+        <h2>{t('jobs.readinessHeading')}</h2>
         {job === undefined ? (
           <form action={submitReadiness}>
             <input name="tenantId" type="hidden" value={tenantId} />
             <input name="workspaceId" type="hidden" value={workspaceId} />
             <input name="profileId" type="hidden" value={profileId} />
             <button className="primary-action" type="submit">
-              启动分析
+              {t('jobs.startAction')}
             </button>
           </form>
         ) : (
           <>
             <JobPoller status={job.status} />
-            <p>Job ID：{job.id}</p>
+            <p>{t('jobs.jobId', { id: job.id })}</p>
             <p>
-              状态：<strong data-testid="job-status">{job.status}</strong>
+              {t('jobs.statusLabel')}
+              <strong data-testid="job-status">{job.status}</strong>
             </p>
-            <p data-testid="job-progress">进度：{job.progress}%</p>
-            {job.heartbeatAt === null ? null : <p>Heartbeat：{job.heartbeatAt}</p>}
+            <p data-testid="job-progress">{t('jobs.jobProgress', { progress: job.progress })}</p>
+            {job.heartbeatAt === null ? null : (
+              <p>{t('jobs.heartbeat', { heartbeat: job.heartbeatAt })}</p>
+            )}
             {job.budgetWarning ? (
-              <p className="warning-message">预算使用已达到 80% 警戒线。</p>
+              <p className="warning-message">{t('jobs.budgetWarning')}</p>
             ) : null}
             {job.result === null ? null : (
               <pre data-testid="job-result">{JSON.stringify(job.result, null, 2)}</pre>
@@ -319,7 +328,7 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
                 <input name="profileId" type="hidden" value={profileId} />
                 <input name="jobId" type="hidden" value={job.id} />
                 <button className="secondary-action" type="submit">
-                  取消分析
+                  {t('jobs.cancelAction')}
                 </button>
               </form>
             ) : null}

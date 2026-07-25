@@ -3,6 +3,9 @@
 import type { OfferingEnvelope } from '@aeostudio/contracts';
 import { useState } from 'react';
 
+import { makeT } from '../../../lib/i18n';
+import type { Locale } from '../../../lib/i18n';
+
 type OfferingAttribute = OfferingEnvelope['data']['offering']['attributes'][number];
 
 /** 结构化业务字段已单独编辑，从通用维度编辑器中排除 */
@@ -44,9 +47,12 @@ function initialRows(attributes: readonly OfferingAttribute[]): AttributeRow[] {
 
 export function OfferingAttributesFields({
   initialAttributes = [],
+  locale,
 }: {
   initialAttributes?: readonly OfferingAttribute[];
+  locale: Locale;
 }) {
+  const t = makeT(locale);
   const [rows, setRows] = useState(() => initialRows(initialAttributes));
   const [nextId, setNextId] = useState(rows.length);
 
@@ -64,39 +70,39 @@ export function OfferingAttributesFields({
 
   return (
     <>
-      <h3>自定义维度</h3>
+      <h3>{t('onboarding.customDimensionsSection')}</h3>
       {rows.map((row, index) => {
         const position = index + 1;
         const suffix = position === 1 ? '' : ` ${position}`;
         return (
           <fieldset key={row.id}>
-            <legend>自定义维度 {position}</legend>
-            <label htmlFor={`attribute-key-${row.id}`}>自定义维度 Key{suffix}</label>
+            <legend>{t('attributes.legend', { position })}</legend>
+            <label htmlFor={`attribute-key-${row.id}`}>{t('attributes.key', { suffix })}</label>
             <input
               defaultValue={row.key}
               id={`attribute-key-${row.id}`}
               name="attributeKey"
               pattern="[a-z][a-z0-9_]*"
             />
-            <label htmlFor={`attribute-label-${row.id}`}>自定义维度名称{suffix}</label>
+            <label htmlFor={`attribute-label-${row.id}`}>{t('attributes.label', { suffix })}</label>
             <input
               defaultValue={row.label}
               id={`attribute-label-${row.id}`}
               name="attributeLabel"
             />
-            <label htmlFor={`attribute-type-${row.id}`}>自定义维度类型{suffix}</label>
+            <label htmlFor={`attribute-type-${row.id}`}>{t('attributes.type', { suffix })}</label>
             <select
               defaultValue={row.valueType}
               id={`attribute-type-${row.id}`}
               name="attributeType"
             >
-              <option value="text">文字</option>
-              <option value="number">数字</option>
-              <option value="boolean">布尔</option>
-              <option value="url">URL</option>
-              <option value="string_list">文字列表</option>
+              <option value="text">{t('attributes.typeText')}</option>
+              <option value="number">{t('attributes.typeNumber')}</option>
+              <option value="boolean">{t('attributes.typeBoolean')}</option>
+              <option value="url">{t('attributes.typeUrl')}</option>
+              <option value="string_list">{t('attributes.typeStringList')}</option>
             </select>
-            <label htmlFor={`attribute-value-${row.id}`}>自定义维度值{suffix}</label>
+            <label htmlFor={`attribute-value-${row.id}`}>{t('attributes.value', { suffix })}</label>
             <input
               defaultValue={row.value}
               id={`attribute-value-${row.id}`}
@@ -104,14 +110,14 @@ export function OfferingAttributesFields({
             />
             {rows.length === 1 ? null : (
               <button className="secondary-button" onClick={() => removeRow(row.id)} type="button">
-                删除自定义维度 {position}
+                {t('attributes.remove', { position })}
               </button>
             )}
           </fieldset>
         );
       })}
       <button className="secondary-button" onClick={addRow} type="button">
-        添加自定义维度
+        {t('attributes.add')}
       </button>
     </>
   );
