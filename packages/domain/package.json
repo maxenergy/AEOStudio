@@ -44,6 +44,11 @@
       "development": "./src/measurement/index.ts",
       "default": "./dist/measurement/index.js"
     },
+    "./onboarding": {
+      "types": "./src/onboarding/index.ts",
+      "development": "./src/onboarding/index.ts",
+      "default": "./dist/onboarding/index.js"
+    },
     "./profile-offering": {
       "types": "./src/profile-offering/index.ts",
       "development": "./src/profile-offering/index.ts",

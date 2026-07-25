@@ -7,6 +7,7 @@ export * from './experiments/index.js';
 export * from './identity-access/index.js';
 export * from './jobs-budgets/index.js';
 export * from './measurement/index.js';
+export * from './onboarding/index.js';
 export * from './profile-offering/index.js';
 export * from './privacy-audit/index.js';
 export * from './prompt-research/index.js';

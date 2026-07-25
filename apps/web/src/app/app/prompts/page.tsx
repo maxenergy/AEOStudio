@@ -13,6 +13,7 @@ import type {
   OfferingListEnvelope,
   ProfileListEnvelope,
 } from '@aeostudio/contracts/profile-offering';
+import type { ApprovedClaimListEnvelope } from '@aeostudio/contracts/evidence-claims';
 import { randomUUID } from 'node:crypto';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -67,8 +68,9 @@ function sourceContext(formData: FormData) {
       id: requiredText(formData, 'offeringId'),
       revision: Number(requiredText(formData, 'offeringRevision')),
     },
-    claimRevisionIds: optionalText(formData, 'claimRevisionIds')
-      .split(/[,\r\n]+/)
+    claimRevisionIds: formData
+      .getAll('claimRevisionIds')
+      .flatMap((value) => (typeof value === 'string' ? value.split(/[,\r\n]+/) : []))
       .map((value) => value.trim())
       .filter(Boolean),
   };
@@ -421,13 +423,18 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
     typeof query.offeringRevision === 'string' ? query.offeringRevision : '1';
   let profileOptions: ProfileListEnvelope['data']['profiles'] = [];
   let offeringOptions: OfferingListEnvelope['data']['offerings'] = [];
+  let claimOptions: ApprovedClaimListEnvelope['data']['claims'] = [];
   if (bundle === undefined && mayManage) {
-    const [profilesResponse, offeringsResponse] = await Promise.all([
+    const [profilesResponse, offeringsResponse, claimsResponse] = await Promise.all([
       fetch(`${apiOrigin()}/api/v1/tenants/${tenantId}/workspaces/${workspaceId}/profiles`, {
         cache: 'no-store',
         headers: { cookie },
       }),
       fetch(`${apiOrigin()}/api/v1/tenants/${tenantId}/workspaces/${workspaceId}/offerings`, {
+        cache: 'no-store',
+        headers: { cookie },
+      }),
+      fetch(`${apiOrigin()}/api/v1/tenants/${tenantId}/workspaces/${workspaceId}/claims/approved`, {
         cache: 'no-store',
         headers: { cookie },
       }),
@@ -437,6 +444,9 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
     }
     if (offeringsResponse.ok) {
       offeringOptions = ((await offeringsResponse.json()) as OfferingListEnvelope).data.offerings;
+    }
+    if (claimsResponse.ok) {
+      claimOptions = ((await claimsResponse.json()) as ApprovedClaimListEnvelope).data.claims;
     }
   }
   const registryEntry =
@@ -582,7 +592,20 @@ export default async function PromptsPage({ searchParams }: PromptsPageProps) {
               type="number"
             />
             <label htmlFor="prompt-claims">{t('prompts.field.claimRevisionIds')}</label>
-            <textarea defaultValue="" id="prompt-claims" name="claimRevisionIds" />
+            <input
+              defaultValue=""
+              id="prompt-claims"
+              list="prompt-claim-options"
+              name="claimRevisionIds"
+            />
+            <datalist id="prompt-claim-options">
+              {claimOptions.map((c) => (
+                <option key={c.revisionId} value={c.revisionId}>
+                  {c.statement} (R{c.revision})
+                </option>
+              ))}
+            </datalist>
+            <p className="field-help">{t('prompts.claimsHelp')}</p>
             <label htmlFor="prompt-market">{t('prompts.field.market')}</label>
             <input defaultValue="SG" id="prompt-market" name="market" required />
             <label htmlFor="prompt-locale">{t('prompts.field.locale')}</label>

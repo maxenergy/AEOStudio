@@ -157,9 +157,7 @@ export async function createApprovedBrief(page: Page): Promise<void> {
     await reviewerPage.goto(
       `/app/plans?tenant=${tenantId}&workspace=${workspaceId}&plan=${planId}&job=${jobId}`,
     );
-    await expect(
-      reviewerPage.getByRole('heading', { name: '内容计划 / 创作摘要' }),
-    ).toBeVisible();
+    await expect(reviewerPage.getByRole('heading', { name: '内容计划 / 创作摘要' })).toBeVisible();
 
     // Approve the first brief
     await reviewerPage.getByLabel('Review note').first().fill('E2E reviewer approves.');

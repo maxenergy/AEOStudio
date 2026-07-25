@@ -106,9 +106,7 @@ async function openChannels(page: Page, scope: ApprovedArtifactScope): Promise<v
   await page.goto(
     `${webOrigin}/app/channels?tenant=${scope.tenantId}&workspace=${scope.workspaceId}&artifact=${scope.artifactId}`,
   );
-  await expect(
-    page.getByRole('heading', { name: /渠道包 \/ 发布/ }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: /渠道包 \/ 发布/ })).toBeVisible();
 }
 
 async function buildSignedWebhookPackage(

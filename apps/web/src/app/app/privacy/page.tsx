@@ -518,10 +518,13 @@ export default async function PrivacyPage({ searchParams }: PrivacyPageProps) {
             <input id="legal-hold-name" maxLength={200} name="name" required />
             <label htmlFor="legal-hold-reason">{t('privacy.holdReasonLabel')}</label>
             <textarea id="legal-hold-reason" maxLength={2000} name="reason" required />
-            <label htmlFor="legal-hold-object-key">{t('privacy.holdObjectKeyLabel')}</label>
-            <input id="legal-hold-object-key" name="objectKey" required />
-            <label htmlFor="legal-hold-version">{t('privacy.holdObjectVersionLabel')}</label>
-            <input id="legal-hold-version" name="objectVersionId" required />
+            <details className="advanced-fields" open>
+              <summary>{t('privacy.advancedFields')}</summary>
+              <label htmlFor="legal-hold-object-key">{t('privacy.holdObjectKeyLabel')}</label>
+              <input id="legal-hold-object-key" name="objectKey" required />
+              <label htmlFor="legal-hold-version">{t('privacy.holdObjectVersionLabel')}</label>
+              <input id="legal-hold-version" name="objectVersionId" required />
+            </details>
             <button type="submit">{t('privacy.holdSubmitAction')}</button>
           </form>
         ) : null}

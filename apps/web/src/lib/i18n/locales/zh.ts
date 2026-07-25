@@ -257,7 +257,8 @@ export const zh = {
   'prompts.field.profileRevision': 'Profile revision',
   'prompts.field.offeringRevisionId': 'Offering revision ID',
   'prompts.field.offeringRevision': 'Offering revision',
-  'prompts.field.claimRevisionIds': 'Approved Claim revision IDs',
+  'prompts.field.claimRevisionIds': '已批准的事实声明',
+  'prompts.claimsHelp': '可从下拉列表选择已批准的事实声明，多个 ID 用逗号分隔。',
   'prompts.field.market': 'Market',
   'prompts.field.locale': 'Locale',
   'prompts.field.region': 'Region',
@@ -370,6 +371,7 @@ export const zh = {
     '所有 ID 都会作为 input artifact revision snapshot 保存，生成过程不调用真实 LLM。',
   'plans.noResources':
     '尚无可用资源。请先完成 Profile/Offering 创建、Prompt Set 审批、Claim 审批和 Site Baseline 爬取。',
+  'plans.claimsHelp': '可从下拉列表选择已批准的事实声明，多个 ID 用逗号分隔。',
   'plans.field.profile': 'Profile',
   'plans.field.profileRevision': 'Profile revision',
   'plans.field.offering': 'Offering',
@@ -623,6 +625,7 @@ export const zh = {
   'channels.shopifySecretArnField': 'Shopify OAuth secret ARN',
   'channels.webhookSecretArnField': 'Webhook signing key ring secret ARN',
   'channels.secretArnField': 'AWS Secrets Manager ARN',
+  'channels.advancedFields': '高级设置（ARN / 凭据 / 到期时间）',
   'channels.secretArnHelp':
     '仅保存 Singapore Secrets Manager 引用；credential value 不进入浏览器、Job、Outbox 或 PublicationRecord。',
   'channels.authorizationExpiryField': '授权到期时间（可选）',
@@ -952,6 +955,7 @@ export const zh = {
   'privacy.releaseHoldAction': '释放 Legal Hold：{name}',
   'privacy.holdNameLabel': 'Legal Hold 名称',
   'privacy.holdReasonLabel': 'Legal Hold 理由',
+  'privacy.advancedFields': '高级设置（Object key / version ID）',
   'privacy.holdObjectKeyLabel': 'Object key',
   'privacy.holdObjectVersionLabel': 'Object version ID',
   'privacy.holdSubmitAction': '保留这个确切对象版本',
@@ -988,4 +992,56 @@ export const zh = {
   'deletionReceipt.activeDeadline': 'Active data deadline（30 天）',
   'deletionReceipt.backupDeadline': 'Backup deadline（90 天）',
   'deletionReceipt.backToLogin': '返回登录',
+
+  // 新手向导（8 步）
+  'navGroup.wizard': '新手向导',
+  'nav.wizard.start': '开始',
+  'nav.wizard.company': '企业资料',
+  'nav.wizard.products': '产品/服务',
+  'nav.wizard.audiences': '客户与竞品',
+  'nav.wizard.evidence': '证明材料',
+  'nav.wizard.strategy': '推广策略',
+  'nav.wizard.channels': '渠道连接',
+  'nav.wizard.content': '内容生成',
+
+  'wizard.progress': '第 {current} 步，共 {total} 步',
+  'wizard.backAction': '返回上一步',
+  'wizard.nextAction': '保存并继续',
+  'wizard.finishAction': '完成',
+  'wizard.skipAction': '跳过此步',
+  'wizard.completed': '已完成',
+  'wizard.current': '当前',
+  'wizard.locked': '未解锁',
+
+  'wizard.start.title': '欢迎使用 AEO Studio',
+  'wizard.start.lede': '本向导将引导你完成 8 个步骤，建立完整的 AEO/GEO 优化体系。',
+  'wizard.start.step1': '填写企业资料',
+  'wizard.start.step1Desc': '告诉我们要推广的品牌与产品',
+  'wizard.start.step2': '收集证明材料',
+  'wizard.start.step2Desc': '用事实声明与证据建立可信度',
+  'wizard.start.step3': '生成并发布内容',
+  'wizard.start.step3Desc': '创建针对 AI 引擎优化的内容',
+  'wizard.start.beginAction': '开始向导',
+  'wizard.start.expertMode': '我是专家，直接进入工作台',
+
+  'wizard.company.title': '企业与品牌信息',
+  'wizard.company.lede': '填写你的企业基本信息，这是所有后续步骤的基础。',
+
+  'wizard.products.title': '产品/服务',
+  'wizard.products.lede': '描述你要推广的产品、服务或解决方案。',
+
+  'wizard.audiences.title': '客户与市场',
+  'wizard.audiences.lede': '定义目标客户画像、市场定位与竞品分析。',
+
+  'wizard.evidence.title': '网站与证明材料',
+  'wizard.evidence.lede': '连接你的网站，收集支持事实声明的证明材料。',
+
+  'wizard.strategy.title': '推广目标与内容参数',
+  'wizard.strategy.lede': '设定推广目标、内容风格与发布策略。',
+
+  'wizard.channels.title': '全网渠道规划',
+  'wizard.channels.lede': '连接 GitHub、WordPress、Shopify 等发布渠道。',
+
+  'wizard.content.title': '内容生成/审核/发布',
+  'wizard.content.lede': '生成内容稿件，经审核后发布到目标渠道。',
 } satisfies Record<string, string>;

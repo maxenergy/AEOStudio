@@ -6890,6 +6890,107 @@
       ],
       "type": "object"
     },
+    "OnboardingStateEnvelopeSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "data": {
+          "additionalProperties": false,
+          "properties": {
+            "onboardingState": {
+              "$ref": "#/$defs/OnboardingStateSchema"
+            }
+          },
+          "required": ["onboardingState"],
+          "type": "object"
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "requestId": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "schemaVersion": {
+              "const": "1.0.0",
+              "type": "string"
+            }
+          },
+          "required": ["requestId", "schemaVersion"],
+          "type": "object"
+        }
+      },
+      "required": ["data", "meta"],
+      "type": "object"
+    },
+    "OnboardingStateSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "activeStep": {
+          "$ref": "#/$defs/OnboardingStepIdSchema"
+        },
+        "completionPercent": {
+          "maximum": 100,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "nextBestAction": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "stepStatuses": {
+          "items": {
+            "$ref": "#/$defs/StepStateSchema"
+          },
+          "maxItems": 8,
+          "minItems": 8,
+          "type": "array"
+        },
+        "tenantId": {
+          "format": "uuid",
+          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+          "type": "string"
+        },
+        "updatedAt": {
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+          "type": "string"
+        },
+        "workspaceId": {
+          "format": "uuid",
+          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tenantId",
+        "workspaceId",
+        "activeStep",
+        "stepStatuses",
+        "completionPercent",
+        "nextBestAction",
+        "updatedAt"
+      ],
+      "type": "object"
+    },
+    "OnboardingStepIdSchema": {
+      "enum": [
+        "start",
+        "company",
+        "products",
+        "audiences",
+        "evidence",
+        "strategy",
+        "channels",
+        "content"
+      ],
+      "type": "string"
+    },
     "OpportunitySchema": {
       "additionalProperties": false,
       "properties": {
@@ -8414,6 +8515,175 @@
       },
       "required": ["contentHash", "responseText", "citations", "error"],
       "type": "object"
+    },
+    "ReadinessBlockerSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "message": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "resourceId": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "type": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": ["type", "message", "resourceId"],
+      "type": "object"
+    },
+    "ReadinessEnvelopeSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "data": {
+          "additionalProperties": false,
+          "properties": {
+            "readiness": {
+              "$ref": "#/$defs/ReadinessSchema"
+            }
+          },
+          "required": ["readiness"],
+          "type": "object"
+        },
+        "meta": {
+          "additionalProperties": false,
+          "properties": {
+            "requestId": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "schemaVersion": {
+              "const": "1.0.0",
+              "type": "string"
+            }
+          },
+          "required": ["requestId", "schemaVersion"],
+          "type": "object"
+        }
+      },
+      "required": ["data", "meta"],
+      "type": "object"
+    },
+    "ReadinessRecommendationSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "targetStep": {
+          "$ref": "#/$defs/OnboardingStepIdSchema"
+        }
+      },
+      "required": ["action", "reason", "targetStep"],
+      "type": "object"
+    },
+    "ReadinessSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "blockers": {
+          "items": {
+            "$ref": "#/$defs/ReadinessBlockerSchema"
+          },
+          "type": "array"
+        },
+        "canGenerate": {
+          "type": "boolean"
+        },
+        "canPublish": {
+          "type": "boolean"
+        },
+        "claimsMissingEvidence": {
+          "items": {
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "completedSteps": {
+          "items": {
+            "$ref": "#/$defs/OnboardingStepIdSchema"
+          },
+          "type": "array"
+        },
+        "currentStage": {
+          "$ref": "#/$defs/ReadinessStageSchema"
+        },
+        "evaluatedAt": {
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+          "type": "string"
+        },
+        "pendingReviewCount": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "recommendations": {
+          "items": {
+            "$ref": "#/$defs/ReadinessRecommendationSchema"
+          },
+          "type": "array"
+        },
+        "tenantId": {
+          "format": "uuid",
+          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+          "type": "string"
+        },
+        "unconnectedChannels": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "workspaceId": {
+          "format": "uuid",
+          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tenantId",
+        "workspaceId",
+        "currentStage",
+        "completedSteps",
+        "blockers",
+        "recommendations",
+        "canGenerate",
+        "canPublish",
+        "unconnectedChannels",
+        "claimsMissingEvidence",
+        "pendingReviewCount",
+        "evaluatedAt"
+      ],
+      "type": "object"
+    },
+    "ReadinessStageSchema": {
+      "enum": [
+        "SETUP",
+        "KNOWLEDGE_BUILDING",
+        "EVIDENCE_GATHERING",
+        "CONTENT_READY",
+        "PUBLISH_READY",
+        "MEASURING"
+      ],
+      "type": "string"
     },
     "RequestDeletionRequestSchema": {
       "additionalProperties": false,
@@ -9980,6 +10250,45 @@
         "idempotencyKey"
       ],
       "type": "object"
+    },
+    "StepStateSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "blockingReason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "completedAt": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "$ref": "#/$defs/StepStatusSchema"
+        },
+        "stepId": {
+          "$ref": "#/$defs/OnboardingStepIdSchema"
+        }
+      },
+      "required": ["stepId", "status", "completedAt", "blockingReason"],
+      "type": "object"
+    },
+    "StepStatusSchema": {
+      "enum": ["NOT_STARTED", "IN_PROGRESS", "COMPLETED", "BLOCKED"],
+      "type": "string"
     },
     "SubmitArtifactRevisionEnvelopeSchema": {
       "additionalProperties": false,

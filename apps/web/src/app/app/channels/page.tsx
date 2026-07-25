@@ -1846,25 +1846,28 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
                     />
                   </>
                 )}
-                <label htmlFor="channel-secret-arn">
-                  {selectedAdapter.adapterKey === 'wordpress-woocommerce-draft'
-                    ? t('channels.wordpressSecretArnField')
-                    : selectedAdapter.adapterKey === 'shopify-draft'
-                      ? t('channels.shopifySecretArnField')
-                      : selectedAdapter.adapterKey === 'signed-webhook'
-                        ? t('channels.webhookSecretArnField')
-                        : t('channels.secretArnField')}
-                </label>
-                <input autoComplete="off" id="channel-secret-arn" name="secretArn" required />
-                <p className="field-help">{t('channels.secretArnHelp')}</p>
-                <label htmlFor="channel-authorization-expiry">
-                  {t('channels.authorizationExpiryField')}
-                </label>
-                <input
-                  id="channel-authorization-expiry"
-                  name="expiresAt"
-                  placeholder="2099-12-31T23:59:59+08:00"
-                />
+                <details className="advanced-fields" open>
+                  <summary>{t('channels.advancedFields')}</summary>
+                  <label htmlFor="channel-secret-arn">
+                    {selectedAdapter.adapterKey === 'wordpress-woocommerce-draft'
+                      ? t('channels.wordpressSecretArnField')
+                      : selectedAdapter.adapterKey === 'shopify-draft'
+                        ? t('channels.shopifySecretArnField')
+                        : selectedAdapter.adapterKey === 'signed-webhook'
+                          ? t('channels.webhookSecretArnField')
+                          : t('channels.secretArnField')}
+                  </label>
+                  <input autoComplete="off" id="channel-secret-arn" name="secretArn" required />
+                  <p className="field-help">{t('channels.secretArnHelp')}</p>
+                  <label htmlFor="channel-authorization-expiry">
+                    {t('channels.authorizationExpiryField')}
+                  </label>
+                  <input
+                    id="channel-authorization-expiry"
+                    name="expiresAt"
+                    placeholder="2099-12-31T23:59:59+08:00"
+                  />
+                </details>
                 <button className="secondary-button" type="submit">
                   {selectedAdapter.adapterKey === 'git-pull-request'
                     ? t('channels.saveGitAuthorizationAction')

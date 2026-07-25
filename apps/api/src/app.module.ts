@@ -21,6 +21,7 @@ import {
   MeasurementModule,
   type MeasurementModuleOptions,
 } from './measurement/measurement.module.js';
+import { OnboardingModule, type OnboardingModuleOptions } from './onboarding/onboarding.module.js';
 import {
   ProfileOfferingModule,
   type ProfileOfferingModuleOptions,
@@ -40,6 +41,7 @@ export interface ApiAppOptions
     ClaimsModuleOptions,
     ContentPlansModuleOptions,
     TenancyModuleOptions,
+    OnboardingModuleOptions,
     ProfileOfferingModuleOptions,
     PromptsModuleOptions,
     JobsModuleOptions,
@@ -78,6 +80,7 @@ export class AppModule {
         PromptsModule.register(options),
         JobsModule.register(options),
         MeasurementModule.register(options),
+        OnboardingModule.register(options),
         SitesModule.register(options),
       ],
     };

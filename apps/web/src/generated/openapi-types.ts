@@ -993,6 +993,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/tenants/{tenantId}/workspaces/{workspaceId}/onboarding-state': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** getOnboardingState */
+    get: operations['Onboarding_getOnboardingState'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/tenants/{tenantId}/workspaces/{workspaceId}/privacy/audit-digests': {
     parameters: {
       query?: never;
@@ -1397,6 +1414,23 @@ export interface paths {
     put?: never;
     /** checkEligibility */
     post: operations['Publications_checkEligibility'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/tenants/{tenantId}/workspaces/{workspaceId}/readiness': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** getReadiness */
+    get: operations['Onboarding_getReadiness'];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -3348,6 +3382,38 @@ export interface components {
       /** Format: uuid */
       workspaceId: string;
     };
+    OnboardingStateEnvelopeSchema: {
+      data: {
+        onboardingState: components['schemas']['OnboardingStateSchema'];
+      };
+      meta: {
+        requestId: string;
+        /** @constant */
+        schemaVersion: '1.0.0';
+      };
+    };
+    OnboardingStateSchema: {
+      activeStep: components['schemas']['OnboardingStepIdSchema'];
+      completionPercent: number;
+      nextBestAction: string | null;
+      stepStatuses: components['schemas']['StepStateSchema'][];
+      /** Format: uuid */
+      tenantId: string;
+      /** Format: date-time */
+      updatedAt: string;
+      /** Format: uuid */
+      workspaceId: string;
+    };
+    /** @enum {string} */
+    OnboardingStepIdSchema:
+      | 'start'
+      | 'company'
+      | 'products'
+      | 'audiences'
+      | 'evidence'
+      | 'strategy'
+      | 'channels'
+      | 'content';
     OpportunitySchema: {
       /** @enum {string} */
       action: 'BRIEF' | 'EVIDENCE_TASK';
@@ -3784,6 +3850,51 @@ export interface components {
       error: components['schemas']['schema112'];
       responseText: components['schemas']['schema110'];
     };
+    ReadinessBlockerSchema: {
+      message: string;
+      resourceId: string | null;
+      type: string;
+    };
+    ReadinessEnvelopeSchema: {
+      data: {
+        readiness: components['schemas']['ReadinessSchema'];
+      };
+      meta: {
+        requestId: string;
+        /** @constant */
+        schemaVersion: '1.0.0';
+      };
+    };
+    ReadinessRecommendationSchema: {
+      action: string;
+      reason: string;
+      targetStep: components['schemas']['OnboardingStepIdSchema'];
+    };
+    ReadinessSchema: {
+      blockers: components['schemas']['ReadinessBlockerSchema'][];
+      canGenerate: boolean;
+      canPublish: boolean;
+      claimsMissingEvidence: string[];
+      completedSteps: components['schemas']['OnboardingStepIdSchema'][];
+      currentStage: components['schemas']['ReadinessStageSchema'];
+      /** Format: date-time */
+      evaluatedAt: string;
+      pendingReviewCount: number;
+      recommendations: components['schemas']['ReadinessRecommendationSchema'][];
+      /** Format: uuid */
+      tenantId: string;
+      unconnectedChannels: string[];
+      /** Format: uuid */
+      workspaceId: string;
+    };
+    /** @enum {string} */
+    ReadinessStageSchema:
+      | 'SETUP'
+      | 'KNOWLEDGE_BUILDING'
+      | 'EVIDENCE_GATHERING'
+      | 'CONTENT_READY'
+      | 'PUBLISH_READY'
+      | 'MEASURING';
     RequestDeletionRequestSchema: {
       reason: components['schemas']['schema20'];
     };
@@ -4746,6 +4857,14 @@ export interface components {
       promptSetId: components['schemas']['schema208'];
       scenarioId: components['schemas']['schema210'];
     };
+    StepStateSchema: {
+      blockingReason: string | null;
+      completedAt: string | null;
+      status: components['schemas']['StepStatusSchema'];
+      stepId: components['schemas']['OnboardingStepIdSchema'];
+    };
+    /** @enum {string} */
+    StepStatusSchema: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED' | 'BLOCKED';
     SubmitArtifactRevisionEnvelopeSchema: {
       data: {
         revision: components['schemas']['ArtifactRevisionSchema'];
@@ -8931,6 +9050,56 @@ export interface operations {
       };
     };
   };
+  Onboarding_getOnboardingState: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        tenantId: string;
+        workspaceId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OnboardingStateEnvelopeSchema'];
+        };
+      };
+      /** @description Request rejected */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Request rejected */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Unhandled error */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+    };
+  };
   Privacy_sealAuditDigest: {
     parameters: {
       query?: never;
@@ -10926,6 +11095,56 @@ export interface operations {
       };
       /** @description Request rejected */
       409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Unhandled error */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+    };
+  };
+  Onboarding_getReadiness: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        tenantId: string;
+        workspaceId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReadinessEnvelopeSchema'];
+        };
+      };
+      /** @description Request rejected */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Request rejected */
+      404: {
         headers: {
           [name: string]: unknown;
         };

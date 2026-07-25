@@ -37,12 +37,14 @@ function requiredText(formData: FormData, name: string): string {
 }
 
 function optionalIds(formData: FormData, name: string): string[] {
-  const value = formData.get(name);
-  if (typeof value !== 'string') return [];
-  return value
-    .split(/[\r\n,]+/)
-    .map((entry) => entry.trim())
-    .filter(Boolean);
+  const all = formData.getAll(name);
+  if (all.length > 0) {
+    return all
+      .flatMap((entry) => (typeof entry === 'string' ? entry.split(/[\r\n,]+/) : []))
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+  }
+  return [];
 }
 
 function location(input: {
@@ -295,17 +297,35 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
                 ))}
               </select>
               <label htmlFor="plan-primary-claims">{t('plans.field.primaryClaims')}</label>
-              <textarea
-                defaultValue={claims.map((c) => c.revisionId).join('\n')}
+              <input
+                defaultValue={claims.map((c) => c.revisionId).join(',')}
                 id="plan-primary-claims"
+                list="plan-primary-claim-options"
                 name="primaryClaimRevisionIds"
               />
+              <datalist id="plan-primary-claim-options">
+                {claims.map((c) => (
+                  <option key={c.revisionId} value={c.revisionId}>
+                    {c.statement} (R{c.revision})
+                  </option>
+                ))}
+              </datalist>
+              <p className="field-help">{t('plans.claimsHelp')}</p>
               <label htmlFor="plan-comparison-claims">{t('plans.field.comparisonClaims')}</label>
-              <textarea
+              <input
                 defaultValue=""
                 id="plan-comparison-claims"
+                list="plan-comparison-claim-options"
                 name="comparisonClaimRevisionIds"
               />
+              <datalist id="plan-comparison-claim-options">
+                {claims.map((c) => (
+                  <option key={c.revisionId} value={c.revisionId}>
+                    {c.statement} (R{c.revision})
+                  </option>
+                ))}
+              </datalist>
+              <p className="field-help">{t('plans.claimsHelp')}</p>
               <label htmlFor="plan-baseline">{t('plans.field.baseline')}</label>
               <select id="plan-baseline" name="baselineId" required>
                 {baselines.map((b) => (

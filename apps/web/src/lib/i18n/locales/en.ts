@@ -267,7 +267,9 @@ export const en: Record<keyof typeof zh, string> = {
   'prompts.field.profileRevision': 'Company profile revision',
   'prompts.field.offeringRevisionId': 'Product/service revision ID',
   'prompts.field.offeringRevision': 'Product/service revision',
-  'prompts.field.claimRevisionIds': 'Approved fact claim revision IDs',
+  'prompts.field.claimRevisionIds': 'Approved fact claims',
+  'prompts.claimsHelp':
+    'Pick approved claims from the dropdown; separate multiple IDs with commas.',
   'prompts.field.market': 'Market',
   'prompts.field.locale': 'Locale',
   'prompts.field.region': 'Region',
@@ -381,6 +383,7 @@ export const en: Record<keyof typeof zh, string> = {
     'Every ID is stored as an input artifact revision snapshot; generation never calls a real LLM.',
   'plans.noResources':
     'No resources available yet. First create a company profile/product, approve a prompt set, approve claims and crawl a site baseline.',
+  'plans.claimsHelp': 'Pick approved claims from the dropdown; separate multiple IDs with commas.',
   'plans.field.profile': 'Company profile',
   'plans.field.profileRevision': 'Company profile revision',
   'plans.field.offering': 'Product/service',
@@ -640,6 +643,7 @@ export const en: Record<keyof typeof zh, string> = {
   'channels.shopifySecretArnField': 'Shopify OAuth secret ARN',
   'channels.webhookSecretArnField': 'Webhook signing key ring secret ARN',
   'channels.secretArnField': 'AWS Secrets Manager ARN',
+  'channels.advancedFields': 'Advanced settings (ARN / credentials / expiry)',
   'channels.secretArnHelp':
     'Only the Singapore Secrets Manager reference is stored; the credential value never enters the browser, jobs, outbox or publication records.',
   'channels.authorizationExpiryField': 'Authorization expiry (optional)',
@@ -985,6 +989,7 @@ export const en: Record<keyof typeof zh, string> = {
   'privacy.releaseHoldAction': 'Release legal hold: {name}',
   'privacy.holdNameLabel': 'Legal hold name',
   'privacy.holdReasonLabel': 'Legal hold reason',
+  'privacy.advancedFields': 'Advanced settings (Object key / version ID)',
   'privacy.holdObjectKeyLabel': 'Object key',
   'privacy.holdObjectVersionLabel': 'Object version ID',
   'privacy.holdSubmitAction': 'Preserve this exact object version',
@@ -1021,4 +1026,58 @@ export const en: Record<keyof typeof zh, string> = {
   'deletionReceipt.activeDeadline': 'Active data deadline (30 days)',
   'deletionReceipt.backupDeadline': 'Backup deadline (90 days)',
   'deletionReceipt.backToLogin': 'Back to login',
+
+  // Onboarding Wizard (8 steps)
+  'navGroup.wizard': 'Getting Started',
+  'nav.wizard.start': 'Start',
+  'nav.wizard.company': 'Company Profile',
+  'nav.wizard.products': 'Products/Services',
+  'nav.wizard.audiences': 'Audiences & Competitors',
+  'nav.wizard.evidence': 'Evidence',
+  'nav.wizard.strategy': 'Strategy',
+  'nav.wizard.channels': 'Channels',
+  'nav.wizard.content': 'Content',
+
+  'wizard.progress': 'Step {current} of {total}',
+  'wizard.backAction': 'Back',
+  'wizard.nextAction': 'Save & Continue',
+  'wizard.finishAction': 'Finish',
+  'wizard.skipAction': 'Skip this step',
+  'wizard.completed': 'Completed',
+  'wizard.current': 'Current',
+  'wizard.locked': 'Locked',
+
+  'wizard.start.title': 'Welcome to AEO Studio',
+  'wizard.start.lede':
+    'This wizard guides you through 8 steps to build a complete AEO/GEO optimization system.',
+  'wizard.start.step1': 'Company Profile',
+  'wizard.start.step1Desc': 'Tell us about your brand and products',
+  'wizard.start.step2': 'Evidence Collection',
+  'wizard.start.step2Desc': 'Build credibility with fact claims and evidence',
+  'wizard.start.step3': 'Content Generation & Publishing',
+  'wizard.start.step3Desc': 'Create AI-engine-optimized content',
+  'wizard.start.beginAction': 'Start Wizard',
+  'wizard.start.expertMode': "I'm an expert, go to workbench",
+
+  'wizard.company.title': 'Company & Brand Information',
+  'wizard.company.lede':
+    'Fill in your company details. This is the foundation for all subsequent steps.',
+
+  'wizard.products.title': 'Products/Services',
+  'wizard.products.lede': 'Describe the products, services or solutions you want to promote.',
+
+  'wizard.audiences.title': 'Audiences & Markets',
+  'wizard.audiences.lede': 'Define target personas, market positioning and competitor analysis.',
+
+  'wizard.evidence.title': 'Website & Evidence',
+  'wizard.evidence.lede': 'Connect your website and collect evidence to support fact claims.',
+
+  'wizard.strategy.title': 'Promotion Goals & Content Parameters',
+  'wizard.strategy.lede': 'Set promotion goals, content style and publishing strategy.',
+
+  'wizard.channels.title': 'Channel Planning',
+  'wizard.channels.lede': 'Connect GitHub, WordPress, Shopify and other publishing channels.',
+
+  'wizard.content.title': 'Content Generation/Review/Publishing',
+  'wizard.content.lede': 'Generate content drafts, review and publish to target channels.',
 };
