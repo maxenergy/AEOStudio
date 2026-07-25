@@ -39,6 +39,11 @@
       "development": "./src/jobs-budgets/index.ts",
       "default": "./dist/jobs-budgets/index.js"
     },
+    "./knowledge": {
+      "types": "./src/knowledge/index.ts",
+      "development": "./src/knowledge/index.ts",
+      "default": "./dist/knowledge/index.js"
+    },
     "./measurement": {
       "types": "./src/measurement/index.ts",
       "development": "./src/measurement/index.ts",

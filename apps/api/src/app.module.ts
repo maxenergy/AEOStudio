@@ -13,10 +13,15 @@ import {
 } from './content-plans/content-plans.module.js';
 import { HealthModule } from './health/health.module.js';
 import {
+  ImportWebsiteModule,
+  type ImportWebsiteModuleOptions,
+} from './import-website/import-website.module.js';
+import {
   ExperimentsModule,
   type ExperimentsModuleOptions,
 } from './experiments/experiments.module.js';
 import { JobsModule, type JobsModuleOptions } from './jobs/jobs.module.js';
+import { KnowledgeModule, type KnowledgeModuleOptions } from './knowledge/knowledge.module.js';
 import {
   MeasurementModule,
   type MeasurementModuleOptions,
@@ -41,10 +46,12 @@ export interface ApiAppOptions
     ClaimsModuleOptions,
     ContentPlansModuleOptions,
     TenancyModuleOptions,
+    ImportWebsiteModuleOptions,
     OnboardingModuleOptions,
     ProfileOfferingModuleOptions,
     PromptsModuleOptions,
     JobsModuleOptions,
+    KnowledgeModuleOptions,
     MeasurementModuleOptions,
     ExperimentsModuleOptions,
     SitesModuleOptions,
@@ -69,6 +76,7 @@ export class AppModule {
         ClaimsModule.register(options),
         ContentPlansModule.register(options),
         HealthModule.register(options.readiness ?? (() => Promise.resolve(true))),
+        ImportWebsiteModule.register(options),
         ExperimentsModule.register(options),
         RuntimeModule.register(
           options.cleanup ?? (() => Promise.resolve()),
@@ -79,6 +87,7 @@ export class AppModule {
         PrivacyModule.register(options),
         PromptsModule.register(options),
         JobsModule.register(options),
+        KnowledgeModule.register(options),
         MeasurementModule.register(options),
         OnboardingModule.register(options),
         SitesModule.register(options),

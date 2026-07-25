@@ -1,0 +1,1 @@
+export const KNOWLEDGE_SERVICE = Symbol('KNOWLEDGE_SERVICE');

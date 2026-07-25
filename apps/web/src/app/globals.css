@@ -756,3 +756,30 @@ summary {
   margin-left: 0.75rem;
   margin-right: 0.75rem;
 }
+
+.stacked-form-label {
+  font-weight: 700;
+}
+
+.check-list {
+  display: grid;
+  gap: 0.4rem;
+  border: 1px solid #aeb9ca;
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.8rem;
+  max-height: 14rem;
+  overflow-y: auto;
+}
+
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 400 !important;
+}
+
+.check-item input {
+  width: auto;
+  border: none;
+  padding: 0;
+}

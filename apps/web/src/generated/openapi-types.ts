@@ -241,6 +241,24 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/tenants/{tenantId}/workspaces/{workspaceId}/audience-personas': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** listAudiencePersonas */
+    get: operations['Knowledge_listAudiencePersonas'];
+    put?: never;
+    /** createAudiencePersona */
+    post: operations['Knowledge_createAudiencePersona'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/tenants/{tenantId}/workspaces/{workspaceId}/budget': {
     parameters: {
       query?: never;
@@ -531,6 +549,24 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/tenants/{tenantId}/workspaces/{workspaceId}/competitor-sets': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** listCompetitorSets */
+    get: operations['Knowledge_listCompetitorSets'];
+    put?: never;
+    /** createCompetitorSet */
+    post: operations['Knowledge_createCompetitorSet'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/tenants/{tenantId}/workspaces/{workspaceId}/content-plans': {
     parameters: {
       query?: never;
@@ -593,6 +629,24 @@ export interface paths {
     get: operations['ContentPlans_listApprovedBriefs'];
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/tenants/{tenantId}/workspaces/{workspaceId}/content-policy': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** listContentPolicy */
+    get: operations['Knowledge_listContentPolicy'];
+    put?: never;
+    /** createContentPolicy */
+    post: operations['Knowledge_createContentPolicy'];
     delete?: never;
     options?: never;
     head?: never;
@@ -678,6 +732,75 @@ export interface paths {
     get: operations['Experiments_listOptions'];
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/tenants/{tenantId}/workspaces/{workspaceId}/import/website': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** startImport */
+    post: operations['ImportWebsite_startImport'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/tenants/{tenantId}/workspaces/{workspaceId}/import/website/{importId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** getImport */
+    get: operations['ImportWebsite_getImport'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/tenants/{tenantId}/workspaces/{workspaceId}/import/website/{importId}/confirm': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** confirmImport */
+    post: operations['ImportWebsite_confirmImport'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/tenants/{tenantId}/workspaces/{workspaceId}/industry-context': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** listIndustryContext */
+    get: operations['Knowledge_listIndustryContext'];
+    put?: never;
+    /** createIndustryContext */
+    post: operations['Knowledge_createIndustryContext'];
     delete?: never;
     options?: never;
     head?: never;
@@ -1250,6 +1373,24 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/tenants/{tenantId}/workspaces/{workspaceId}/promotion-strategy': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** listPromotionStrategy */
+    get: operations['Knowledge_listPromotionStrategy'];
+    put?: never;
+    /** createPromotionStrategy */
+    post: operations['Knowledge_createPromotionStrategy'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/tenants/{tenantId}/workspaces/{workspaceId}/prompt-sets/{promptSetId}': {
     parameters: {
       query?: never;
@@ -1796,45 +1937,88 @@ export interface components {
       type: 'DEFINITION_PRODUCT' | 'COMPARISON' | 'TECHNICAL_EVIDENCE';
       workspaceId: components['schemas']['schema6'];
     };
+    AudiencePersonaEnvelopeSchema: {
+      data: {
+        audiencePersona: components['schemas']['AudiencePersonaRevisionSchema'];
+      };
+      meta: components['schemas']['schema22'];
+    };
+    AudiencePersonaInputSchema: {
+      channels: components['schemas']['schema15'];
+      decisionCriteria: components['schemas']['schema15'];
+      goals: components['schemas']['schema15'];
+      industry: components['schemas']['schema13'];
+      journeyStages: components['schemas']['schema15'];
+      name: components['schemas']['schema11'];
+      objections: components['schemas']['schema15'];
+      painPoints: components['schemas']['schema15'];
+      questions: components['schemas']['schema15'];
+      region: components['schemas']['schema14'];
+      role: components['schemas']['schema12'];
+    };
+    AudiencePersonaListEnvelopeSchema: {
+      data: {
+        audiencePersonas: components['schemas']['AudiencePersonaRevisionSchema'][];
+      };
+      meta: components['schemas']['schema22'];
+    };
+    AudiencePersonaRevisionSchema: {
+      channels: components['schemas']['schema15'];
+      contentHash: components['schemas']['schema21'];
+      decisionCriteria: components['schemas']['schema15'];
+      goals: components['schemas']['schema15'];
+      id: components['schemas']['schema17'];
+      industry: components['schemas']['schema13'];
+      journeyStages: components['schemas']['schema15'];
+      name: components['schemas']['schema11'];
+      objections: components['schemas']['schema15'];
+      painPoints: components['schemas']['schema15'];
+      questions: components['schemas']['schema15'];
+      region: components['schemas']['schema14'];
+      revision: components['schemas']['schema20'];
+      role: components['schemas']['schema12'];
+      tenantId: components['schemas']['schema18'];
+      workspaceId: components['schemas']['schema19'];
+    };
     /** @enum {string} */
     AuditActorKindSchema: 'USER' | 'AGENT' | 'SYSTEM' | 'SUPPORT' | 'PLATFORM_OPERATOR';
     AuditDigestEnvelopeSchema: {
       data: {
         digest: components['schemas']['AuditDigestSchema'];
       };
-      meta: components['schemas']['schema15'];
+      meta: components['schemas']['schema27'];
     };
     AuditDigestSchema: {
-      digestHash: components['schemas']['schema13'];
+      digestHash: components['schemas']['schema25'];
       eventCount: number;
-      headHash: components['schemas']['schema13'] | null;
-      id: components['schemas']['schema11'];
+      headHash: components['schemas']['schema25'] | null;
+      id: components['schemas']['schema23'];
       lastSequence: number;
-      lockedUntil: components['schemas']['schema12'];
-      objectKey: components['schemas']['schema14'];
+      lockedUntil: components['schemas']['schema24'];
+      objectKey: components['schemas']['schema26'];
       objectRef: string;
       objectVersionId: string;
       /** @constant */
       schemaVersion: 'audit-digest.v1';
-      sealedAt: components['schemas']['schema12'];
-      tenantId: components['schemas']['schema11'];
+      sealedAt: components['schemas']['schema24'];
+      tenantId: components['schemas']['schema23'];
       timeRange: components['schemas']['PrivacyTimeRangeSchema'];
     };
     AuditIntegrityEnvelopeSchema: {
       data: {
         verification: components['schemas']['AuditIntegrityResultSchema'];
       };
-      meta: components['schemas']['schema15'];
+      meta: components['schemas']['schema27'];
     };
     AuditIntegrityResultSchema: {
-      eventCount: components['schemas']['schema18'];
-      outcome: components['schemas']['schema16'];
-      reason: components['schemas']['schema19'];
-      valid: components['schemas']['schema17'];
+      eventCount: components['schemas']['schema30'];
+      outcome: components['schemas']['schema28'];
+      reason: components['schemas']['schema31'];
+      valid: components['schemas']['schema29'];
     };
     AuditIntegrityVerificationSchema: {
       eventCount: number;
-      headHash: components['schemas']['schema13'] | null;
+      headHash: components['schemas']['schema25'] | null;
       lastSequence: number;
       reason: string | null;
       valid: boolean;
@@ -1843,25 +2027,25 @@ export interface components {
       data: {
         timeline: components['schemas']['AuditTimelineSchema'];
       };
-      meta: components['schemas']['schema15'];
+      meta: components['schemas']['schema27'];
     };
     AuditTimelineEventSchema: {
       action: string;
       actorId: string;
       actorKind: components['schemas']['AuditActorKindSchema'];
-      eventHash: components['schemas']['schema13'];
-      id: components['schemas']['schema11'];
+      eventHash: components['schemas']['schema25'];
+      id: components['schemas']['schema23'];
       metadata: {
         [key: string]: unknown;
       };
-      occurredAt: components['schemas']['schema12'];
+      occurredAt: components['schemas']['schema24'];
       outcome: string;
-      previousHash: components['schemas']['schema13'] | null;
+      previousHash: components['schemas']['schema25'] | null;
       resourceId: string | null;
       resourceType: string;
       sequence: number;
-      tenantId: components['schemas']['schema11'];
-      workspaceId: components['schemas']['schema11'] | null;
+      tenantId: components['schemas']['schema23'];
+      workspaceId: components['schemas']['schema23'] | null;
     };
     AuditTimelineSchema: {
       events: components['schemas']['AuditTimelineEventSchema'][];
@@ -1878,29 +2062,29 @@ export interface components {
       snapshotId: string;
     };
     BreakGlassDecisionSchema: {
-      auditEventId: components['schemas']['schema11'] | null;
+      auditEventId: components['schemas']['schema23'] | null;
       /** @enum {string} */
       decision: 'ALLOW' | 'DENY';
-      grantId: components['schemas']['schema11'] | null;
+      grantId: components['schemas']['schema23'] | null;
       operatorName: string | null;
-      reason: components['schemas']['schema20'] | null;
+      reason: components['schemas']['schema32'] | null;
       /** @enum {string} */
       state: 'ACTIVE' | 'NOT_YET_ACTIVE' | 'EXPIRED' | 'REVOKED' | 'INVALID_GRANT';
     };
     BreakGlassGrantSchema: {
-      auditEventId: components['schemas']['schema11'];
-      expiresAt: components['schemas']['schema12'];
-      grantedAt: components['schemas']['schema12'];
-      id: components['schemas']['schema11'];
-      operatorId: components['schemas']['schema11'];
-      operatorName: components['schemas']['schema21'];
-      reason: components['schemas']['schema20'];
-      requestedAction: components['schemas']['schema22'];
-      resourceId: components['schemas']['schema24'];
-      resourceType: components['schemas']['schema23'];
-      revokedAt: components['schemas']['schema25'];
-      tenantId: components['schemas']['schema11'];
-      workspaceId: components['schemas']['schema11'];
+      auditEventId: components['schemas']['schema23'];
+      expiresAt: components['schemas']['schema24'];
+      grantedAt: components['schemas']['schema24'];
+      id: components['schemas']['schema23'];
+      operatorId: components['schemas']['schema23'];
+      operatorName: components['schemas']['schema33'];
+      reason: components['schemas']['schema32'];
+      requestedAction: components['schemas']['schema34'];
+      resourceId: components['schemas']['schema36'];
+      resourceType: components['schemas']['schema35'];
+      revokedAt: components['schemas']['schema37'];
+      tenantId: components['schemas']['schema23'];
+      workspaceId: components['schemas']['schema23'];
     };
     BriefReviewEnvelopeSchema: {
       data: {
@@ -1976,10 +2160,10 @@ export interface components {
       };
     };
     BuildChannelPackageRequestSchema: {
-      artifactId: components['schemas']['schema26'];
-      artifactRevisionId: components['schemas']['schema26'];
+      artifactId: components['schemas']['schema38'];
+      artifactRevisionId: components['schemas']['schema38'];
       channelKey: string;
-      expectedContentHash: components['schemas']['schema27'];
+      expectedContentHash: components['schemas']['schema39'];
       revision: number;
     };
     ChangeMembershipRoleRequestSchema: {
@@ -1988,18 +2172,18 @@ export interface components {
     ChannelAdapterVersionSchema: {
       adapterKey: string;
       adapterVersion: string;
-      capabilities: components['schemas']['schema29'][];
+      capabilities: components['schemas']['schema41'][];
       disabledReason: string | null;
       enabled: boolean;
-      id: components['schemas']['schema28'];
+      id: components['schemas']['schema40'];
       processingRegion: string;
       /** Format: date-time */
       providerApiSupportedUntil?: string;
       providerApiVersion?: string;
-      ratePolicy: components['schemas']['schema31'];
-      requiredScopes: components['schemas']['schema30'][];
+      ratePolicy: components['schemas']['schema43'];
+      requiredScopes: components['schemas']['schema42'][];
       retentionPolicy: string;
-      subprocessors: components['schemas']['schema31'][];
+      subprocessors: components['schemas']['schema43'][];
       /** @enum {string} */
       termsStatus: 'ALLOWED' | 'REVIEW_REQUIRED' | 'PROHIBITED';
       termsVersion: string;
@@ -2009,13 +2193,13 @@ export interface components {
       data: {
         authorization: components['schemas']['ChannelAuthorizationMetadataSchema'];
       };
-      meta: components['schemas']['schema34'];
+      meta: components['schemas']['schema46'];
     };
     ChannelAuthorizationListEnvelopeSchema: {
       data: {
         authorizations: components['schemas']['ChannelAuthorizationMetadataSchema'][];
       };
-      meta: components['schemas']['schema34'];
+      meta: components['schemas']['schema46'];
     };
     ChannelAuthorizationMetadataSchema: {
       acceptedTermsVersion: string;
@@ -2037,7 +2221,7 @@ export interface components {
       validationFailureCode: string | null;
       validationSnapshot: {
         acceptedTermsVersion: string;
-        actualScopes: components['schemas']['schema32'];
+        actualScopes: components['schemas']['schema44'];
         actualTarget: string;
         /** Format: date-time */
         validatedAt: string;
@@ -2052,9 +2236,9 @@ export interface components {
       authorizationId: string;
     };
     ChannelPackageArtifactSchema: {
-      artifactId: components['schemas']['schema26'];
-      artifactRevisionId: components['schemas']['schema26'];
-      contentHash: components['schemas']['schema27'];
+      artifactId: components['schemas']['schema38'];
+      artifactRevisionId: components['schemas']['schema38'];
+      contentHash: components['schemas']['schema39'];
       locale: string;
       market: string;
       methodPolicyVersion: string;
@@ -2063,24 +2247,24 @@ export interface components {
       type: 'DEFINITION_PRODUCT' | 'COMPARISON' | 'TECHNICAL_EVIDENCE';
     };
     ChannelPackageClaimSourceMapEntrySchema: {
-      claimContentHash: components['schemas']['schema27'];
-      claimId: components['schemas']['schema26'];
-      claimRevisionId: components['schemas']['schema26'];
+      claimContentHash: components['schemas']['schema39'];
+      claimId: components['schemas']['schema38'];
+      claimRevisionId: components['schemas']['schema38'];
       evidence: {
-        snapshotId: components['schemas']['schema26'];
-        sourceHash: components['schemas']['schema27'];
-        sourceId: components['schemas']['schema26'];
+        snapshotId: components['schemas']['schema38'];
+        sourceHash: components['schemas']['schema39'];
+        sourceId: components['schemas']['schema38'];
       }[];
     };
     ChannelPackageDocumentSchema: {
       artifact: components['schemas']['ChannelPackageArtifactSchema'];
       channel: {
         channelKey: string;
-        definitionId: components['schemas']['schema26'];
+        definitionId: components['schemas']['schema38'];
       };
-      id: components['schemas']['schema26'];
+      id: components['schemas']['schema38'];
       manifest: components['schemas']['ChannelPackageManifestSchema'];
-      packageChecksum: components['schemas']['schema27'];
+      packageChecksum: components['schemas']['schema39'];
       packageRevision: number;
       preview: {
         html: string;
@@ -2108,7 +2292,7 @@ export interface components {
       artifact: components['schemas']['ChannelPackageArtifactSchema'];
       channel: {
         channelKey: string;
-        definitionId: components['schemas']['schema26'];
+        definitionId: components['schemas']['schema38'];
       };
       files: {
         'content.html': string;
@@ -2117,9 +2301,9 @@ export interface components {
       } & {
         [key: string]: string;
       };
-      id: components['schemas']['schema26'];
+      id: components['schemas']['schema38'];
       manifest: components['schemas']['ChannelPackageManifestSchema'];
-      packageChecksum: components['schemas']['schema27'];
+      packageChecksum: components['schemas']['schema39'];
       packageRevision: number;
       transformer: {
         key: string;
@@ -2130,7 +2314,7 @@ export interface components {
       byteLength: number;
       mediaType: string;
       path: string;
-      sha256: components['schemas']['schema27'];
+      sha256: components['schemas']['schema39'];
     };
     ChannelPackageManifestSchema: {
       assetRefs: string[];
@@ -2140,25 +2324,25 @@ export interface components {
       schemaVersion: string;
     };
     ChannelProfileFieldRequirementSchema: {
-      field: components['schemas']['schema39'];
-      format: components['schemas']['schema44'];
-      maxLength: components['schemas']['schema43'];
-      minLength: components['schemas']['schema42'];
-      required: components['schemas']['schema41'];
-      sourcePointer: components['schemas']['schema40'];
+      field: components['schemas']['schema51'];
+      format: components['schemas']['schema56'];
+      maxLength: components['schemas']['schema55'];
+      minLength: components['schemas']['schema54'];
+      required: components['schemas']['schema53'];
+      sourcePointer: components['schemas']['schema52'];
     };
     ChannelProfileSchema: {
-      channel: components['schemas']['schema35'];
-      fieldRequirements: components['schemas']['schema38'];
-      profileHash: components['schemas']['schema37'];
-      profileVersion: components['schemas']['schema36'];
+      channel: components['schemas']['schema47'];
+      fieldRequirements: components['schemas']['schema50'];
+      profileHash: components['schemas']['schema49'];
+      profileVersion: components['schemas']['schema48'];
     };
     ChannelRegistryEntrySchema: {
       adapterVersions: components['schemas']['ChannelAdapterVersionSchema'][];
       channelKey: string;
       channelProfile?: components['schemas']['ChannelProfileSchema'] | null;
       displayName: string;
-      id: components['schemas']['schema28'];
+      id: components['schemas']['schema40'];
       packageSchemaVersion: string;
       packageTransformerKey: string;
       /** @enum {string} */
@@ -2176,9 +2360,9 @@ export interface components {
       };
     };
     CheckPublicationEligibilitySchema: {
-      adapterVersionId?: components['schemas']['schema45'];
-      channelPackageId: components['schemas']['schema45'];
-      expectedPackageChecksum: components['schemas']['schema46'];
+      adapterVersionId?: components['schemas']['schema57'];
+      channelPackageId: components['schemas']['schema57'];
+      expectedPackageChecksum: components['schemas']['schema58'];
       target: string;
     };
     ClaimCurrentStateEnvelopeSchema: {
@@ -2263,7 +2447,7 @@ export interface components {
     ClaimRevisionSchema: {
       /** Format: uuid */
       claimId: string;
-      conditions: components['schemas']['schema47'][];
+      conditions: components['schemas']['schema59'][];
       contentHash: string;
       /** Format: date-time */
       createdAt: string;
@@ -2296,6 +2480,43 @@ export interface components {
       /** Format: uuid */
       workspaceId: string;
     };
+    CompetitorSetEnvelopeSchema: {
+      data: {
+        competitorSet: components['schemas']['CompetitorSetRevisionSchema'];
+      };
+      meta: components['schemas']['schema22'];
+    };
+    CompetitorSetInputSchema: {
+      allowedComparisons: components['schemas']['schema15'];
+      comparisonDimensions: components['schemas']['schema15'];
+      competitorName: components['schemas']['schema60'];
+      evidenceSourceIds: components['schemas']['schema65'];
+      matchedOfferingIds: components['schemas']['schema62'];
+      positioning: components['schemas']['schema64'];
+      prohibitedComparisons: components['schemas']['schema15'];
+      website: components['schemas']['schema61'];
+    };
+    CompetitorSetListEnvelopeSchema: {
+      data: {
+        competitorSets: components['schemas']['CompetitorSetRevisionSchema'][];
+      };
+      meta: components['schemas']['schema22'];
+    };
+    CompetitorSetRevisionSchema: {
+      allowedComparisons: components['schemas']['schema15'];
+      comparisonDimensions: components['schemas']['schema15'];
+      competitorName: components['schemas']['schema60'];
+      contentHash: components['schemas']['schema21'];
+      evidenceSourceIds: components['schemas']['schema65'];
+      id: components['schemas']['schema17'];
+      matchedOfferingIds: components['schemas']['schema62'];
+      positioning: components['schemas']['schema64'];
+      prohibitedComparisons: components['schemas']['schema15'];
+      revision: components['schemas']['schema20'];
+      tenantId: components['schemas']['schema18'];
+      website: components['schemas']['schema61'];
+      workspaceId: components['schemas']['schema19'];
+    };
     CompletenessSummarySchema: {
       completedFields: number;
       missingFields: string[];
@@ -2322,11 +2543,11 @@ export interface components {
       comparisonEvidenceIndependent: boolean;
       comparisonEvidenceSnapshotIds: components['schemas']['schema1'][];
       methodPolicyVersion: string;
-      offering: components['schemas']['schema48'];
+      offering: components['schemas']['schema67'];
       offeringRevisionId: components['schemas']['schema1'];
       primaryClaimRevisionIds: components['schemas']['schema1'][];
       primaryEvidenceSnapshotIds: components['schemas']['schema1'][];
-      profile: components['schemas']['schema48'];
+      profile: components['schemas']['schema67'];
       profileRevisionId: components['schemas']['schema1'];
       promptIds: components['schemas']['schema1'][];
       promptRevisionId: components['schemas']['schema1'];
@@ -2346,6 +2567,53 @@ export interface components {
       status: 'PENDING' | 'READY' | 'INVALID';
       tenantId: components['schemas']['schema1'];
       workspaceId: components['schemas']['schema1'];
+    };
+    ContentPolicyEnvelopeSchema: {
+      data: {
+        contentPolicy: components['schemas']['ContentPolicyRevisionSchema'];
+      };
+      meta: components['schemas']['schema22'];
+    };
+    ContentPolicyInputSchema: {
+      answerFirst: components['schemas']['schema74'];
+      audienceId: components['schemas']['schema69'];
+      ctaPolicy: components['schemas']['schema78'];
+      includeFaq: components['schemas']['schema75'];
+      journeyStage: components['schemas']['schema70'];
+      locale: components['schemas']['schema68'];
+      objective: components['schemas']['schema71'];
+      prohibitedTerms: components['schemas']['schema15'];
+      readingLevel: components['schemas']['schema73'];
+      requiredClaimRevisionIds: components['schemas']['schema76'];
+      requiredEntities: components['schemas']['schema15'];
+      schemaTypes: components['schemas']['schema15'];
+      tone: components['schemas']['schema72'];
+    };
+    ContentPolicyListEnvelopeSchema: {
+      data: {
+        contentPolicies: components['schemas']['ContentPolicyRevisionSchema'][];
+      };
+      meta: components['schemas']['schema22'];
+    };
+    ContentPolicyRevisionSchema: {
+      answerFirst: components['schemas']['schema74'];
+      audienceId: components['schemas']['schema69'];
+      contentHash: components['schemas']['schema21'];
+      ctaPolicy: components['schemas']['schema78'];
+      id: components['schemas']['schema17'];
+      includeFaq: components['schemas']['schema75'];
+      journeyStage: components['schemas']['schema70'];
+      locale: components['schemas']['schema68'];
+      objective: components['schemas']['schema71'];
+      prohibitedTerms: components['schemas']['schema15'];
+      readingLevel: components['schemas']['schema73'];
+      requiredClaimRevisionIds: components['schemas']['schema76'];
+      requiredEntities: components['schemas']['schema15'];
+      revision: components['schemas']['schema20'];
+      schemaTypes: components['schemas']['schema15'];
+      tenantId: components['schemas']['schema18'];
+      tone: components['schemas']['schema72'];
+      workspaceId: components['schemas']['schema19'];
     };
     CrawlSnapshotSchema: {
       /** Format: date-time */
@@ -2375,12 +2643,12 @@ export interface components {
       /** Format: uuid */
       adapterVersionId: string;
       expiresAt?: string | null;
-      grantedScopes: components['schemas']['schema32'];
+      grantedScopes: components['schemas']['schema44'];
       secretArn: string;
       target: string;
     };
     CreateClaimRequestSchema: {
-      conditions: components['schemas']['schema49'][];
+      conditions: components['schemas']['schema79'][];
       evidence: components['schemas']['ClaimEvidenceInputSchema'][];
       expiresAt: string | null;
       numericValue: number | null;
@@ -2392,21 +2660,21 @@ export interface components {
       data: {
         verification: {
           algorithm: components['schemas']['SignedWebhookSigningAlgorithmSchema'];
-          challengeExpiresAt: components['schemas']['schema68'];
-          channelDefinitionId: components['schemas']['schema64'];
-          createdAt: components['schemas']['schema67'];
+          challengeExpiresAt: components['schemas']['schema98'];
+          channelDefinitionId: components['schemas']['schema94'];
+          createdAt: components['schemas']['schema97'];
           endpointUrl: components['schemas']['SignedWebhookUrlSchema'];
-          id: components['schemas']['schema64'];
+          id: components['schemas']['schema94'];
           keyId: components['schemas']['SignedWebhookKeyIdSchema'];
-          proofs: components['schemas']['schema71'];
+          proofs: components['schemas']['schema101'];
           receiptUrl: components['schemas']['SignedWebhookUrlSchema'];
-          revokedAt: components['schemas']['schema70'];
-          status: components['schemas']['schema66'];
-          verificationReference: components['schemas']['schema65'];
-          verifiedAt: components['schemas']['schema69'];
+          revokedAt: components['schemas']['schema100'];
+          status: components['schemas']['schema96'];
+          verificationReference: components['schemas']['schema95'];
+          verifiedAt: components['schemas']['schema99'];
         };
       };
-      meta: components['schemas']['schema73'];
+      meta: components['schemas']['schema103'];
     };
     CreateEvidenceSnapshotRequestSchema: {
       contentBase64: string;
@@ -2422,16 +2690,16 @@ export interface components {
       uri: string | null;
     };
     CreateExperimentRequestSchema: {
-      baselineRunId: components['schemas']['schema50'];
-      idempotencyKey: components['schemas']['schema53'];
+      baselineRunId: components['schemas']['schema80'];
+      idempotencyKey: components['schemas']['schema83'];
       intervention: components['schemas']['ExperimentInterventionRequestSchema'];
-      remeasurementRunId: components['schemas']['schema51'];
+      remeasurementRunId: components['schemas']['schema81'];
     };
     CreateLegalHoldRequestSchema: {
       name: string;
-      objectKey: components['schemas']['schema14'];
+      objectKey: components['schemas']['schema26'];
       objectVersionId: string;
-      reason: components['schemas']['schema20'];
+      reason: components['schemas']['schema32'];
     };
     CreatePromptRevisionRequestSchema: {
       expectedRevision: number;
@@ -2441,11 +2709,11 @@ export interface components {
     };
     CreateSignedWebhookEndpointVerificationRequestSchema: {
       algorithm: components['schemas']['SignedWebhookSigningAlgorithmSchema'];
-      channelDefinitionId: components['schemas']['schema64'];
+      channelDefinitionId: components['schemas']['schema94'];
       endpointUrl: components['schemas']['SignedWebhookUrlSchema'];
       keyId: components['schemas']['SignedWebhookKeyIdSchema'];
       receiptUrl: components['schemas']['SignedWebhookUrlSchema'];
-      verificationReference: components['schemas']['schema65'];
+      verificationReference: components['schemas']['schema95'];
     };
     CreateSiteRequestSchema: {
       /** Format: uri */
@@ -2533,43 +2801,43 @@ export interface components {
     DeletionScopeSchema: 'TENANT' | 'WORKSPACE';
     DynamicAttributeSchema:
       | {
-          key: components['schemas']['schema74'];
-          label: components['schemas']['schema75'];
-          required: components['schemas']['schema76'];
+          key: components['schemas']['schema104'];
+          label: components['schemas']['schema105'];
+          required: components['schemas']['schema106'];
           value: string;
           /** @constant */
           valueType: 'text';
         }
       | {
-          key: components['schemas']['schema74'];
-          label: components['schemas']['schema75'];
-          required: components['schemas']['schema76'];
+          key: components['schemas']['schema104'];
+          label: components['schemas']['schema105'];
+          required: components['schemas']['schema106'];
           value: number;
           /** @constant */
           valueType: 'number';
         }
       | {
-          key: components['schemas']['schema74'];
-          label: components['schemas']['schema75'];
-          required: components['schemas']['schema76'];
+          key: components['schemas']['schema104'];
+          label: components['schemas']['schema105'];
+          required: components['schemas']['schema106'];
           value: boolean;
           /** @constant */
           valueType: 'boolean';
         }
       | {
-          key: components['schemas']['schema74'];
-          label: components['schemas']['schema75'];
-          required: components['schemas']['schema76'];
+          key: components['schemas']['schema104'];
+          label: components['schemas']['schema105'];
+          required: components['schemas']['schema106'];
           /** Format: uri */
           value: string;
           /** @constant */
           valueType: 'url';
         }
       | {
-          key: components['schemas']['schema74'];
-          label: components['schemas']['schema75'];
-          required: components['schemas']['schema76'];
-          value: components['schemas']['schema77'][];
+          key: components['schemas']['schema104'];
+          label: components['schemas']['schema105'];
+          required: components['schemas']['schema106'];
+          value: components['schemas']['schema107'][];
           /** @constant */
           valueType: 'string_list';
         };
@@ -2658,11 +2926,11 @@ export interface components {
       data: {
         experiment: components['schemas']['ExperimentSchema'];
       };
-      meta: components['schemas']['schema101'];
+      meta: components['schemas']['schema131'];
     };
     ExperimentInterventionOptionSchema:
       | {
-          artifactContentHash: components['schemas']['schema52'];
+          artifactContentHash: components['schemas']['schema82'];
           /** Format: uuid */
           artifactId: string;
           /** Format: uuid */
@@ -2681,7 +2949,7 @@ export interface components {
           publicationRecordId: string;
         }
       | {
-          artifactContentHash: components['schemas']['schema52'];
+          artifactContentHash: components['schemas']['schema82'];
           /** Format: uuid */
           artifactId: string;
           /** Format: uuid */
@@ -2695,7 +2963,7 @@ export interface components {
         };
     ExperimentInterventionRequestSchema:
       | {
-          artifactContentHash: components['schemas']['schema52'];
+          artifactContentHash: components['schemas']['schema82'];
           /** Format: uuid */
           artifactId: string;
           /** Format: uuid */
@@ -2714,7 +2982,7 @@ export interface components {
           publicationRecordId: string;
         }
       | {
-          artifactContentHash: components['schemas']['schema52'];
+          artifactContentHash: components['schemas']['schema82'];
           /** Format: uuid */
           artifactId: string;
           /** Format: uuid */
@@ -2730,7 +2998,7 @@ export interface components {
       | {
           /** @constant */
           applicationState: 'PUBLISHED';
-          artifactContentHash: components['schemas']['schema52'];
+          artifactContentHash: components['schemas']['schema82'];
           /** Format: uuid */
           artifactId: string;
           /** Format: uuid */
@@ -2754,7 +3022,7 @@ export interface components {
           applicationDisclosure: 'Approval is a recorded review event, not proof of external application or causation.';
           /** @constant */
           applicationState: 'APPROVED_NOT_PUBLISHED';
-          artifactContentHash: components['schemas']['schema52'];
+          artifactContentHash: components['schemas']['schema82'];
           /** Format: uuid */
           artifactId: string;
           /** Format: uuid */
@@ -2776,14 +3044,14 @@ export interface components {
       scenarioVersion: number;
       surfaceKey: string;
       readonly timeline: {
-        baseline: components['schemas']['schema85'];
-        remeasurement: components['schemas']['schema85'];
+        baseline: components['schemas']['schema115'];
+        remeasurement: components['schemas']['schema115'];
       };
     };
     ExperimentMetricComparisonSchema: {
       baseline: components['schemas']['ExperimentSnapshotSummarySchema'];
       caveat: string;
-      compatibilityHash: components['schemas']['schema52'];
+      compatibilityHash: components['schemas']['schema82'];
       compatibilityKey: string;
       costBreakdown: {
         baseline: components['schemas']['MonetaryCostSchema'][];
@@ -2810,7 +3078,7 @@ export interface components {
           remeasurementRuns: components['schemas']['ExperimentRunOptionSchema'][];
         };
       };
-      meta: components['schemas']['schema101'];
+      meta: components['schemas']['schema131'];
     };
     ExperimentRunOptionSchema: {
       /** Format: date-time */
@@ -2828,30 +3096,30 @@ export interface components {
       surfaceKey: string;
     };
     ExperimentSchema: {
-      baselineRunId: components['schemas']['schema82'];
-      caveat: components['schemas']['schema96'];
-      comparisons: components['schemas']['schema90'];
-      costBreakdown: components['schemas']['schema94'];
-      createdAt: components['schemas']['schema100'];
-      createdByUserId: components['schemas']['schema99'];
-      drillDown: components['schemas']['schema98'];
-      excludedCounts: components['schemas']['schema93'];
-      id: components['schemas']['schema78'];
+      baselineRunId: components['schemas']['schema112'];
+      caveat: components['schemas']['schema126'];
+      comparisons: components['schemas']['schema120'];
+      costBreakdown: components['schemas']['schema124'];
+      createdAt: components['schemas']['schema130'];
+      createdByUserId: components['schemas']['schema129'];
+      drillDown: components['schemas']['schema128'];
+      excludedCounts: components['schemas']['schema123'];
+      id: components['schemas']['schema108'];
       intervention: components['schemas']['ExperimentInterventionSchema'];
       measurementContext: components['schemas']['ExperimentMeasurementContextSchema'];
-      noGuarantee: components['schemas']['schema97'];
-      observedAssociation: components['schemas']['schema95'];
-      remeasurementRunId: components['schemas']['schema83'];
-      sample: components['schemas']['schema92'];
-      scenarioVersion: components['schemas']['schema84'];
-      schemaVersion: components['schemas']['schema81'];
-      tenantId: components['schemas']['schema79'];
-      workspaceId: components['schemas']['schema80'];
+      noGuarantee: components['schemas']['schema127'];
+      observedAssociation: components['schemas']['schema125'];
+      remeasurementRunId: components['schemas']['schema113'];
+      sample: components['schemas']['schema122'];
+      scenarioVersion: components['schemas']['schema114'];
+      schemaVersion: components['schemas']['schema111'];
+      tenantId: components['schemas']['schema109'];
+      workspaceId: components['schemas']['schema110'];
     };
     ExperimentSnapshotSummarySchema: {
-      contentHash: components['schemas']['schema52'];
+      contentHash: components['schemas']['schema82'];
       eligibleDenominator: number;
-      excludedCounts: components['schemas']['schema91'];
+      excludedCounts: components['schemas']['schema121'];
       numerator: number;
       sampleSize: number;
       /** Format: uuid */
@@ -2865,13 +3133,13 @@ export interface components {
       eligibility: {
         /** @constant */
         mode: 'EXPORT_ONLY';
-        packageChecksum: components['schemas']['schema46'];
-        packageId: components['schemas']['schema45'];
+        packageChecksum: components['schemas']['schema58'];
+        packageId: components['schemas']['schema57'];
         reasons: components['schemas']['PublicationEligibilityReasonSchema'][];
       };
       export: {
         href: string;
-        packageChecksum: components['schemas']['schema46'];
+        packageChecksum: components['schemas']['schema58'];
       };
       requestId: string;
       /** @constant */
@@ -2883,8 +3151,8 @@ export interface components {
       type: string;
     };
     ExportTenantRequestSchema: {
-      from: components['schemas']['schema12'];
-      to: components['schemas']['schema12'];
+      from: components['schemas']['schema24'];
+      to: components['schemas']['schema24'];
     } & components['schemas']['PrivacyTimeRangeSchema'];
     GitPullRequestTargetV1Schema: {
       baseBranch: string;
@@ -2897,11 +3165,11 @@ export interface components {
       schemaVersion: 'git-pr-target.v1';
     };
     GrantBreakGlassRequestSchema: {
-      expiresAt: components['schemas']['schema12'];
-      reason: components['schemas']['schema20'];
-      requestedAction: components['schemas']['schema22'];
-      resourceId: components['schemas']['schema24'];
-      resourceType: components['schemas']['schema23'];
+      expiresAt: components['schemas']['schema24'];
+      reason: components['schemas']['schema32'];
+      requestedAction: components['schemas']['schema34'];
+      resourceId: components['schemas']['schema36'];
+      resourceType: components['schemas']['schema35'];
     };
     HealthEnvelopeSchema: {
       data: {
@@ -2919,10 +3187,51 @@ export interface components {
       caveat: string;
       /** @enum {string} */
       decision: 'REBASELINE' | 'STRATIFY';
-      differingFields: components['schemas']['schema102'][];
+      differingFields: components['schemas']['schema132'][];
       /** @constant */
       outcome: 'INCOMPATIBLE_SCENARIO';
       remeasurementCompatibilityKeys: string[];
+    };
+    IndustryContextEnvelopeSchema: {
+      data: {
+        industryContext: components['schemas']['IndustryContextRevisionSchema'];
+      };
+      meta: components['schemas']['schema22'];
+    };
+    IndustryContextInputSchema: {
+      authoritativeSources: components['schemas']['schema15'];
+      commonQuestions: components['schemas']['schema15'];
+      commonTerms: components['schemas']['schema15'];
+      industryLabels: components['schemas']['schema15'];
+      prohibitedClaims: components['schemas']['schema15'];
+      regulations: components['schemas']['schema15'];
+      seasonality: components['schemas']['schema15'];
+      subIndustryLabels: components['schemas']['schema15'];
+      synonyms: components['schemas']['schema15'];
+      taxonomyRefs: components['schemas']['schema15'];
+    };
+    IndustryContextListEnvelopeSchema: {
+      data: {
+        industryContexts: components['schemas']['IndustryContextRevisionSchema'][];
+      };
+      meta: components['schemas']['schema22'];
+    };
+    IndustryContextRevisionSchema: {
+      authoritativeSources: components['schemas']['schema15'];
+      commonQuestions: components['schemas']['schema15'];
+      commonTerms: components['schemas']['schema15'];
+      contentHash: components['schemas']['schema21'];
+      id: components['schemas']['schema17'];
+      industryLabels: components['schemas']['schema15'];
+      prohibitedClaims: components['schemas']['schema15'];
+      regulations: components['schemas']['schema15'];
+      revision: components['schemas']['schema20'];
+      seasonality: components['schemas']['schema15'];
+      subIndustryLabels: components['schemas']['schema15'];
+      synonyms: components['schemas']['schema15'];
+      taxonomyRefs: components['schemas']['schema15'];
+      tenantId: components['schemas']['schema18'];
+      workspaceId: components['schemas']['schema19'];
     };
     InviteMembershipRequestSchema: {
       /** Format: email */
@@ -2982,16 +3291,16 @@ export interface components {
       data: {
         hold: components['schemas']['TenantVisibleLegalHoldSchema'];
       };
-      meta: components['schemas']['schema15'];
+      meta: components['schemas']['schema27'];
     };
     LegalHoldListEnvelopeSchema: {
       data: {
         holds: components['schemas']['TenantVisibleLegalHoldSchema'][];
       };
-      meta: components['schemas']['schema15'];
+      meta: components['schemas']['schema27'];
     };
     LegalHoldTargetSchema: {
-      objectKey: components['schemas']['schema14'];
+      objectKey: components['schemas']['schema26'];
       objectVersionId: string;
     };
     LocaleSchema: string;
@@ -3000,7 +3309,7 @@ export interface components {
         manualImport: components['schemas']['ManualMeasurementImportSchema'];
         slots: components['schemas']['ManualMeasurementImportSlotManifestSchema'][];
       };
-      meta: components['schemas']['schema115'];
+      meta: components['schemas']['schema145'];
     };
     ManualMeasurementImportEntrySchema: {
       /** Format: date-time */
@@ -3011,7 +3320,7 @@ export interface components {
       result: {
         cost: components['schemas']['MonetaryCostSchema'];
         observation: components['schemas']['MeasurementObservationSchema'];
-        rawEvidence: components['schemas']['schema109'];
+        rawEvidence: components['schemas']['schema139'];
         status: components['schemas']['PromptRunStatusSchema'];
       };
       scope: components['schemas']['MeasurementScopeSchema'];
@@ -3020,7 +3329,7 @@ export interface components {
       data: {
         manualImport: components['schemas']['ManualMeasurementImportSchema'];
       };
-      meta: components['schemas']['schema115'];
+      meta: components['schemas']['schema145'];
     };
     ManualMeasurementImportSchema: {
       /** @constant */
@@ -3061,15 +3370,15 @@ export interface components {
       workspaceId: string;
     };
     ManualMeasurementImportSlotManifestSchema: {
-      contentHash: components['schemas']['schema114'];
-      observedAt: components['schemas']['schema107'];
-      prompt: components['schemas']['schema103'];
-      provided: components['schemas']['schema106'];
-      rawEvidenceContentHash: components['schemas']['schema113'];
-      repetition: components['schemas']['schema105'];
-      result: components['schemas']['schema108'];
+      contentHash: components['schemas']['schema144'];
+      observedAt: components['schemas']['schema137'];
+      prompt: components['schemas']['schema133'];
+      provided: components['schemas']['schema136'];
+      rawEvidenceContentHash: components['schemas']['schema143'];
+      repetition: components['schemas']['schema135'];
+      result: components['schemas']['schema138'];
       scope: components['schemas']['MeasurementScopeSchema'];
-      scopeKey: components['schemas']['schema104'];
+      scopeKey: components['schemas']['schema134'];
     };
     MarketSchema: string;
     /** @enum {string} */
@@ -3077,13 +3386,13 @@ export interface components {
       'CONSUMER_UI_SAMPLE' | 'MODEL_API_DIAGNOSTIC' | 'SEARCH_DATA_API' | 'MANUAL_IMPORT';
     MeasurementDashboardEnvelopeSchema: {
       data: {
-        cost: components['schemas']['schema124'];
-        costBreakdown: components['schemas']['schema123'];
+        cost: components['schemas']['schema154'];
+        costBreakdown: components['schemas']['schema153'];
         resultCounts: components['schemas']['MeasurementResultCountsSchema'];
-        sections: components['schemas']['schema119'];
-        snapshot: components['schemas']['schema118'];
+        sections: components['schemas']['schema149'];
+        snapshot: components['schemas']['schema148'];
       };
-      meta: components['schemas']['schema115'];
+      meta: components['schemas']['schema145'];
     };
     MeasurementObservationSchema: {
       accuracy: ('MATCH' | 'MISMATCH' | 'NOT_APPLICABLE') | null;
@@ -3099,8 +3408,8 @@ export interface components {
         limit: number;
         nextOffset: number | null;
         offset: number;
-        requestId: components['schemas']['schema116'];
-        schemaVersion: components['schemas']['schema117'];
+        requestId: components['schemas']['schema146'];
+        schemaVersion: components['schemas']['schema147'];
         total: number;
       };
     };
@@ -3127,7 +3436,7 @@ export interface components {
       data: {
         policy: components['schemas']['MeasurementProviderPolicySchema'];
       };
-      meta: components['schemas']['schema115'];
+      meta: components['schemas']['schema145'];
     };
     MeasurementProviderPolicyRequestSchema: {
       adapterVersion: string;
@@ -3163,7 +3472,7 @@ export interface components {
       data: {
         state: components['schemas']['MeasurementProviderPolicyStateSchema'];
       };
-      meta: components['schemas']['schema115'];
+      meta: components['schemas']['schema145'];
     };
     MeasurementProviderPolicyStateSchema: {
       eligible: boolean;
@@ -3187,7 +3496,7 @@ export interface components {
       data: {
         measurementRun: components['schemas']['MeasurementRunSchema'];
       };
-      meta: components['schemas']['schema115'];
+      meta: components['schemas']['schema145'];
     };
     /** @enum {string} */
     MeasurementRunKindSchema: 'BASELINE' | 'REMEASUREMENT';
@@ -3227,35 +3536,35 @@ export interface components {
     MeasurementRunStatusSchema:
       'QUEUED' | 'RUNNING' | 'COMPLETED' | 'PARTIAL' | 'ERROR' | 'CANCELLED';
     MeasurementScenarioInputSchema: {
-      account: components['schemas']['schema58'];
-      acquisitionMethod: components['schemas']['schema59'];
-      freshSession: components['schemas']['schema60'];
-      model: components['schemas']['schema56'];
-      modelVersion: components['schemas']['schema57'];
-      parameters: components['schemas']['schema62'];
-      providerKey: components['schemas']['schema54'];
-      repetitions: components['schemas']['schema63'];
-      searchEnabled: components['schemas']['schema61'];
-      surfaceKey: components['schemas']['schema55'];
+      account: components['schemas']['schema88'];
+      acquisitionMethod: components['schemas']['schema89'];
+      freshSession: components['schemas']['schema90'];
+      model: components['schemas']['schema86'];
+      modelVersion: components['schemas']['schema87'];
+      parameters: components['schemas']['schema92'];
+      providerKey: components['schemas']['schema84'];
+      repetitions: components['schemas']['schema93'];
+      searchEnabled: components['schemas']['schema91'];
+      surfaceKey: components['schemas']['schema85'];
     };
     MeasurementScenarioSchema: {
-      account: components['schemas']['schema58'];
-      acquisitionMethod: components['schemas']['schema59'];
+      account: components['schemas']['schema88'];
+      acquisitionMethod: components['schemas']['schema89'];
       contentHash: components['schemas']['schema0'];
       /** Format: date-time */
       createdAt: string;
-      freshSession: components['schemas']['schema60'];
+      freshSession: components['schemas']['schema90'];
       id: components['schemas']['schema4'];
-      model: components['schemas']['schema56'];
-      modelVersion: components['schemas']['schema57'];
-      parameters: components['schemas']['schema62'];
+      model: components['schemas']['schema86'];
+      modelVersion: components['schemas']['schema87'];
+      parameters: components['schemas']['schema92'];
       promptRevisionId: components['schemas']['schema4'];
-      providerKey: components['schemas']['schema54'];
+      providerKey: components['schemas']['schema84'];
       /** @enum {string} */
       registryStatus: 'AVAILABLE' | 'UNAVAILABLE' | 'UNKNOWN';
-      repetitions: components['schemas']['schema63'];
-      searchEnabled: components['schemas']['schema61'];
-      surfaceKey: components['schemas']['schema55'];
+      repetitions: components['schemas']['schema93'];
+      searchEnabled: components['schemas']['schema91'];
+      surfaceKey: components['schemas']['schema85'];
       version: number;
     };
     MeasurementScopeSchema: {
@@ -3266,19 +3575,19 @@ export interface components {
     MeasurementSurfaceAdapterDescriptorSchema: {
       acquisitionClass: components['schemas']['MeasurementAcquisitionClassSchema'];
       acquisitionMethod: string;
-      adapterKey: components['schemas']['schema125'];
-      adapterVersion: components['schemas']['schema126'];
-      processingRegion: components['schemas']['schema130'];
-      providerKey: components['schemas']['schema127'];
+      adapterKey: components['schemas']['schema155'];
+      adapterVersion: components['schemas']['schema156'];
+      processingRegion: components['schemas']['schema160'];
+      providerKey: components['schemas']['schema157'];
       requiresAuthorization: boolean;
-      retentionPolicy: components['schemas']['schema132'];
-      storageRegion: components['schemas']['schema131'];
-      subprocessors: components['schemas']['schema134'];
-      surfaceKey: components['schemas']['schema128'];
+      retentionPolicy: components['schemas']['schema162'];
+      storageRegion: components['schemas']['schema161'];
+      subprocessors: components['schemas']['schema164'];
+      surfaceKey: components['schemas']['schema158'];
       /** @enum {string} */
       surfaceKind: 'SEARCH_DATA' | 'CONSUMER_SEARCH' | 'CONSUMER_AI_ANSWER';
-      termsVersion: components['schemas']['schema129'];
-      trainingPolicy: components['schemas']['schema133'];
+      termsVersion: components['schemas']['schema159'];
+      trainingPolicy: components['schemas']['schema163'];
     };
     MembershipEnvelopeSchema: {
       data: {
@@ -3319,19 +3628,19 @@ export interface components {
       };
     };
     OfferingInputSchema: {
-      applicationScenarios: components['schemas']['schema143'];
-      attributes: components['schemas']['schema145'];
-      compatibility: components['schemas']['schema143'];
-      evidenceHints: components['schemas']['schema143'];
-      features: components['schemas']['schema143'];
-      kind: components['schemas']['schema136'];
+      applicationScenarios: components['schemas']['schema173'];
+      attributes: components['schemas']['schema175'];
+      compatibility: components['schemas']['schema173'];
+      evidenceHints: components['schemas']['schema173'];
+      features: components['schemas']['schema173'];
+      kind: components['schemas']['schema166'];
       locale: components['schemas']['LocaleSchema'];
       market: components['schemas']['MarketSchema'];
-      name: components['schemas']['schema137'];
-      principle?: components['schemas']['schema140'];
-      specifications: components['schemas']['schema141'];
-      taxonomy: components['schemas']['schema138'];
-      usage: components['schemas']['schema143'];
+      name: components['schemas']['schema167'];
+      principle?: components['schemas']['schema170'];
+      specifications: components['schemas']['schema171'];
+      taxonomy: components['schemas']['schema168'];
+      usage: components['schemas']['schema173'];
     };
     OfferingListEnvelopeSchema: {
       data: {
@@ -3355,30 +3664,30 @@ export interface components {
       };
     };
     OfferingRevisionSchema: {
-      applicationScenarios: components['schemas']['schema143'];
-      attributes: components['schemas']['schema145'];
-      compatibility: components['schemas']['schema143'];
+      applicationScenarios: components['schemas']['schema173'];
+      attributes: components['schemas']['schema175'];
+      compatibility: components['schemas']['schema173'];
       completeness: components['schemas']['CompletenessSummarySchema'];
       contentHash: string;
-      evidenceHints: components['schemas']['schema143'];
-      features: components['schemas']['schema143'];
+      evidenceHints: components['schemas']['schema173'];
+      features: components['schemas']['schema173'];
       /** Format: uuid */
       id: string;
-      kind: components['schemas']['schema136'];
+      kind: components['schemas']['schema166'];
       locale: components['schemas']['LocaleSchema'];
       market: components['schemas']['MarketSchema'];
-      name: components['schemas']['schema137'];
+      name: components['schemas']['schema167'];
       /** Format: uuid */
       offeringId: string;
-      principle?: components['schemas']['schema140'];
+      principle?: components['schemas']['schema170'];
       /** Format: uuid */
       profileId: string;
       revision: number;
-      specifications: components['schemas']['schema141'];
-      taxonomy: components['schemas']['schema138'];
+      specifications: components['schemas']['schema171'];
+      taxonomy: components['schemas']['schema168'];
       /** Format: uuid */
       tenantId: string;
-      usage: components['schemas']['schema143'];
+      usage: components['schemas']['schema173'];
       /** Format: uuid */
       workspaceId: string;
     };
@@ -3443,11 +3752,11 @@ export interface components {
       data: {
         overview: components['schemas']['PrivacyOverviewSchema'];
       };
-      meta: components['schemas']['schema15'];
+      meta: components['schemas']['schema27'];
     };
     PrivacyOverviewSchema: {
       breakGlassGrants: components['schemas']['BreakGlassGrantSchema'][];
-      latestAuditEventAt: components['schemas']['schema12'] | null;
+      latestAuditEventAt: components['schemas']['schema24'] | null;
       latestDeletionReceipt: components['schemas']['TenantDeletionReceiptSchema'] | null;
       legalHolds: components['schemas']['TenantVisibleLegalHoldSchema'][];
       /** @enum {string} */
@@ -3468,11 +3777,11 @@ export interface components {
         /** @constant */
         secretForceDeleteHours: 24;
       };
-      tenantId: components['schemas']['schema11'];
+      tenantId: components['schemas']['schema23'];
     };
     PrivacyTimeRangeSchema: {
-      from: components['schemas']['schema12'];
-      to: components['schemas']['schema12'];
+      from: components['schemas']['schema24'];
+      to: components['schemas']['schema24'];
     };
     ProblemDetailsSchema: {
       code: string;
@@ -3497,10 +3806,10 @@ export interface components {
       };
     };
     ProfileInputSchema: {
-      description?: components['schemas']['schema148'];
-      digitalAssets: components['schemas']['schema149'];
-      displayName: components['schemas']['schema147'];
-      targetMarkets: components['schemas']['schema151'];
+      description?: components['schemas']['schema178'];
+      digitalAssets: components['schemas']['schema179'];
+      displayName: components['schemas']['schema177'];
+      targetMarkets: components['schemas']['schema181'];
     };
     ProfileListEnvelopeSchema: {
       data: {
@@ -3521,19 +3830,56 @@ export interface components {
     ProfileRevisionSchema: {
       completeness: components['schemas']['CompletenessSummarySchema'];
       contentHash: string;
-      description?: components['schemas']['schema148'];
-      digitalAssets: components['schemas']['schema149'];
-      displayName: components['schemas']['schema147'];
+      description?: components['schemas']['schema178'];
+      digitalAssets: components['schemas']['schema179'];
+      displayName: components['schemas']['schema177'];
       /** Format: uuid */
       id: string;
       /** Format: uuid */
       profileId: string;
       revision: number;
-      targetMarkets: components['schemas']['schema151'];
+      targetMarkets: components['schemas']['schema181'];
       /** Format: uuid */
       tenantId: string;
       /** Format: uuid */
       workspaceId: string;
+    };
+    PromotionStrategyEnvelopeSchema: {
+      data: {
+        promotionStrategy: components['schemas']['PromotionStrategyRevisionSchema'];
+      };
+      meta: components['schemas']['schema22'];
+    };
+    PromotionStrategyInputSchema: {
+      channelPriorities: components['schemas']['schema15'];
+      contentTypes: components['schemas']['schema15'];
+      measurementGoals: components['schemas']['schema15'];
+      objectives: components['schemas']['schema15'];
+      primaryCta: components['schemas']['schema187'];
+      priorityOfferingIds: components['schemas']['schema183'];
+      targetMarkets: components['schemas']['schema15'];
+      targetPersonaIds: components['schemas']['schema185'];
+    };
+    PromotionStrategyListEnvelopeSchema: {
+      data: {
+        promotionStrategies: components['schemas']['PromotionStrategyRevisionSchema'][];
+      };
+      meta: components['schemas']['schema22'];
+    };
+    PromotionStrategyRevisionSchema: {
+      channelPriorities: components['schemas']['schema15'];
+      contentHash: components['schemas']['schema21'];
+      contentTypes: components['schemas']['schema15'];
+      id: components['schemas']['schema17'];
+      measurementGoals: components['schemas']['schema15'];
+      objectives: components['schemas']['schema15'];
+      primaryCta: components['schemas']['schema187'];
+      priorityOfferingIds: components['schemas']['schema183'];
+      revision: components['schemas']['schema20'];
+      targetMarkets: components['schemas']['schema15'];
+      targetPersonaIds: components['schemas']['schema185'];
+      tenantId: components['schemas']['schema18'];
+      workspaceId: components['schemas']['schema19'];
     };
     PromptApprovalIssueSchema: {
       /** @enum {string} */
@@ -3606,7 +3952,7 @@ export interface components {
         promptRun: components['schemas']['PromptRunSchema'];
         rawEvidence: components['schemas']['RawMeasurementEvidenceSchema'];
       };
-      meta: components['schemas']['schema115'];
+      meta: components['schemas']['schema145'];
     };
     PromptRunSchema: {
       /** @enum {string} */
@@ -3677,14 +4023,14 @@ export interface components {
       data: {
         policy: components['schemas']['ProviderBudgetPolicySchema'];
       };
-      meta: components['schemas']['schema157'];
+      meta: components['schemas']['schema192'];
     };
     ProviderBudgetPolicySchema: {
-      id: components['schemas']['schema153'];
-      limitUnits: components['schemas']['schema155'];
+      id: components['schemas']['schema188'];
+      limitUnits: components['schemas']['schema190'];
       providerKey: components['schemas']['ProviderKeySchema'];
-      tenantId: components['schemas']['schema154'];
-      warningPercent: components['schemas']['schema156'];
+      tenantId: components['schemas']['schema189'];
+      warningPercent: components['schemas']['schema191'];
     };
     ProviderKeySchema: string;
     ProviderSurfaceRegistrySchema: {
@@ -3708,7 +4054,7 @@ export interface components {
       attemptNumber: number;
       errorCode: string | null;
       finishedAt: string | null;
-      id: components['schemas']['schema45'];
+      id: components['schemas']['schema57'];
       /** @enum {string} */
       operation: 'PUBLISH' | 'RECONCILE' | 'ROLLBACK';
       /** @enum {string} */
@@ -3722,7 +4068,7 @@ export interface components {
         | 'UNKNOWN'
         | 'ROLLED_BACK'
         | 'ROLLBACK_FAILED';
-      publicationId: components['schemas']['schema45'];
+      publicationId: components['schemas']['schema57'];
       remoteRef: string | null;
       /** Format: date-time */
       startedAt: string;
@@ -3755,23 +4101,23 @@ export interface components {
       data: {
         eligibility:
           | {
-              adapterVersionId: components['schemas']['schema45'];
-              channelAuthorizationId: components['schemas']['schema45'];
+              adapterVersionId: components['schemas']['schema57'];
+              channelAuthorizationId: components['schemas']['schema57'];
               /** @constant */
               mode: 'PUBLISH_READY';
-              packageChecksum: components['schemas']['schema46'];
-              packageId: components['schemas']['schema45'];
+              packageChecksum: components['schemas']['schema58'];
+              packageId: components['schemas']['schema57'];
             }
           | {
               /** @constant */
               mode: 'EXPORT_ONLY';
-              packageChecksum: components['schemas']['schema46'];
-              packageId: components['schemas']['schema45'];
+              packageChecksum: components['schemas']['schema58'];
+              packageId: components['schemas']['schema57'];
               reasons: components['schemas']['PublicationEligibilityReasonSchema'][];
             };
         export: {
           href: string;
-          packageChecksum: components['schemas']['schema46'];
+          packageChecksum: components['schemas']['schema58'];
         };
       };
       meta: {
@@ -3805,28 +4151,28 @@ export interface components {
       detail: string;
     };
     PublicationRecordSchema: {
-      adapterVersionId: components['schemas']['schema45'];
-      artifactContentHash: components['schemas']['schema46'];
-      artifactRevisionId: components['schemas']['schema45'];
-      channelAuthorizationId: components['schemas']['schema45'];
-      channelPackageId: components['schemas']['schema45'];
-      createdAt: components['schemas']['schema171'];
-      id: components['schemas']['schema45'];
-      idempotencyKey: components['schemas']['schema160'];
-      packageChecksum: components['schemas']['schema46'];
-      remoteRef: components['schemas']['schema161'];
-      remoteState?: components['schemas']['schema162'];
-      requestedByUserId: components['schemas']['schema45'];
-      status: components['schemas']['schema158'];
-      target: components['schemas']['schema159'];
-      updatedAt: components['schemas']['schema172'];
+      adapterVersionId: components['schemas']['schema57'];
+      artifactContentHash: components['schemas']['schema58'];
+      artifactRevisionId: components['schemas']['schema57'];
+      channelAuthorizationId: components['schemas']['schema57'];
+      channelPackageId: components['schemas']['schema57'];
+      createdAt: components['schemas']['schema206'];
+      id: components['schemas']['schema57'];
+      idempotencyKey: components['schemas']['schema195'];
+      packageChecksum: components['schemas']['schema58'];
+      remoteRef: components['schemas']['schema196'];
+      remoteState?: components['schemas']['schema197'];
+      requestedByUserId: components['schemas']['schema57'];
+      status: components['schemas']['schema193'];
+      target: components['schemas']['schema194'];
+      updatedAt: components['schemas']['schema207'];
     };
     PublicationRemoteStateSchema: {
-      isProductionLive: components['schemas']['schema165'];
-      number: components['schemas']['schema164'];
-      receiptEvidence?: components['schemas']['schema169'];
-      rollbackHandle: components['schemas']['schema166'];
-      status: components['schemas']['schema163'];
+      isProductionLive: components['schemas']['schema200'];
+      number: components['schemas']['schema199'];
+      receiptEvidence?: components['schemas']['schema204'];
+      rollbackHandle: components['schemas']['schema201'];
+      status: components['schemas']['schema198'];
     };
     PublicationRemoteStatusRefreshEnvelopeSchema: {
       data: {
@@ -3845,10 +4191,10 @@ export interface components {
       url: string;
     };
     RawMeasurementEvidenceSchema: {
-      citations: components['schemas']['schema111'];
+      citations: components['schemas']['schema141'];
       contentHash: string;
-      error: components['schemas']['schema112'];
-      responseText: components['schemas']['schema110'];
+      error: components['schemas']['schema142'];
+      responseText: components['schemas']['schema140'];
     };
     ReadinessBlockerSchema: {
       message: string;
@@ -3896,12 +4242,12 @@ export interface components {
       | 'PUBLISH_READY'
       | 'MEASURING';
     RequestDeletionRequestSchema: {
-      reason: components['schemas']['schema20'];
+      reason: components['schemas']['schema32'];
     };
     RequestPublicationSchema: {
-      adapterVersionId?: components['schemas']['schema45'];
-      channelPackageId: components['schemas']['schema45'];
-      expectedPackageChecksum: components['schemas']['schema46'];
+      adapterVersionId?: components['schemas']['schema57'];
+      channelPackageId: components['schemas']['schema57'];
+      expectedPackageChecksum: components['schemas']['schema58'];
       idempotencyKey: string;
       target: string;
     };
@@ -4037,95 +4383,152 @@ export interface components {
       /** @constant */
       schemaVersion: '1.0.0';
     };
-    /** Format: uuid */
     schema11: string;
-    /** Format: date-time */
+    /** @default  */
     schema12: string;
+    /** @default  */
     schema13: string;
+    /** @default  */
     schema14: string;
-    schema15: {
+    /** @default [] */
+    schema15: components['schemas']['schema16'][];
+    schema16: string;
+    /** Format: uuid */
+    schema17: string;
+    /** Format: uuid */
+    schema18: string;
+    /** Format: uuid */
+    schema19: string;
+    schema20: number;
+    schema21: string;
+    schema22: {
+      requestId: string;
+      /** @constant */
+      schemaVersion: '1.0.0';
+    };
+    /** Format: uuid */
+    schema23: string;
+    /** Format: date-time */
+    schema24: string;
+    schema25: string;
+    schema26: string;
+    schema27: {
       requestId: string;
       /** @constant */
       schemaVersion: '1.0.0';
     };
     /** @enum {string} */
-    schema16: 'SUCCEEDED' | 'TAMPERED';
-    schema17: boolean;
-    schema18: number;
-    schema19: string | null;
-    schema20: string;
-    schema21: string;
-    schema22: string;
-    schema23: string;
-    schema24: string;
-    schema25: components['schemas']['schema12'] | null;
+    schema28: 'SUCCEEDED' | 'TAMPERED';
+    schema29: boolean;
+    schema30: number;
+    schema31: string | null;
+    schema32: string;
+    schema33: string;
+    schema34: string;
+    schema35: string;
+    schema36: string;
+    schema37: components['schemas']['schema24'] | null;
     /** Format: uuid */
-    schema26: string;
-    schema27: string;
+    schema38: string;
+    schema39: string;
     /** Format: uuid */
-    schema28: string;
-    schema29: string;
-    schema30: string;
-    schema31: {
+    schema40: string;
+    schema41: string;
+    schema42: string;
+    schema43: {
       [key: string]: unknown;
     };
-    schema32: components['schemas']['schema33'][];
-    schema33: string;
-    schema34: {
+    schema44: components['schemas']['schema45'][];
+    schema45: string;
+    schema46: {
       requestId: string;
       /** @constant */
       schemaVersion: '1.0.0';
     };
-    schema35: string;
-    schema36: string;
-    schema37: string;
-    schema38: components['schemas']['ChannelProfileFieldRequirementSchema'][];
-    schema39: string;
-    schema40: string;
-    schema41: boolean;
-    schema42: number | null;
-    schema43: number | null;
-    schema44: string;
-    /** Format: uuid */
-    schema45: string;
-    schema46: string;
     schema47: string;
-    schema48: {
-      id: components['schemas']['schema1'];
-      revision: number;
-    };
+    schema48: string;
     schema49: string;
-    /** Format: uuid */
-    schema50: string;
-    /** Format: uuid */
+    schema50: components['schemas']['ChannelProfileFieldRequirementSchema'][];
     schema51: string;
     schema52: string;
-    schema53: string;
-    schema54: string;
-    schema55: string;
+    schema53: boolean;
+    schema54: number | null;
+    schema55: number | null;
     schema56: string;
+    /** Format: uuid */
     schema57: string;
     schema58: string;
     schema59: string;
-    schema60: boolean;
-    schema61: boolean;
-    schema62: {
+    schema60: string;
+    /** @default  */
+    schema61: string;
+    /** @default [] */
+    schema62: components['schemas']['schema63'][];
+    /** Format: uuid */
+    schema63: string;
+    /** @default  */
+    schema64: string;
+    /** @default [] */
+    schema65: components['schemas']['schema66'][];
+    /** Format: uuid */
+    schema66: string;
+    schema67: {
+      id: components['schemas']['schema1'];
+      revision: number;
+    };
+    schema68: string;
+    /** @default  */
+    schema69: string;
+    /** @default  */
+    schema70: string;
+    /** @default  */
+    schema71: string;
+    /** @default  */
+    schema72: string;
+    /** @default  */
+    schema73: string;
+    /** @default true */
+    schema74: boolean;
+    /** @default true */
+    schema75: boolean;
+    /** @default [] */
+    schema76: components['schemas']['schema77'][];
+    /** Format: uuid */
+    schema77: string;
+    /** @default  */
+    schema78: string;
+    schema79: string;
+    /** Format: uuid */
+    schema80: string;
+    /** Format: uuid */
+    schema81: string;
+    schema82: string;
+    schema83: string;
+    schema84: string;
+    schema85: string;
+    schema86: string;
+    schema87: string;
+    schema88: string;
+    schema89: string;
+    schema90: boolean;
+    schema91: boolean;
+    schema92: {
       [key: string]: unknown;
     };
-    schema63: number;
+    schema93: number;
     /** Format: uuid */
-    schema64: string;
-    schema65: string;
+    schema94: string;
+    schema95: string;
     /** @enum {string} */
-    schema66: 'PENDING' | 'VERIFIED' | 'REVOKED';
+    schema96: 'PENDING' | 'VERIFIED' | 'REVOKED';
     /** Format: date-time */
-    schema67: string;
+    schema97: string;
     /** Format: date-time */
-    schema68: string;
-    schema69: string | null;
-    schema70: string | null;
-    schema71: components['schemas']['schema72'][];
-    schema72: {
+    schema98: string;
+    schema99: string | null;
+    schema100: string | null;
+    schema101: components['schemas']['schema102'][];
+    schema102: {
       challenge: string;
       /** Format: date-time */
       challengeExpiresAt: string;
@@ -4133,126 +4536,126 @@ export interface components {
       /** @enum {string} */
       purpose: 'DELIVERY' | 'RECEIPT' | 'DELIVERY_AND_RECEIPT';
     };
-    schema73: {
+    schema103: {
       requestId: string;
       /** @constant */
       schemaVersion: '1.0.0';
     };
-    schema74: string;
-    schema75: string;
-    schema76: boolean;
-    schema77: string;
+    schema104: string;
+    schema105: string;
+    schema106: boolean;
+    schema107: string;
     /** Format: uuid */
-    schema78: string;
+    schema108: string;
     /** Format: uuid */
-    schema79: string;
+    schema109: string;
     /** Format: uuid */
-    schema80: string;
+    schema110: string;
     /** @constant */
-    schema81: 'experiment.v1';
+    schema111: 'experiment.v1';
     /** Format: uuid */
-    schema82: string;
+    schema112: string;
     /** Format: uuid */
-    schema83: string;
-    schema84: number;
-    schema85: {
-      completedAt: components['schemas']['schema88'];
-      evidenceWindow: components['schemas']['schema89'];
-      runId: components['schemas']['schema86'];
-      startedAt: components['schemas']['schema87'];
+    schema113: string;
+    schema114: number;
+    schema115: {
+      completedAt: components['schemas']['schema118'];
+      evidenceWindow: components['schemas']['schema119'];
+      runId: components['schemas']['schema116'];
+      startedAt: components['schemas']['schema117'];
     };
     /** Format: uuid */
-    schema86: string;
+    schema116: string;
     /** Format: date-time */
-    schema87: string;
+    schema117: string;
     /** Format: date-time */
-    schema88: string;
-    schema89: {
+    schema118: string;
+    schema119: {
       /** Format: date-time */
       maxObservedAt: string;
       /** Format: date-time */
       minObservedAt: string;
     };
-    schema90: components['schemas']['ExperimentMetricComparisonSchema'][];
-    schema91: {
+    schema120: components['schemas']['ExperimentMetricComparisonSchema'][];
+    schema121: {
       ERROR: number;
       INCONCLUSIVE: number;
       NOT_APPLICABLE: number;
       NOT_CHECKED: number;
     };
-    schema92: {
+    schema122: {
       baseline: number;
       remeasurement: number;
     };
-    schema93: {
-      baseline: components['schemas']['schema91'];
-      remeasurement: components['schemas']['schema91'];
+    schema123: {
+      baseline: components['schemas']['schema121'];
+      remeasurement: components['schemas']['schema121'];
     };
-    schema94: {
+    schema124: {
       baseline: components['schemas']['MonetaryCostSchema'][];
       remeasurement: components['schemas']['MonetaryCostSchema'][];
     };
-    schema95: string;
-    schema96: string;
-    schema97: string;
-    schema98: {
+    schema125: string;
+    schema126: string;
+    schema127: string;
+    schema128: {
       baselineRunHref: string;
       interventionHref: string;
       remeasurementRunHref: string;
     };
     /** Format: uuid */
-    schema99: string;
+    schema129: string;
     /** Format: date-time */
-    schema100: string;
-    schema101: {
+    schema130: string;
+    schema131: {
       requestId: string;
       /** @constant */
       schemaVersion: '1.0.0';
     };
-    schema102: string;
-    schema103: {
+    schema132: string;
+    schema133: {
       /** Format: uuid */
       id: string;
       ordinal: number;
       text: string;
     };
-    schema104: string;
-    schema105: number;
-    schema106: boolean;
-    schema107: string | null;
-    schema108: {
+    schema134: string;
+    schema135: number;
+    schema136: boolean;
+    schema137: string | null;
+    schema138: {
       cost: components['schemas']['MonetaryCostSchema'];
       observation: components['schemas']['MeasurementObservationSchema'];
-      rawEvidence: components['schemas']['schema109'];
+      rawEvidence: components['schemas']['schema139'];
       status: components['schemas']['PromptRunStatusSchema'];
     } | null;
-    schema109: {
-      citations: components['schemas']['schema111'];
+    schema139: {
+      citations: components['schemas']['schema141'];
       contentHash?: string;
-      error: components['schemas']['schema112'];
-      responseText: components['schemas']['schema110'];
+      error: components['schemas']['schema142'];
+      responseText: components['schemas']['schema140'];
     };
-    schema110: string | null;
-    schema111: components['schemas']['RawCitationSchema'][];
-    schema112: {
+    schema140: string | null;
+    schema141: components['schemas']['RawCitationSchema'][];
+    schema142: {
       code: string;
       message: string;
     } | null;
-    schema113: string | null;
-    schema114: string;
-    schema115: {
-      requestId: components['schemas']['schema116'];
-      schemaVersion: components['schemas']['schema117'];
+    schema143: string | null;
+    schema144: string;
+    schema145: {
+      requestId: components['schemas']['schema146'];
+      schemaVersion: components['schemas']['schema147'];
     };
-    schema116: string;
+    schema146: string;
     /** @constant */
-    schema117: '1.0.0';
-    schema118: {
+    schema147: '1.0.0';
+    schema148: {
       /** Format: uuid */
       measurementRunId: string;
       metrics: components['schemas']['DashboardMetricSchema'][];
     };
-    schema119: [
+    schema149: [
       {
         /** @constant */
         key: 'TECHNICAL_HEALTH';
@@ -4306,9 +4709,9 @@ export interface components {
       {
         cohorts: {
           cohort: components['schemas']['DashboardCohortSchema'];
-          cost: components['schemas']['schema122'];
-          costBreakdown: components['schemas']['schema123'];
-          metricIds: components['schemas']['schema120'];
+          cost: components['schemas']['schema152'];
+          costBreakdown: components['schemas']['schema153'];
+          metricIds: components['schemas']['schema150'];
           resultCounts: components['schemas']['MeasurementResultCountsSchema'];
         }[];
         crossSurfaceAggregate?: unknown;
@@ -4316,70 +4719,80 @@ export interface components {
         key: 'MEASURED_AI_VISIBILITY';
       },
     ];
-    schema120: components['schemas']['schema121'][];
+    schema150: components['schemas']['schema151'][];
     /** Format: uuid */
-    schema121: string;
-    schema122: components['schemas']['MonetaryCostSchema'] | null;
-    schema123: components['schemas']['MonetaryCostSchema'][];
-    schema124: components['schemas']['MonetaryCostSchema'] | null;
-    schema125: string;
-    schema126: string;
-    schema127: string;
-    schema128: string;
-    schema129: string;
-    schema130: string;
-    schema131: string;
-    schema132: string;
-    schema133: string;
-    schema134: components['schemas']['schema135'][];
-    schema135: string;
-    schema136: string;
-    schema137: string;
+    schema151: string;
+    schema152: components['schemas']['MonetaryCostSchema'] | null;
+    schema153: components['schemas']['MonetaryCostSchema'][];
+    schema154: components['schemas']['MonetaryCostSchema'] | null;
+    schema155: string;
+    schema156: string;
+    schema157: string;
+    schema158: string;
+    schema159: string;
+    schema160: string;
+    schema161: string;
+    schema162: string;
+    schema163: string;
+    schema164: components['schemas']['schema165'][];
+    schema165: string;
+    schema166: string;
+    schema167: string;
     /** @default [] */
-    schema138: components['schemas']['schema139'][];
-    schema139: string;
-    schema140: string;
+    schema168: components['schemas']['schema169'][];
+    schema169: string;
+    schema170: string;
     /** @default [] */
-    schema141: components['schemas']['schema142'][];
-    schema142: {
+    schema171: components['schemas']['schema172'][];
+    schema172: {
       name: string;
       unit?: string;
       value: string;
     };
     /** @default [] */
-    schema143: components['schemas']['schema144'][];
-    schema144: string;
+    schema173: components['schemas']['schema174'][];
+    schema174: string;
     /** @default [] */
-    schema145: components['schemas']['DynamicAttributeSchema'][];
+    schema175: components['schemas']['DynamicAttributeSchema'][];
     /** @constant */
-    schema146: 'FROZEN';
-    schema147: string;
-    schema148: string;
+    schema176: 'FROZEN';
+    schema177: string;
+    schema178: string;
     /** @default [] */
-    schema149: components['schemas']['schema150'][];
-    schema150: {
+    schema179: components['schemas']['schema180'][];
+    schema180: {
       label: string;
       /** Format: uri */
       url: string;
     };
-    schema151: components['schemas']['schema152'][];
-    schema152: {
+    schema181: components['schemas']['schema182'][];
+    schema182: {
       locale: components['schemas']['LocaleSchema'];
       market: components['schemas']['MarketSchema'];
     };
+    /** @default [] */
+    schema183: components['schemas']['schema184'][];
     /** Format: uuid */
-    schema153: string;
+    schema184: string;
+    /** @default [] */
+    schema185: components['schemas']['schema186'][];
     /** Format: uuid */
-    schema154: string;
-    schema155: number;
-    schema156: number;
-    schema157: {
+    schema186: string;
+    /** @default  */
+    schema187: string;
+    /** Format: uuid */
+    schema188: string;
+    /** Format: uuid */
+    schema189: string;
+    schema190: number;
+    schema191: number;
+    schema192: {
       requestId: string;
       /** @constant */
       schemaVersion: '1.0.0';
     };
     /** @enum {string} */
-    schema158:
+    schema193:
       | 'REQUESTED'
       | 'BUDGET_BLOCKED'
       | 'QUEUED'
@@ -4395,145 +4808,152 @@ export interface components {
       | 'ROLLBACK_QUEUED'
       | 'ROLLED_BACK'
       | 'ROLLBACK_FAILED';
-    schema159: string;
-    schema160: string;
-    schema161: string | null;
-    schema162: components['schemas']['PublicationRemoteStateSchema'] | null;
-    schema163: string;
-    schema164: number | null;
-    schema165: boolean;
-    schema166: {
-      [key: string]: components['schemas']['schema168'];
+    schema194: string;
+    schema195: string;
+    schema196: string | null;
+    schema197: components['schemas']['PublicationRemoteStateSchema'] | null;
+    schema198: string;
+    schema199: number | null;
+    schema200: boolean;
+    schema201: {
+      [key: string]: components['schemas']['schema203'];
     } | null;
-    schema167: string;
-    schema168: string | number | boolean;
-    schema169: components['schemas']['SignedWebhookReceiptEvidenceSchema'];
-    schema170: string;
+    schema202: string;
+    schema203: string | number | boolean;
+    schema204: components['schemas']['SignedWebhookReceiptEvidenceSchema'];
+    schema205: string;
     /** Format: date-time */
-    schema171: string;
+    schema206: string;
     /** Format: date-time */
-    schema172: string;
-    schema173: string;
-    schema174: string;
-    schema175: string;
+    schema207: string;
+    schema208: string;
+    schema209: string;
+    schema210: string;
     /** @constant */
-    schema176: '1.0.0';
+    schema211: '1.0.0';
     /** @constant */
-    schema177: 'channel-package.approved.v1';
+    schema212: 'channel-package.approved.v1';
     /** Format: uuid */
-    schema178: string;
-    schema179: {
+    schema213: string;
+    schema214: {
       artifact: components['schemas']['ChannelPackageArtifactSchema'];
       channel: {
         channelKey: string;
-        definitionId: components['schemas']['schema178'];
+        definitionId: components['schemas']['schema213'];
       };
       files: {
         'content.html': string;
         'content.md': string;
         'structured-data.json': string;
       };
-      id: components['schemas']['schema178'];
+      id: components['schemas']['schema213'];
       manifest: components['schemas']['ChannelPackageManifestSchema'];
-      packageChecksum: components['schemas']['schema180'];
+      packageChecksum: components['schemas']['schema215'];
       packageRevision: number;
       packageSchemaVersion: string;
-      tenantId: components['schemas']['schema178'];
+      tenantId: components['schemas']['schema213'];
       transformer: {
         key: string;
         version: string;
       };
-      workspaceId: components['schemas']['schema178'];
+      workspaceId: components['schemas']['schema213'];
     };
-    schema180: string;
-    /** @constant */
-    schema181: '1.0.0';
-    /** @constant */
-    schema182: 'channel-package.delivery-receipt.v1';
-    schema183: number;
-    /** @constant */
-    schema184: '1.0.0';
-    /** @constant */
-    schema185: 'channel-package.delivery-receipt.v1';
-    schema186: string;
-    /** @enum {string} */
-    schema187: 'APPLIED' | 'ALREADY_APPLIED' | 'PENDING' | 'NOT_FOUND' | 'CONFLICT';
-    schema188: number;
-    schema189: string | null;
-    /** Format: date-time */
-    schema190: string;
-    /** @constant */
-    schema191: false;
-    /** @constant */
-    schema192: 'signed-webhook-target.v1';
-    /** Format: uuid */
-    schema193: string;
-    /** Format: uuid */
-    schema194: string;
-    /** Format: uuid */
-    schema195: string;
-    /** Format: uuid */
-    schema196: string;
-    /** Format: uuid */
-    schema197: string;
-    /** Format: uuid */
-    schema198: string;
-    /** @enum {string} */
-    schema199: 'COMPLETE' | 'PARTIAL' | 'FAILED_TERMINAL';
-    schema200: string | null;
-    schema201: number;
-    schema202: number;
-    /** Format: date-time */
-    schema203: string;
-    schema204: components['schemas']['CrawlSnapshotSchema'][];
-    schema205: components['schemas']['BaselineFindingSchema'][];
-    schema206: number;
-    schema207: number;
-    /** Format: uuid */
-    schema208: string;
-    /** Format: uuid */
-    schema209: string;
-    /** Format: uuid */
-    schema210: string;
-    schema211: string;
-    schema212: string;
-    /** Format: uuid */
-    schema213: string;
-    schema214: string;
     schema215: string;
     /** @constant */
     schema216: '1.0.0';
-    schema217: components['schemas']['TenantExportManifestObjectSchema'][];
-    schema218: components['schemas']['TenantExportManifestFileSchema'][];
+    /** @constant */
+    schema217: 'channel-package.delivery-receipt.v1';
+    schema218: number;
+    /** @constant */
+    schema219: '1.0.0';
+    /** @constant */
+    schema220: 'channel-package.delivery-receipt.v1';
+    schema221: string;
     /** @enum {string} */
-    schema219: 'PENDING' | 'READY' | 'FAILED';
-    schema220: boolean;
-    schema221: string | null;
+    schema222: 'APPLIED' | 'ALREADY_APPLIED' | 'PENDING' | 'NOT_FOUND' | 'CONFLICT';
+    schema223: number;
+    schema224: string | null;
+    /** Format: date-time */
+    schema225: string;
+    /** @constant */
+    schema226: false;
+    /** @constant */
+    schema227: 'signed-webhook-target.v1';
+    /** Format: uuid */
+    schema228: string;
+    /** Format: uuid */
+    schema229: string;
+    /** Format: uuid */
+    schema230: string;
+    /** Format: uuid */
+    schema231: string;
+    /** Format: uuid */
+    schema232: string;
+    /** Format: uuid */
+    schema233: string;
     /** @enum {string} */
-    schema222: 'OAUTH' | 'APPLICATION_PASSWORD' | 'APPROVED_TOKEN';
-    schema223: string;
-    schema224: number;
-    schema225: components['schemas']['schema226'][];
-    schema226: number;
+    schema234: 'COMPLETE' | 'PARTIAL' | 'FAILED_TERMINAL';
+    schema235: string | null;
+    schema236: number;
+    schema237: number;
+    /** Format: date-time */
+    schema238: string;
+    schema239: components['schemas']['CrawlSnapshotSchema'][];
+    schema240: components['schemas']['BaselineFindingSchema'][];
+    schema241: number;
+    schema242: number;
+    /** Format: uuid */
+    schema243: string;
+    /** Format: uuid */
+    schema244: string;
+    /** Format: uuid */
+    schema245: string;
+    schema246: string;
+    schema247: string;
+    /** Format: uuid */
+    schema248: string;
+    schema249: string;
+    schema250: string;
+    /** @constant */
+    schema251: '1.0.0';
+    schema252: components['schemas']['TenantExportManifestObjectSchema'][];
+    schema253: components['schemas']['TenantExportManifestFileSchema'][];
+    /** @enum {string} */
+    schema254: 'PENDING' | 'READY' | 'FAILED';
+    schema255: boolean;
+    schema256: string | null;
+    schema257: {
+      requestId: string;
+      /** @constant */
+      schemaVersion: '1.0.0';
+    };
+    /** Format: uuid */
+    schema258: string;
+    /** @enum {string} */
+    schema259: 'OAUTH' | 'APPLICATION_PASSWORD' | 'APPROVED_TOKEN';
+    schema260: string;
+    schema261: number;
+    schema262: components['schemas']['schema263'][];
+    schema263: number;
     SearchDataConnectorDescriptorSchema: {
       /** @constant */
       acquisitionClass: 'SEARCH_DATA_API';
       /** @constant */
       acquisitionMethod: 'OFFICIAL_API';
-      adapterKey: components['schemas']['schema125'];
-      adapterVersion: components['schemas']['schema126'];
-      processingRegion: components['schemas']['schema130'];
-      providerKey: components['schemas']['schema127'];
+      adapterKey: components['schemas']['schema155'];
+      adapterVersion: components['schemas']['schema156'];
+      processingRegion: components['schemas']['schema160'];
+      providerKey: components['schemas']['schema157'];
       /** @constant */
       requiresAuthorization: true;
-      retentionPolicy: components['schemas']['schema132'];
-      storageRegion: components['schemas']['schema131'];
-      subprocessors: components['schemas']['schema134'];
-      surfaceKey: components['schemas']['schema128'];
+      retentionPolicy: components['schemas']['schema162'];
+      storageRegion: components['schemas']['schema161'];
+      subprocessors: components['schemas']['schema164'];
+      surfaceKey: components['schemas']['schema158'];
       /** @constant */
       surfaceKind: 'SEARCH_DATA';
-      termsVersion: components['schemas']['schema129'];
-      trainingPolicy: components['schemas']['schema133'];
+      termsVersion: components['schemas']['schema159'];
+      trainingPolicy: components['schemas']['schema163'];
     };
     SessionEnvelopeSchema: {
       data: {
@@ -4555,14 +4975,14 @@ export interface components {
       apiVersion: string;
       destination:
         | {
-            handle: components['schemas']['schema174'];
+            handle: components['schemas']['schema209'];
             /** @constant */
             kind: 'PAGE';
             /** @constant */
             operation: 'CREATE';
           }
         | {
-            handle: components['schemas']['schema174'];
+            handle: components['schemas']['schema209'];
             /** @constant */
             kind: 'PAGE';
             /** @constant */
@@ -4570,16 +4990,16 @@ export interface components {
             remoteId: string;
           }
         | {
-            blogId: components['schemas']['schema175'];
-            handle: components['schemas']['schema174'];
+            blogId: components['schemas']['schema210'];
+            handle: components['schemas']['schema209'];
             /** @constant */
             kind: 'BLOG_ARTICLE';
             /** @constant */
             operation: 'CREATE';
           }
         | {
-            blogId: components['schemas']['schema175'];
-            handle: components['schemas']['schema174'];
+            blogId: components['schemas']['schema210'];
+            handle: components['schemas']['schema209'];
             /** @constant */
             kind: 'BLOG_ARTICLE';
             /** @constant */
@@ -4587,14 +5007,14 @@ export interface components {
             remoteId: string;
           }
         | {
-            handle: components['schemas']['schema174'];
+            handle: components['schemas']['schema209'];
             /** @constant */
             kind: 'PRODUCT';
             /** @constant */
             operation: 'CREATE';
           }
         | {
-            handle: components['schemas']['schema174'];
+            handle: components['schemas']['schema209'];
             /** @constant */
             kind: 'PRODUCT';
             /** @constant */
@@ -4603,91 +5023,91 @@ export interface components {
           };
       /** @constant */
       schemaVersion: 'shopify-draft-target.v1';
-      shopDomain: components['schemas']['schema173'];
+      shopDomain: components['schemas']['schema208'];
     };
     ShopifyShopAuthorizationTargetV1Schema: {
       /** @constant */
       schemaVersion: 'shopify-shop-auth.v1';
-      shopDomain: components['schemas']['schema173'];
+      shopDomain: components['schemas']['schema208'];
     };
     SignedWebhookDeliveryV1Schema: {
-      channelPackage: components['schemas']['schema179'];
-      deliveryId: components['schemas']['schema178'];
-      eventType: components['schemas']['schema177'];
-      publicationId: components['schemas']['schema178'];
-      schemaVersion: components['schemas']['schema176'];
+      channelPackage: components['schemas']['schema214'];
+      deliveryId: components['schemas']['schema213'];
+      eventType: components['schemas']['schema212'];
+      publicationId: components['schemas']['schema213'];
+      schemaVersion: components['schemas']['schema211'];
     };
     SignedWebhookEndpointVerificationEnvelopeSchema: {
       data: {
         verification: components['schemas']['SignedWebhookEndpointVerificationSchema'];
       };
-      meta: components['schemas']['schema73'];
+      meta: components['schemas']['schema103'];
     };
     SignedWebhookEndpointVerificationListEnvelopeSchema: {
       data: {
         verifications: components['schemas']['SignedWebhookEndpointVerificationSchema'][];
       };
-      meta: components['schemas']['schema73'];
+      meta: components['schemas']['schema103'];
     };
     SignedWebhookEndpointVerificationPathParamsSchema: {
-      verificationId: components['schemas']['schema64'];
+      verificationId: components['schemas']['schema94'];
     };
     SignedWebhookEndpointVerificationSchema: {
       algorithm: components['schemas']['SignedWebhookSigningAlgorithmSchema'];
-      challengeExpiresAt: components['schemas']['schema68'];
-      channelDefinitionId: components['schemas']['schema64'];
-      createdAt: components['schemas']['schema67'];
+      challengeExpiresAt: components['schemas']['schema98'];
+      channelDefinitionId: components['schemas']['schema94'];
+      createdAt: components['schemas']['schema97'];
       endpointUrl: components['schemas']['SignedWebhookUrlSchema'];
-      id: components['schemas']['schema64'];
+      id: components['schemas']['schema94'];
       keyId: components['schemas']['SignedWebhookKeyIdSchema'];
       receiptUrl: components['schemas']['SignedWebhookUrlSchema'];
-      revokedAt: components['schemas']['schema70'];
-      status: components['schemas']['schema66'];
-      verificationReference: components['schemas']['schema65'];
-      verifiedAt: components['schemas']['schema69'];
+      revokedAt: components['schemas']['schema100'];
+      status: components['schemas']['schema96'];
+      verificationReference: components['schemas']['schema95'];
+      verifiedAt: components['schemas']['schema99'];
     };
     SignedWebhookKeyIdSchema: string;
     SignedWebhookReceiptEvidenceSchema: {
-      deliveryId: components['schemas']['schema45'];
-      receiptId: components['schemas']['schema170'];
+      deliveryId: components['schemas']['schema57'];
+      receiptId: components['schemas']['schema205'];
       /** Format: date-time */
       receivedAt: string;
-      receiverEffectId: components['schemas']['schema170'];
-      requestBodySha256: components['schemas']['schema46'];
+      receiverEffectId: components['schemas']['schema205'];
+      requestBodySha256: components['schemas']['schema58'];
       /** @constant */
       schemaVersion: 'signed-webhook-receipt-evidence.v1';
       verifiedAlgorithm: components['schemas']['SignedWebhookSigningAlgorithmSchema'];
       verifiedKeyId: components['schemas']['SignedWebhookKeyIdSchema'];
     };
     SignedWebhookReceiptQueryV1Schema: {
-      artifactContentHash: components['schemas']['schema180'];
-      artifactRevisionId: components['schemas']['schema178'];
-      channelPackageId: components['schemas']['schema178'];
-      deliveryId: components['schemas']['schema178'];
-      packageChecksum: components['schemas']['schema180'];
-      packageRevision: components['schemas']['schema183'];
-      publicationId: components['schemas']['schema178'];
-      queryType: components['schemas']['schema182'];
-      requestBodySha256: components['schemas']['schema180'];
-      schemaVersion: components['schemas']['schema181'];
+      artifactContentHash: components['schemas']['schema215'];
+      artifactRevisionId: components['schemas']['schema213'];
+      channelPackageId: components['schemas']['schema213'];
+      deliveryId: components['schemas']['schema213'];
+      packageChecksum: components['schemas']['schema215'];
+      packageRevision: components['schemas']['schema218'];
+      publicationId: components['schemas']['schema213'];
+      queryType: components['schemas']['schema217'];
+      requestBodySha256: components['schemas']['schema215'];
+      schemaVersion: components['schemas']['schema216'];
     };
     SignedWebhookReceiptV1Schema: {
-      artifactContentHash: components['schemas']['schema180'];
-      artifactRevisionId: components['schemas']['schema178'];
-      channelPackageId: components['schemas']['schema178'];
-      deliveryId: components['schemas']['schema178'];
-      isProductionLive: components['schemas']['schema191'];
-      packageChecksum: components['schemas']['schema180'];
-      packageRevision: components['schemas']['schema188'];
-      publicationId: components['schemas']['schema178'];
-      receiptId: components['schemas']['schema186'];
-      receiptType: components['schemas']['schema185'];
-      receivedAt: components['schemas']['schema190'];
-      receiverEffectId: components['schemas']['schema189'];
+      artifactContentHash: components['schemas']['schema215'];
+      artifactRevisionId: components['schemas']['schema213'];
+      channelPackageId: components['schemas']['schema213'];
+      deliveryId: components['schemas']['schema213'];
+      isProductionLive: components['schemas']['schema226'];
+      packageChecksum: components['schemas']['schema215'];
+      packageRevision: components['schemas']['schema223'];
+      publicationId: components['schemas']['schema213'];
+      receiptId: components['schemas']['schema221'];
+      receiptType: components['schemas']['schema220'];
+      receivedAt: components['schemas']['schema225'];
+      receiverEffectId: components['schemas']['schema224'];
       remoteRef: components['schemas']['SignedWebhookUrlSchema'];
-      requestBodySha256: components['schemas']['schema180'];
-      schemaVersion: components['schemas']['schema184'];
-      status: components['schemas']['schema187'];
+      requestBodySha256: components['schemas']['schema215'];
+      schemaVersion: components['schemas']['schema219'];
+      status: components['schemas']['schema222'];
       verifiedAlgorithm: components['schemas']['SignedWebhookSigningAlgorithmSchema'];
       verifiedKeyId: components['schemas']['SignedWebhookKeyIdSchema'];
     };
@@ -4696,10 +5116,10 @@ export interface components {
     SignedWebhookTargetV1Schema: {
       algorithm: components['schemas']['SignedWebhookSigningAlgorithmSchema'];
       endpointUrl: components['schemas']['SignedWebhookUrlSchema'];
-      endpointVerificationId: components['schemas']['schema193'];
+      endpointVerificationId: components['schemas']['schema228'];
       keyId: components['schemas']['SignedWebhookKeyIdSchema'];
       receiptUrl: components['schemas']['SignedWebhookUrlSchema'];
-      schemaVersion: components['schemas']['schema192'];
+      schemaVersion: components['schemas']['schema227'];
     };
     SignedWebhookUrlSchema: string;
     SiteBaselineEnvelopeSchema: {
@@ -4732,18 +5152,18 @@ export interface components {
       };
     };
     SiteBaselineSchema: {
-      completedAt: components['schemas']['schema203'];
-      errorCode: components['schemas']['schema200'];
-      findings: components['schemas']['schema205'];
-      id: components['schemas']['schema194'];
-      jobId: components['schemas']['schema198'];
-      pageCount: components['schemas']['schema201'];
-      siteId: components['schemas']['schema197'];
-      snapshots: components['schemas']['schema204'];
-      status: components['schemas']['schema199'];
-      tenantId: components['schemas']['schema195'];
-      totalBytes: components['schemas']['schema202'];
-      workspaceId: components['schemas']['schema196'];
+      completedAt: components['schemas']['schema238'];
+      errorCode: components['schemas']['schema235'];
+      findings: components['schemas']['schema240'];
+      id: components['schemas']['schema229'];
+      jobId: components['schemas']['schema233'];
+      pageCount: components['schemas']['schema236'];
+      siteId: components['schemas']['schema232'];
+      snapshots: components['schemas']['schema239'];
+      status: components['schemas']['schema234'];
+      tenantId: components['schemas']['schema230'];
+      totalBytes: components['schemas']['schema237'];
+      workspaceId: components['schemas']['schema231'];
     };
     SiteEnvelopeSchema: {
       data: {
@@ -4808,7 +5228,7 @@ export interface components {
     StartArtifactGenerationRequestSchema: {
       briefId: components['schemas']['schema6'];
       /** @description Deprecated client estimate; accepted for compatibility and ignored by the server. */
-      estimatedUnits?: components['schemas']['schema206'];
+      estimatedUnits?: components['schemas']['schema241'];
       idempotencyKey: string;
       locale: string;
       market: string;
@@ -4826,13 +5246,13 @@ export interface components {
       baselineId: components['schemas']['schema1'];
       comparisonClaimRevisionIds: components['schemas']['schema1'][];
       /** @description Deprecated client estimate; accepted for compatibility and ignored by the server. */
-      estimatedUnits?: components['schemas']['schema207'];
+      estimatedUnits?: components['schemas']['schema242'];
       idempotencyKey: string;
       /** @constant */
       methodPolicyVersion: 'content-plan-v1';
-      offering: components['schemas']['schema48'];
+      offering: components['schemas']['schema67'];
       primaryClaimRevisionIds: components['schemas']['schema1'][];
-      profile: components['schemas']['schema48'];
+      profile: components['schemas']['schema67'];
       promptRevisionId: components['schemas']['schema1'];
       promptSetId: components['schemas']['schema1'];
     };
@@ -4844,18 +5264,18 @@ export interface components {
         job: components['schemas']['JobSchema'];
         measurementRun: components['schemas']['MeasurementRunSchema'];
       };
-      meta: components['schemas']['schema115'];
+      meta: components['schemas']['schema145'];
     };
     StartMeasurementRunRequestSchema: {
-      expectedManualImportHash?: components['schemas']['schema214'];
-      expectedPromptHash: components['schemas']['schema211'];
-      expectedScenarioHash: components['schemas']['schema212'];
-      idempotencyKey: components['schemas']['schema215'];
+      expectedManualImportHash?: components['schemas']['schema249'];
+      expectedPromptHash: components['schemas']['schema246'];
+      expectedScenarioHash: components['schemas']['schema247'];
+      idempotencyKey: components['schemas']['schema250'];
       kind: components['schemas']['MeasurementRunKindSchema'];
-      manualImportId?: components['schemas']['schema213'];
-      promptRevisionId: components['schemas']['schema209'];
-      promptSetId: components['schemas']['schema208'];
-      scenarioId: components['schemas']['schema210'];
+      manualImportId?: components['schemas']['schema248'];
+      promptRevisionId: components['schemas']['schema244'];
+      promptSetId: components['schemas']['schema243'];
+      scenarioId: components['schemas']['schema245'];
     };
     StepStateSchema: {
       blockingReason: string | null;
@@ -4901,28 +5321,28 @@ export interface components {
       data: {
         policy: components['schemas']['TenantBudgetPolicySchema'];
       };
-      meta: components['schemas']['schema157'];
+      meta: components['schemas']['schema192'];
     };
     TenantBudgetPolicySchema: {
-      id: components['schemas']['schema153'];
-      limitUnits: components['schemas']['schema155'];
-      tenantId: components['schemas']['schema154'];
-      warningPercent: components['schemas']['schema156'];
+      id: components['schemas']['schema188'];
+      limitUnits: components['schemas']['schema190'];
+      tenantId: components['schemas']['schema189'];
+      warningPercent: components['schemas']['schema191'];
     };
     TenantDeletionReceiptEnvelopeSchema: {
       data: {
         receipt: components['schemas']['TenantDeletionReceiptSchema'];
       };
-      meta: components['schemas']['schema15'];
+      meta: components['schemas']['schema27'];
     };
     TenantDeletionReceiptSchema: {
-      activeDeleteBy: components['schemas']['schema12'];
-      backupDeleteBy: components['schemas']['schema12'];
-      id: components['schemas']['schema11'];
-      requestedAt: components['schemas']['schema12'];
+      activeDeleteBy: components['schemas']['schema24'];
+      backupDeleteBy: components['schemas']['schema24'];
+      id: components['schemas']['schema23'];
+      requestedAt: components['schemas']['schema24'];
       scope: components['schemas']['DeletionScopeSchema'];
-      secretForceDeleteBy: components['schemas']['schema12'];
-      state: components['schemas']['schema146'];
+      secretForceDeleteBy: components['schemas']['schema24'];
+      state: components['schemas']['schema176'];
     };
     TenantExportDisclosuresSchema: {
       /** @constant */
@@ -4936,25 +5356,25 @@ export interface components {
       data: {
         export: components['schemas']['TenantExportSchema'];
       };
-      meta: components['schemas']['schema15'];
+      meta: components['schemas']['schema27'];
     };
     TenantExportManifestFileSchema: {
       byteLength: number;
-      contentHash: components['schemas']['schema13'];
+      contentHash: components['schemas']['schema25'];
       objectCount: number;
-      path: components['schemas']['schema14'];
+      path: components['schemas']['schema26'];
     };
     TenantExportManifestObjectSchema: {
-      contentHash: components['schemas']['schema13'];
+      contentHash: components['schemas']['schema25'];
       kind: components['schemas']['TenantExportObjectKindSchema'];
       objectId: string;
     };
     TenantExportManifestSchema: {
       disclosures: components['schemas']['TenantExportDisclosuresSchema'];
-      files: components['schemas']['schema218'];
-      objects: components['schemas']['schema217'];
-      schemaVersion: components['schemas']['schema216'];
-      tenantId: components['schemas']['schema11'];
+      files: components['schemas']['schema253'];
+      objects: components['schemas']['schema252'];
+      schemaVersion: components['schemas']['schema251'];
+      tenantId: components['schemas']['schema23'];
       timeRange: components['schemas']['PrivacyTimeRangeSchema'];
     };
     /** @enum {string} */
@@ -4968,88 +5388,156 @@ export interface components {
       | 'PUBLICATION'
       | 'AUDIT_EVENT';
     TenantExportSchema: {
-      archiveReady: components['schemas']['schema220'];
-      archiveStatus: components['schemas']['schema219'];
-      checksum: components['schemas']['schema13'];
-      createdAt: components['schemas']['schema12'];
-      id: components['schemas']['schema11'];
+      archiveReady: components['schemas']['schema255'];
+      archiveStatus: components['schemas']['schema254'];
+      checksum: components['schemas']['schema25'];
+      createdAt: components['schemas']['schema24'];
+      id: components['schemas']['schema23'];
       manifest: components['schemas']['TenantExportManifestSchema'];
-      objectRef: components['schemas']['schema221'];
+      objectRef: components['schemas']['schema256'];
     };
     /** @enum {string} */
     TenantRoleSchema:
       'OWNER' | 'ADMIN' | 'EDITOR' | 'REVIEWER' | 'PUBLISHER' | 'ANALYST' | 'VIEWER';
     TenantVisibleLegalHoldSchema: {
-      createdAt: components['schemas']['schema12'];
-      createdBy: components['schemas']['schema11'];
-      id: components['schemas']['schema11'];
+      createdAt: components['schemas']['schema24'];
+      createdBy: components['schemas']['schema23'];
+      id: components['schemas']['schema23'];
       name: string;
-      reason: components['schemas']['schema20'];
-      releasedAt: components['schemas']['schema12'] | null;
+      reason: components['schemas']['schema32'];
+      releasedAt: components['schemas']['schema24'] | null;
       target: components['schemas']['LegalHoldTargetSchema'];
-      tenantId: components['schemas']['schema11'];
+      tenantId: components['schemas']['schema23'];
       /** @constant */
       visibleToTenant: true;
     };
     VerifySignedWebhookEndpointVerificationRequestSchema: Record<string, never>;
+    WebsiteImportConfirmEnvelopeSchema: {
+      data: {
+        /** Format: uuid */
+        importId: string;
+        offeringIds: string[];
+        pendingFaqs: components['schemas']['WebsiteImportFaqCandidateSchema'][];
+        profileId: string | null;
+      };
+      meta: components['schemas']['schema257'];
+    };
+    WebsiteImportConfirmRequestSchema: {
+      /** @default true */
+      createProfile: boolean;
+      /** @default [] */
+      offeringCandidateIds: components['schemas']['schema258'][];
+    };
+    WebsiteImportEnvelopeSchema: {
+      data: {
+        websiteImport: components['schemas']['WebsiteImportSessionSchema'];
+      };
+      meta: components['schemas']['schema257'];
+    };
+    WebsiteImportFaqCandidateSchema: {
+      answer: string;
+      /** Format: uuid */
+      candidateId: string;
+      question: string;
+    };
+    WebsiteImportOfferingCandidateSchema: {
+      /** Format: uuid */
+      candidateId: string;
+      /** @default  */
+      description: string;
+      kind: string;
+      locale: string;
+      market: string;
+      name: string;
+    };
+    WebsiteImportProfileCandidateSchema: {
+      /** @default  */
+      description: string;
+      displayName: string;
+      locale: string;
+      market: string;
+      /** Format: uri */
+      websiteUrl: string;
+    };
+    WebsiteImportRequestSchema: {
+      url: string;
+    };
+    WebsiteImportSessionSchema: {
+      /** Format: date-time */
+      createdAt: string;
+      faqs: components['schemas']['WebsiteImportFaqCandidateSchema'][];
+      /** Format: uuid */
+      importId: string;
+      offerings: components['schemas']['WebsiteImportOfferingCandidateSchema'][];
+      profile: components['schemas']['WebsiteImportProfileCandidateSchema'];
+      status: components['schemas']['WebsiteImportStatusSchema'];
+      /** Format: uuid */
+      tenantId: string;
+      /** Format: uri */
+      url: string;
+      /** Format: uuid */
+      workspaceId: string;
+    };
+    /** @enum {string} */
+    WebsiteImportStatusSchema: 'PENDING_CONFIRMATION' | 'CONFIRMED';
     WordPressDraftTargetV1Schema: {
-      authMode: components['schemas']['schema222'];
+      authMode: components['schemas']['schema259'];
       destination:
         | {
             /** @constant */
             kind: 'PAGE';
             /** @constant */
             operation: 'CREATE';
-            slug: components['schemas']['schema223'];
+            slug: components['schemas']['schema260'];
           }
         | {
             /** @constant */
             kind: 'PAGE';
             /** @constant */
             operation: 'UPDATE';
-            remoteId: components['schemas']['schema224'];
-            slug: components['schemas']['schema223'];
+            remoteId: components['schemas']['schema261'];
+            slug: components['schemas']['schema260'];
           }
         | {
-            categoryIds: components['schemas']['schema225'];
+            categoryIds: components['schemas']['schema262'];
             /** @constant */
             kind: 'POST';
             /** @constant */
             operation: 'CREATE';
-            slug: components['schemas']['schema223'];
+            slug: components['schemas']['schema260'];
           }
         | {
-            categoryIds: components['schemas']['schema225'];
+            categoryIds: components['schemas']['schema262'];
             /** @constant */
             kind: 'POST';
             /** @constant */
             operation: 'UPDATE';
-            remoteId: components['schemas']['schema224'];
-            slug: components['schemas']['schema223'];
+            remoteId: components['schemas']['schema261'];
+            slug: components['schemas']['schema260'];
           }
         | {
-            categoryIds: components['schemas']['schema225'];
+            categoryIds: components['schemas']['schema262'];
             /** @constant */
             kind: 'PRODUCT';
             /** @constant */
             operation: 'CREATE';
-            slug: components['schemas']['schema223'];
+            slug: components['schemas']['schema260'];
           }
         | {
-            categoryIds: components['schemas']['schema225'];
+            categoryIds: components['schemas']['schema262'];
             /** @constant */
             kind: 'PRODUCT';
             /** @constant */
             operation: 'UPDATE';
-            remoteId: components['schemas']['schema224'];
-            slug: components['schemas']['schema223'];
+            remoteId: components['schemas']['schema261'];
+            slug: components['schemas']['schema260'];
           };
       /** @constant */
       schemaVersion: 'wordpress-draft-target.v1';
       siteUrl: string;
     };
     WordPressSiteAuthorizationTargetV1Schema: {
-      authMode: components['schemas']['schema222'];
+      authMode: components['schemas']['schema259'];
       /** @constant */
       schemaVersion: 'wordpress-site-auth.v1';
       siteUrl: string;
@@ -5075,13 +5563,13 @@ export interface components {
       data: {
         policy: components['schemas']['WorkspaceBudgetPolicySchema'];
       };
-      meta: components['schemas']['schema157'];
+      meta: components['schemas']['schema192'];
     };
     WorkspaceBudgetPolicySchema: {
-      id: components['schemas']['schema153'];
-      limitUnits: components['schemas']['schema155'];
-      tenantId: components['schemas']['schema154'];
-      warningPercent: components['schemas']['schema156'];
+      id: components['schemas']['schema188'];
+      limitUnits: components['schemas']['schema190'];
+      tenantId: components['schemas']['schema189'];
+      warningPercent: components['schemas']['schema191'];
       /** Format: uuid */
       workspaceId: string;
     };
@@ -5897,6 +6385,124 @@ export interface operations {
       };
       /** @description Request rejected */
       409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Unhandled error */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+    };
+  };
+  Knowledge_listAudiencePersonas: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        tenantId: string;
+        workspaceId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success response is not yet represented by an exported Zod schema */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Request rejected */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Request rejected */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Unhandled error */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+    };
+  };
+  Knowledge_createAudiencePersona: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        tenantId: string;
+        workspaceId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AudiencePersonaInputSchema'];
+      };
+    };
+    responses: {
+      /** @description Success response is not yet represented by an exported Zod schema */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Request rejected */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Request rejected */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Request rejected */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Request rejected */
+      404: {
         headers: {
           [name: string]: unknown;
         };
@@ -7098,6 +7704,124 @@ export interface operations {
       };
     };
   };
+  Knowledge_listCompetitorSets: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        tenantId: string;
+        workspaceId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success response is not yet represented by an exported Zod schema */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Request rejected */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Request rejected */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Unhandled error */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+    };
+  };
+  Knowledge_createCompetitorSet: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        tenantId: string;
+        workspaceId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CompetitorSetInputSchema'];
+      };
+    };
+    responses: {
+      /** @description Success response is not yet represented by an exported Zod schema */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Request rejected */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Request rejected */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Request rejected */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Request rejected */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Unhandled error */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+    };
+  };
   ContentPlans_start: {
     parameters: {
       query?: never;
@@ -7336,6 +8060,124 @@ export interface operations {
       };
       /** @description Request rejected */
       401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Request rejected */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Unhandled error */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+    };
+  };
+  Knowledge_listContentPolicy: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        tenantId: string;
+        workspaceId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success response is not yet represented by an exported Zod schema */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Request rejected */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Request rejected */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Unhandled error */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+    };
+  };
+  Knowledge_createContentPolicy: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        tenantId: string;
+        workspaceId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ContentPolicyInputSchema'];
+      };
+    };
+    responses: {
+      /** @description Success response is not yet represented by an exported Zod schema */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Request rejected */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Request rejected */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Request rejected */
+      403: {
         headers: {
           [name: string]: unknown;
         };
@@ -7701,6 +8543,320 @@ export interface operations {
       };
       /** @description Request rejected */
       401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Request rejected */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Unhandled error */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+    };
+  };
+  ImportWebsite_startImport: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        tenantId: string;
+        workspaceId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['WebsiteImportRequestSchema'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['WebsiteImportEnvelopeSchema'];
+        };
+      };
+      /** @description Request rejected */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Request rejected */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Request rejected */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Request rejected */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Unhandled error */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+    };
+  };
+  ImportWebsite_getImport: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        importId: string;
+        tenantId: string;
+        workspaceId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['WebsiteImportEnvelopeSchema'];
+        };
+      };
+      /** @description Request rejected */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Request rejected */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Unhandled error */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+    };
+  };
+  ImportWebsite_confirmImport: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        importId: string;
+        tenantId: string;
+        workspaceId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['WebsiteImportConfirmRequestSchema'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['WebsiteImportConfirmEnvelopeSchema'];
+        };
+      };
+      /** @description Request rejected */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Request rejected */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Request rejected */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Request rejected */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Unhandled error */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+    };
+  };
+  Knowledge_listIndustryContext: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        tenantId: string;
+        workspaceId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success response is not yet represented by an exported Zod schema */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Request rejected */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Request rejected */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Unhandled error */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+    };
+  };
+  Knowledge_createIndustryContext: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        tenantId: string;
+        workspaceId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['IndustryContextInputSchema'];
+      };
+    };
+    responses: {
+      /** @description Success response is not yet represented by an exported Zod schema */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Request rejected */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Request rejected */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Request rejected */
+      403: {
         headers: {
           [name: string]: unknown;
         };
@@ -10366,6 +11522,124 @@ export interface operations {
       };
       /** @description Request rejected */
       401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Request rejected */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Unhandled error */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+    };
+  };
+  Knowledge_listPromotionStrategy: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        tenantId: string;
+        workspaceId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success response is not yet represented by an exported Zod schema */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Request rejected */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Request rejected */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Unhandled error */
+      default: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+    };
+  };
+  Knowledge_createPromotionStrategy: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        tenantId: string;
+        workspaceId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PromotionStrategyInputSchema'];
+      };
+    };
+    responses: {
+      /** @description Success response is not yet represented by an exported Zod schema */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Request rejected */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Request rejected */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetailsSchema'];
+        };
+      };
+      /** @description Request rejected */
+      403: {
         headers: {
           [name: string]: unknown;
         };

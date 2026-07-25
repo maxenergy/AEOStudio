@@ -94,6 +94,8 @@ import { InMemoryPrivacyAuditStore } from '../privacy/in-memory-privacy-audit-st
 import { InMemoryAuditSink } from '../privacy/in-memory-audit-sink.js';
 import { HmacDeletionReceiptTokenService } from '../privacy/deletion-receipt-token.js';
 import { InMemoryPromptResearchStore } from '../prompts/in-memory-prompt-research-store.js';
+import { InMemoryKnowledgeStore } from '../knowledge/in-memory-knowledge-store.js';
+import { InMemoryWebsiteImportStore } from '../import-website/in-memory-website-import-store.js';
 import { InMemorySiteCrawlStore } from '../sites/in-memory-site-crawl-store.js';
 import { FakeSiteOwnershipVerifier } from '../sites/fake-site-ownership-verifier.js';
 import { InMemoryTenancyStore } from '../tenants/in-memory-tenancy-store.js';
@@ -251,6 +253,12 @@ export async function resolveApiRuntime(
   }
   if (fakeMode && options.promptResearchStore === undefined) {
     options = { ...options, promptResearchStore: new InMemoryPromptResearchStore() };
+  }
+  if (fakeMode && options.knowledgeStore === undefined) {
+    options = { ...options, knowledgeStore: new InMemoryKnowledgeStore() };
+  }
+  if (fakeMode && options.websiteImportStore === undefined) {
+    options = { ...options, websiteImportStore: new InMemoryWebsiteImportStore() };
   }
   if (fakeMode && options.measurementStore === undefined) {
     options = { ...options, measurementStore: new InMemoryMeasurementStore() };

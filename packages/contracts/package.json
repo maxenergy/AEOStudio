@@ -64,10 +64,20 @@
       "development": "./src/identity-access/index.ts",
       "default": "./dist/identity-access/index.js"
     },
+    "./import": {
+      "types": "./src/import/index.ts",
+      "development": "./src/import/index.ts",
+      "default": "./dist/import/index.js"
+    },
     "./jobs-budgets": {
       "types": "./src/jobs-budgets/jobs-budgets.contracts.ts",
       "development": "./src/jobs-budgets/jobs-budgets.contracts.ts",
       "default": "./dist/jobs-budgets/jobs-budgets.contracts.js"
+    },
+    "./knowledge": {
+      "types": "./src/knowledge/index.ts",
+      "development": "./src/knowledge/index.ts",
+      "default": "./dist/knowledge/index.js"
     },
     "./measurement": {
       "types": "./src/measurement/measurement.contracts.ts",
