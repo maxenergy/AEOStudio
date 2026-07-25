@@ -407,6 +407,18 @@ export default async function ArtifactsPage({ searchParams }: ArtifactsPageProps
                   </a>
                 </h3>
                 <p>{t('artifacts.claimHash', { hash: binding.claimContentHash })}</p>
+                <p
+                  data-testid={`claim-evidence-status-${binding.claimRevisionId}`}
+                  style={{
+                    color: binding.evidence.length > 0 ? '#1a7f37' : '#b42318',
+                    fontWeight: 600,
+                  }}
+                >
+                  {binding.evidence.length > 0 ? '✓ ' : '⚠ '}
+                  {binding.evidence.length > 0
+                    ? t('artifacts.evidenceSupported')
+                    : t('artifacts.evidenceUnsupported')}
+                </p>
                 {binding.evidence.map((evidence) => (
                   <p key={evidence.snapshotId}>
                     <a

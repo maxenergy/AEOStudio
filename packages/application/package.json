@@ -93,6 +93,11 @@
       "types": "./src/tenant-data-access/index.ts",
       "development": "./src/tenant-data-access/index.ts",
       "default": "./dist/tenant-data-access/index.js"
+    },
+    "./writer": {
+      "types": "./src/writer/index.ts",
+      "development": "./src/writer/index.ts",
+      "default": "./dist/writer/index.js"
     }
   },
   "scripts": {

@@ -34,15 +34,29 @@ export interface ChannelProfileFieldRequirement {
   format: string;
 }
 
+/** Body rendering format the destination platform expects. */
+export type ChannelProfileBodyFormat = 'markdown' | 'html' | 'plain';
+
+/** Where the disclosure / call-to-action block is placed in rendered output. */
+export type ChannelProfileCtaPosition = 'none' | 'top' | 'bottom';
+
 /**
  * Immutable, versioned destination requirements. `channel` and `format` remain open strings:
  * adding a destination is Registry data, not a business-logic enum or release.
+ *
+ * The optional platform-template constraints (titleMaxLength, bodyFormat, maxTags, ctaPosition)
+ * are additive and default to the historical behaviour when absent, so existing profiles and
+ * their profileHash remain valid unchanged.
  */
 export interface ChannelProfile {
   channel: string;
   profileVersion: string;
   profileHash: string;
   fieldRequirements: ChannelProfileFieldRequirement[];
+  titleMaxLength?: number | null;
+  bodyFormat?: ChannelProfileBodyFormat | null;
+  maxTags?: number | null;
+  ctaPosition?: ChannelProfileCtaPosition | null;
 }
 
 export interface ChannelRegistryEntry {

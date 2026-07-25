@@ -61,7 +61,44 @@ export function channelProfileIsValid(profile: ChannelProfile, expectedChannel: 
     }
     fields.add(requirement.field);
   }
+  if (!optionalTemplateConstraintsAreValid(profile)) {
+    return false;
+  }
   return hashChannelProfile(profile) === profile.profileHash;
+}
+
+function optionalTemplateConstraintsAreValid(profile: ChannelProfile): boolean {
+  const bodyFormats = ['markdown', 'html', 'plain'];
+  const ctaPositions = ['none', 'top', 'bottom'];
+  if (
+    profile.titleMaxLength !== undefined &&
+    profile.titleMaxLength !== null &&
+    (!Number.isSafeInteger(profile.titleMaxLength) || profile.titleMaxLength < 1)
+  ) {
+    return false;
+  }
+  if (
+    profile.bodyFormat !== undefined &&
+    profile.bodyFormat !== null &&
+    !bodyFormats.includes(profile.bodyFormat)
+  ) {
+    return false;
+  }
+  if (
+    profile.maxTags !== undefined &&
+    profile.maxTags !== null &&
+    (!Number.isSafeInteger(profile.maxTags) || profile.maxTags < 0)
+  ) {
+    return false;
+  }
+  if (
+    profile.ctaPosition !== undefined &&
+    profile.ctaPosition !== null &&
+    !ctaPositions.includes(profile.ctaPosition)
+  ) {
+    return false;
+  }
+  return true;
 }
 
 function nullableLengthIsValid(value: number | null): boolean {

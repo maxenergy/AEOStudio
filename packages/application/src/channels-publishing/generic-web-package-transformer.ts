@@ -24,42 +24,58 @@ export class GenericWebPackageTransformer implements ChannelPackageTransformer {
     payload: ArtifactPayload;
     channelProfile?: ChannelProfile | null;
   }): ChannelPackagePayload {
-    const markdown = [
-      `# ${input.payload.title}`,
+    const profile = input.channelProfile ?? null;
+    const title = applyTitleMaxLength(input.payload.title, profile?.titleMaxLength ?? null);
+    const ctaPosition = profile?.ctaPosition ?? null;
+    const disclosureAtTop = ctaPosition === 'top';
+    const bodyFormat = profile?.bodyFormat ?? null;
+    const markdownBody = [
+      `# ${title}`,
       '',
       input.payload.summary,
+      ...(disclosureAtTop ? ['', '## Disclosure', '', input.payload.disclosure] : []),
       ...input.payload.sections.flatMap((section) => [
         '',
         `## ${section.heading}`,
         '',
         section.body,
       ]),
-      '',
-      '## Disclosure',
-      '',
-      input.payload.disclosure,
+      ...(disclosureAtTop ? [] : ['', '## Disclosure', '', input.payload.disclosure]),
       '',
     ].join('\n');
+    const markdown = bodyFormat === 'plain' ? stripMarkdown(markdownBody) : markdownBody;
     const html = [
       '<article>',
-      `<h1>${escapeHtml(input.payload.title)}</h1>`,
+      `<h1>${escapeHtml(title)}</h1>`,
       `<p>${escapeHtml(input.payload.summary)}</p>`,
+      ...(disclosureAtTop
+        ? [
+            '<section>',
+            '<h2>Disclosure</h2>',
+            `<p>${escapeHtml(input.payload.disclosure)}</p>`,
+            '</section>',
+          ]
+        : []),
       ...input.payload.sections.flatMap((section) => [
         '<section>',
         `<h2>${escapeHtml(section.heading)}</h2>`,
         `<p>${escapeHtml(section.body)}</p>`,
         '</section>',
       ]),
-      '<section>',
-      '<h2>Disclosure</h2>',
-      `<p>${escapeHtml(input.payload.disclosure)}</p>`,
-      '</section>',
+      ...(disclosureAtTop
+        ? []
+        : [
+            '<section>',
+            '<h2>Disclosure</h2>',
+            `<p>${escapeHtml(input.payload.disclosure)}</p>`,
+            '</section>',
+          ]),
       '</article>',
     ].join('');
     const jsonLd = {
       '@context': 'https://schema.org',
       '@type': 'CreativeWork',
-      headline: input.payload.title,
+      headline: title,
       abstract: input.payload.summary,
       inLanguage: input.revision.locale,
       text: markdown,
@@ -69,11 +85,11 @@ export class GenericWebPackageTransformer implements ChannelPackageTransformer {
       'content.html': html,
       'structured-data.json': JSON.stringify(jsonLd),
     };
-    if (input.channelProfile === undefined || input.channelProfile === null) {
+    if (profile === null) {
       return { files: coreFiles };
     }
 
-    const fields = input.channelProfile.fieldRequirements.map((requirement) => ({
+    const fields = profile.fieldRequirements.map((requirement) => ({
       field: requirement.field,
       sourcePointer: requirement.sourcePointer,
       value: readArtifactValue(input.payload, requirement.sourcePointer),
@@ -110,9 +126,9 @@ export class GenericWebPackageTransformer implements ChannelPackageTransformer {
       '',
       'Review required before external publication.',
       '',
-      `- Channel: ${input.channelProfile.channel}`,
-      `- Profile version: ${input.channelProfile.profileVersion}`,
-      `- Profile hash: ${input.channelProfile.profileHash}`,
+      `- Channel: ${profile.channel}`,
+      `- Profile version: ${profile.profileVersion}`,
+      `- Profile hash: ${profile.profileHash}`,
       '',
       '## Field requirements',
       '',
@@ -153,10 +169,16 @@ export class GenericWebPackageTransformer implements ChannelPackageTransformer {
         'fields.json': JSON.stringify(
           {
             schemaVersion: '1.0.0',
-            channel: input.channelProfile.channel,
-            profileVersion: input.channelProfile.profileVersion,
-            profileHash: input.channelProfile.profileHash,
+            channel: profile.channel,
+            profileVersion: profile.profileVersion,
+            profileHash: profile.profileHash,
             reviewedBeforePublish: true,
+            template: {
+              titleMaxLength: profile.titleMaxLength ?? null,
+              bodyFormat: profile.bodyFormat ?? null,
+              maxTags: profile.maxTags ?? null,
+              ctaPosition: profile.ctaPosition ?? null,
+            },
             fields,
             lineage,
           },
@@ -190,6 +212,18 @@ function escapeHtml(value: string): string {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
+}
+
+function applyTitleMaxLength(title: string, titleMaxLength: number | null): string {
+  if (titleMaxLength === null || title.length <= titleMaxLength) return title;
+  return `${title.slice(0, titleMaxLength).trimEnd()}…`;
+}
+
+function stripMarkdown(value: string): string {
+  return value
+    .replace(/^#{1,6}\s+/gm, '')
+    .replaceAll('**', '')
+    .replaceAll('__', '');
 }
 
 function readArtifactValue(payload: ArtifactPayload, pointer: string): string {

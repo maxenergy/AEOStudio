@@ -48,6 +48,15 @@ export class ChannelPackagesController {
       return this.problem(request, 403, 'FORBIDDEN', 'The active role cannot build packages.');
     }
     if (result.outcome !== 'SUCCEEDED') {
+      if (result.outcome === 'UNSUPPORTED_CLAIM_BLOCKS_PUBLICATION') {
+        reply.code(409);
+        return this.problem(
+          request,
+          409,
+          'UNSUPPORTED_CLAIM_BLOCKS_PUBLICATION',
+          'Publication is blocked: at least one Claim in this Artifact has no backing Evidence. Add Evidence before publishing.',
+        );
+      }
       const code =
         result.outcome === 'APPROVAL_REQUIRED'
           ? 'APPROVAL_REQUIRED'

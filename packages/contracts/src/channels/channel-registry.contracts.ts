@@ -53,6 +53,10 @@ export const ChannelProfileSchema = z
     profileVersion: z.string().trim().min(1).max(80),
     profileHash: Sha256Schema,
     fieldRequirements: z.array(ChannelProfileFieldRequirementSchema).min(1).max(100),
+    titleMaxLength: z.number().int().positive().max(1_000_000).nullable().optional(),
+    bodyFormat: z.enum(['markdown', 'html', 'plain']).nullable().optional(),
+    maxTags: z.number().int().nonnegative().max(1_000).nullable().optional(),
+    ctaPosition: z.enum(['none', 'top', 'bottom']).nullable().optional(),
   })
   .strict()
   .superRefine((value, context) => {

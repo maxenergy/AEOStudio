@@ -28,6 +28,7 @@ import type {
 } from './ports.js';
 import type { ChannelPackageTransformerRegistry } from './generic-web-package-transformer.js';
 import { channelProfileIsValid } from './channel-profile.js';
+import { validateFactEvidence } from '../writer/fact-evidence-validator.js';
 
 export type BuildChannelPackageOutcome =
   | { outcome: 'SUCCEEDED'; package: ChannelPackageDocument; created: boolean }
@@ -41,7 +42,8 @@ export type BuildChannelPackageOutcome =
         | 'PAYLOAD_INTEGRITY_INVALID'
         | 'CHANNEL_UNAVAILABLE'
         | 'CHANNEL_PROFILE_INVALID'
-        | 'TRANSFORMER_UNAVAILABLE';
+        | 'TRANSFORMER_UNAVAILABLE'
+        | 'UNSUPPORTED_CLAIM_BLOCKS_PUBLICATION';
     };
 
 export class ChannelPackageService {
@@ -150,6 +152,11 @@ export class ChannelPackageService {
     });
     if (actualArtifactHash !== revision.contentHash) {
       return { outcome: 'PAYLOAD_INTEGRITY_INVALID' };
+    }
+
+    const factEvidence = validateFactEvidence(artifactPayload);
+    if (!factEvidence.supported) {
+      return { outcome: 'UNSUPPORTED_CLAIM_BLOCKS_PUBLICATION' };
     }
 
     const payload = transformer.transform({

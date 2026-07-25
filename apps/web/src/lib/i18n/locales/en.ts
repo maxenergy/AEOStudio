@@ -452,6 +452,8 @@ export const en: Record<keyof typeof zh, string> = {
   'artifacts.claimRevision': 'Fact claim revision {id}',
   'artifacts.claimHash': 'Fact claim hash: {hash}',
   'artifacts.evidenceLink': 'Evidence {source} / {snapshot} / {hash}',
+  'artifacts.evidenceSupported': 'Supported by Evidence',
+  'artifacts.evidenceUnsupported': 'No Evidence yet — pending verification',
   'artifacts.diffHeading': 'Revision diff',
   'artifacts.firstRevision': 'This is the first revision; there is no previous version yet.',
   'artifacts.revisionDiffLine': 'R{prevRevision} {prevHash} → R{revision} {hash}',
@@ -496,6 +498,22 @@ export const en: Record<keyof typeof zh, string> = {
   'channels.noticeRemoteStatusRefreshed': 'Pull request status re-confirmed with the provider.',
   'channels.errorGeneric':
     'Operation not completed: {code}. Check the current revision, authorization and target, then retry.',
+  'channels.unsupportedBlock':
+    'Publication blocked: at least one fact claim in this artifact has no backing Evidence. Add Evidence before publishing.',
+  'channels.confirmHeading': 'Confirm before publishing',
+  'channels.confirmChannel': 'Target channel: {channel}',
+  'channels.confirmAdapter': 'Adapter / account: {adapter}',
+  'channels.confirmTarget': 'Target: {target}',
+  'channels.confirmDelivery': 'Content type: {mode} (not production-live)',
+  'channels.confirmDeliveryPr': 'Pull request draft',
+  'channels.confirmDeliveryDraft': 'Platform draft',
+  'channels.confirmDeliveryWebhook': 'Signed webhook delivery',
+  'channels.confirmDeliveryPackage': 'Reviewed channel package',
+  'channels.confirmRevision': 'Exact revision: R{revision} · {hash}',
+  'channels.confirmEvidence':
+    'Evidence summary: {claims} fact claim(s) / {evidence} evidence item(s)',
+  'channels.confirmHelp':
+    'By clicking below you confirm you have reviewed the channel, account, exact revision and evidence above. Publication requires human confirmation; the system never publishes autonomously.',
   'channels.registryEyebrow': 'Registry-driven',
   'channels.registryHeading': 'Available channels',
   'channels.registryCount': '{count} channels',

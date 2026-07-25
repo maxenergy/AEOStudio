@@ -1068,6 +1068,25 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
             priorPublicationId: retryFromPublicationId,
           });
 
+  const claimCount = channelPackage?.manifest.claimSourceMap.length ?? 0;
+  const evidenceCount =
+    channelPackage === undefined
+      ? 0
+      : channelPackage.manifest.claimSourceMap.reduce(
+          (sum, claim) => sum + claim.evidence.length,
+          0,
+        );
+  const deliveryModeKey =
+    selectedAdapter?.adapterKey === 'git-pull-request'
+      ? 'channels.confirmDeliveryPr'
+      : selectedAdapter?.adapterKey === 'wordpress-woocommerce-draft'
+        ? 'channels.confirmDeliveryDraft'
+        : selectedAdapter?.adapterKey === 'shopify-draft'
+          ? 'channels.confirmDeliveryDraft'
+          : selectedAdapter?.adapterKey === 'signed-webhook'
+            ? 'channels.confirmDeliveryWebhook'
+            : 'channels.confirmDeliveryPackage';
+
   return (
     <main>
       <p className="eyebrow">{t('channels.eyebrow')}</p>
@@ -1132,9 +1151,11 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
       ) : null}
       {typeof query.error === 'string' ? (
         <p className="error-message" role="alert">
-          {t('channels.errorGeneric', {
-            code: typeof query.code === 'string' ? query.code : query.error,
-          })}
+          {typeof query.code === 'string' && query.code === 'UNSUPPORTED_CLAIM_BLOCKS_PUBLICATION'
+            ? t('channels.unsupportedBlock')
+            : t('channels.errorGeneric', {
+                code: typeof query.code === 'string' ? query.code : query.error,
+              })}
         </p>
       ) : null}
 
@@ -1969,45 +1990,79 @@ export default async function ChannelsPage({ searchParams }: ChannelsPageProps) 
             eligibility?.eligibility.mode === 'PUBLISH_READY' &&
             selectedAdapter !== undefined &&
             publicationIntentId !== undefined ? (
-              <form action={publishReviewedPackage} className="stacked-form">
-                <input name="tenantId" type="hidden" value={tenantId} />
-                <input name="workspaceId" type="hidden" value={workspaceId} />
-                <input name="artifactId" type="hidden" value={channelPackage.artifact.artifactId} />
-                <input
-                  name="artifactRevisionId"
-                  type="hidden"
-                  value={channelPackage.artifact.artifactRevisionId}
-                />
-                <input
-                  name="channelKey"
-                  type="hidden"
-                  value={selectedChannel?.channelKey ?? channelPackage.channel.channelKey}
-                />
-                <input name="packageId" type="hidden" value={packageId} />
-                <input name="adapterVersionId" type="hidden" value={selectedAdapter.id} />
-                <input name="target" type="hidden" value={effectiveTarget} />
-                <input name="publicationIntentId" type="hidden" value={publicationIntentId} />
-                {retryFromPublicationId === undefined ? null : (
+              <>
+                <div className="nested-card" data-testid="publication-confirmation">
+                  <h3>{t('channels.confirmHeading')}</h3>
+                  <p>
+                    {t('channels.confirmChannel', { channel: channelPackage.channel.channelKey })}
+                  </p>
+                  <p>
+                    {t('channels.confirmAdapter', {
+                      adapter: `${selectedAdapter.adapterKey}@${selectedAdapter.adapterVersion}`,
+                    })}
+                  </p>
+                  <p className="monospace break-anywhere">
+                    {t('channels.confirmTarget', { target: effectiveTarget })}
+                  </p>
+                  <p>{t('channels.confirmDelivery', { mode: t(deliveryModeKey) })}</p>
+                  <p className="monospace break-anywhere">
+                    {t('channels.confirmRevision', {
+                      revision: channelPackage.artifact.revision,
+                      hash: channelPackage.artifact.contentHash,
+                    })}
+                  </p>
+                  <p>
+                    {t('channels.confirmEvidence', {
+                      claims: claimCount,
+                      evidence: evidenceCount,
+                    })}
+                  </p>
+                  <p className="field-help">{t('channels.confirmHelp')}</p>
+                </div>
+                <form action={publishReviewedPackage} className="stacked-form">
+                  <input name="tenantId" type="hidden" value={tenantId} />
+                  <input name="workspaceId" type="hidden" value={workspaceId} />
                   <input
-                    name="retryFromPublicationId"
+                    name="artifactId"
                     type="hidden"
-                    value={retryFromPublicationId}
+                    value={channelPackage.artifact.artifactId}
                   />
-                )}
-                <button className="primary-action" type="submit">
-                  {retryFromPublicationId === undefined
-                    ? selectedAdapter.adapterKey === 'git-pull-request'
-                      ? t('channels.publishGitAction')
-                      : selectedAdapter.adapterKey === 'wordpress-woocommerce-draft'
-                        ? t('channels.publishWordPressAction')
-                        : selectedAdapter.adapterKey === 'shopify-draft'
-                          ? t('channels.publishShopifyAction')
-                          : selectedAdapter.adapterKey === 'signed-webhook'
-                            ? t('channels.publishWebhookAction')
-                            : t('channels.publishAction')
-                    : t('channels.retryPublicationAction')}
-                </button>
-              </form>
+                  <input
+                    name="artifactRevisionId"
+                    type="hidden"
+                    value={channelPackage.artifact.artifactRevisionId}
+                  />
+                  <input
+                    name="channelKey"
+                    type="hidden"
+                    value={selectedChannel?.channelKey ?? channelPackage.channel.channelKey}
+                  />
+                  <input name="packageId" type="hidden" value={packageId} />
+                  <input name="adapterVersionId" type="hidden" value={selectedAdapter.id} />
+                  <input name="target" type="hidden" value={effectiveTarget} />
+                  <input name="publicationIntentId" type="hidden" value={publicationIntentId} />
+                  {retryFromPublicationId === undefined ? null : (
+                    <input
+                      name="retryFromPublicationId"
+                      type="hidden"
+                      value={retryFromPublicationId}
+                    />
+                  )}
+                  <button className="primary-action" type="submit">
+                    {retryFromPublicationId === undefined
+                      ? selectedAdapter.adapterKey === 'git-pull-request'
+                        ? t('channels.publishGitAction')
+                        : selectedAdapter.adapterKey === 'wordpress-woocommerce-draft'
+                          ? t('channels.publishWordPressAction')
+                          : selectedAdapter.adapterKey === 'shopify-draft'
+                            ? t('channels.publishShopifyAction')
+                            : selectedAdapter.adapterKey === 'signed-webhook'
+                              ? t('channels.publishWebhookAction')
+                              : t('channels.publishAction')
+                      : t('channels.retryPublicationAction')}
+                  </button>
+                </form>
+              </>
             ) : null}
           </section>
         </>

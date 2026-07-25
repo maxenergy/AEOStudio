@@ -2332,10 +2332,14 @@ export interface components {
       sourcePointer: components['schemas']['schema52'];
     };
     ChannelProfileSchema: {
+      bodyFormat?: components['schemas']['schema58'];
       channel: components['schemas']['schema47'];
+      ctaPosition?: components['schemas']['schema60'];
       fieldRequirements: components['schemas']['schema50'];
+      maxTags?: components['schemas']['schema59'];
       profileHash: components['schemas']['schema49'];
       profileVersion: components['schemas']['schema48'];
+      titleMaxLength?: components['schemas']['schema57'];
     };
     ChannelRegistryEntrySchema: {
       adapterVersions: components['schemas']['ChannelAdapterVersionSchema'][];
@@ -2360,9 +2364,9 @@ export interface components {
       };
     };
     CheckPublicationEligibilitySchema: {
-      adapterVersionId?: components['schemas']['schema57'];
-      channelPackageId: components['schemas']['schema57'];
-      expectedPackageChecksum: components['schemas']['schema58'];
+      adapterVersionId?: components['schemas']['schema61'];
+      channelPackageId: components['schemas']['schema61'];
+      expectedPackageChecksum: components['schemas']['schema62'];
       target: string;
     };
     ClaimCurrentStateEnvelopeSchema: {
@@ -2447,7 +2451,7 @@ export interface components {
     ClaimRevisionSchema: {
       /** Format: uuid */
       claimId: string;
-      conditions: components['schemas']['schema59'][];
+      conditions: components['schemas']['schema63'][];
       contentHash: string;
       /** Format: date-time */
       createdAt: string;
@@ -2489,12 +2493,12 @@ export interface components {
     CompetitorSetInputSchema: {
       allowedComparisons: components['schemas']['schema15'];
       comparisonDimensions: components['schemas']['schema15'];
-      competitorName: components['schemas']['schema60'];
-      evidenceSourceIds: components['schemas']['schema65'];
-      matchedOfferingIds: components['schemas']['schema62'];
-      positioning: components['schemas']['schema64'];
+      competitorName: components['schemas']['schema64'];
+      evidenceSourceIds: components['schemas']['schema69'];
+      matchedOfferingIds: components['schemas']['schema66'];
+      positioning: components['schemas']['schema68'];
       prohibitedComparisons: components['schemas']['schema15'];
-      website: components['schemas']['schema61'];
+      website: components['schemas']['schema65'];
     };
     CompetitorSetListEnvelopeSchema: {
       data: {
@@ -2505,16 +2509,16 @@ export interface components {
     CompetitorSetRevisionSchema: {
       allowedComparisons: components['schemas']['schema15'];
       comparisonDimensions: components['schemas']['schema15'];
-      competitorName: components['schemas']['schema60'];
+      competitorName: components['schemas']['schema64'];
       contentHash: components['schemas']['schema21'];
-      evidenceSourceIds: components['schemas']['schema65'];
+      evidenceSourceIds: components['schemas']['schema69'];
       id: components['schemas']['schema17'];
-      matchedOfferingIds: components['schemas']['schema62'];
-      positioning: components['schemas']['schema64'];
+      matchedOfferingIds: components['schemas']['schema66'];
+      positioning: components['schemas']['schema68'];
       prohibitedComparisons: components['schemas']['schema15'];
       revision: components['schemas']['schema20'];
       tenantId: components['schemas']['schema18'];
-      website: components['schemas']['schema61'];
+      website: components['schemas']['schema65'];
       workspaceId: components['schemas']['schema19'];
     };
     CompletenessSummarySchema: {
@@ -2543,11 +2547,11 @@ export interface components {
       comparisonEvidenceIndependent: boolean;
       comparisonEvidenceSnapshotIds: components['schemas']['schema1'][];
       methodPolicyVersion: string;
-      offering: components['schemas']['schema67'];
+      offering: components['schemas']['schema71'];
       offeringRevisionId: components['schemas']['schema1'];
       primaryClaimRevisionIds: components['schemas']['schema1'][];
       primaryEvidenceSnapshotIds: components['schemas']['schema1'][];
-      profile: components['schemas']['schema67'];
+      profile: components['schemas']['schema71'];
       profileRevisionId: components['schemas']['schema1'];
       promptIds: components['schemas']['schema1'][];
       promptRevisionId: components['schemas']['schema1'];
@@ -2575,19 +2579,19 @@ export interface components {
       meta: components['schemas']['schema22'];
     };
     ContentPolicyInputSchema: {
-      answerFirst: components['schemas']['schema74'];
-      audienceId: components['schemas']['schema69'];
-      ctaPolicy: components['schemas']['schema78'];
-      includeFaq: components['schemas']['schema75'];
-      journeyStage: components['schemas']['schema70'];
-      locale: components['schemas']['schema68'];
-      objective: components['schemas']['schema71'];
+      answerFirst: components['schemas']['schema78'];
+      audienceId: components['schemas']['schema73'];
+      ctaPolicy: components['schemas']['schema82'];
+      includeFaq: components['schemas']['schema79'];
+      journeyStage: components['schemas']['schema74'];
+      locale: components['schemas']['schema72'];
+      objective: components['schemas']['schema75'];
       prohibitedTerms: components['schemas']['schema15'];
-      readingLevel: components['schemas']['schema73'];
-      requiredClaimRevisionIds: components['schemas']['schema76'];
+      readingLevel: components['schemas']['schema77'];
+      requiredClaimRevisionIds: components['schemas']['schema80'];
       requiredEntities: components['schemas']['schema15'];
       schemaTypes: components['schemas']['schema15'];
-      tone: components['schemas']['schema72'];
+      tone: components['schemas']['schema76'];
     };
     ContentPolicyListEnvelopeSchema: {
       data: {
@@ -2596,23 +2600,23 @@ export interface components {
       meta: components['schemas']['schema22'];
     };
     ContentPolicyRevisionSchema: {
-      answerFirst: components['schemas']['schema74'];
-      audienceId: components['schemas']['schema69'];
+      answerFirst: components['schemas']['schema78'];
+      audienceId: components['schemas']['schema73'];
       contentHash: components['schemas']['schema21'];
-      ctaPolicy: components['schemas']['schema78'];
+      ctaPolicy: components['schemas']['schema82'];
       id: components['schemas']['schema17'];
-      includeFaq: components['schemas']['schema75'];
-      journeyStage: components['schemas']['schema70'];
-      locale: components['schemas']['schema68'];
-      objective: components['schemas']['schema71'];
+      includeFaq: components['schemas']['schema79'];
+      journeyStage: components['schemas']['schema74'];
+      locale: components['schemas']['schema72'];
+      objective: components['schemas']['schema75'];
       prohibitedTerms: components['schemas']['schema15'];
-      readingLevel: components['schemas']['schema73'];
-      requiredClaimRevisionIds: components['schemas']['schema76'];
+      readingLevel: components['schemas']['schema77'];
+      requiredClaimRevisionIds: components['schemas']['schema80'];
       requiredEntities: components['schemas']['schema15'];
       revision: components['schemas']['schema20'];
       schemaTypes: components['schemas']['schema15'];
       tenantId: components['schemas']['schema18'];
-      tone: components['schemas']['schema72'];
+      tone: components['schemas']['schema76'];
       workspaceId: components['schemas']['schema19'];
     };
     CrawlSnapshotSchema: {
@@ -2648,7 +2652,7 @@ export interface components {
       target: string;
     };
     CreateClaimRequestSchema: {
-      conditions: components['schemas']['schema79'][];
+      conditions: components['schemas']['schema83'][];
       evidence: components['schemas']['ClaimEvidenceInputSchema'][];
       expiresAt: string | null;
       numericValue: number | null;
@@ -2660,21 +2664,21 @@ export interface components {
       data: {
         verification: {
           algorithm: components['schemas']['SignedWebhookSigningAlgorithmSchema'];
-          challengeExpiresAt: components['schemas']['schema98'];
-          channelDefinitionId: components['schemas']['schema94'];
-          createdAt: components['schemas']['schema97'];
+          challengeExpiresAt: components['schemas']['schema102'];
+          channelDefinitionId: components['schemas']['schema98'];
+          createdAt: components['schemas']['schema101'];
           endpointUrl: components['schemas']['SignedWebhookUrlSchema'];
-          id: components['schemas']['schema94'];
+          id: components['schemas']['schema98'];
           keyId: components['schemas']['SignedWebhookKeyIdSchema'];
-          proofs: components['schemas']['schema101'];
+          proofs: components['schemas']['schema105'];
           receiptUrl: components['schemas']['SignedWebhookUrlSchema'];
-          revokedAt: components['schemas']['schema100'];
-          status: components['schemas']['schema96'];
-          verificationReference: components['schemas']['schema95'];
-          verifiedAt: components['schemas']['schema99'];
+          revokedAt: components['schemas']['schema104'];
+          status: components['schemas']['schema100'];
+          verificationReference: components['schemas']['schema99'];
+          verifiedAt: components['schemas']['schema103'];
         };
       };
-      meta: components['schemas']['schema103'];
+      meta: components['schemas']['schema107'];
     };
     CreateEvidenceSnapshotRequestSchema: {
       contentBase64: string;
@@ -2690,10 +2694,10 @@ export interface components {
       uri: string | null;
     };
     CreateExperimentRequestSchema: {
-      baselineRunId: components['schemas']['schema80'];
-      idempotencyKey: components['schemas']['schema83'];
+      baselineRunId: components['schemas']['schema84'];
+      idempotencyKey: components['schemas']['schema87'];
       intervention: components['schemas']['ExperimentInterventionRequestSchema'];
-      remeasurementRunId: components['schemas']['schema81'];
+      remeasurementRunId: components['schemas']['schema85'];
     };
     CreateLegalHoldRequestSchema: {
       name: string;
@@ -2709,11 +2713,11 @@ export interface components {
     };
     CreateSignedWebhookEndpointVerificationRequestSchema: {
       algorithm: components['schemas']['SignedWebhookSigningAlgorithmSchema'];
-      channelDefinitionId: components['schemas']['schema94'];
+      channelDefinitionId: components['schemas']['schema98'];
       endpointUrl: components['schemas']['SignedWebhookUrlSchema'];
       keyId: components['schemas']['SignedWebhookKeyIdSchema'];
       receiptUrl: components['schemas']['SignedWebhookUrlSchema'];
-      verificationReference: components['schemas']['schema95'];
+      verificationReference: components['schemas']['schema99'];
     };
     CreateSiteRequestSchema: {
       /** Format: uri */
@@ -2801,43 +2805,43 @@ export interface components {
     DeletionScopeSchema: 'TENANT' | 'WORKSPACE';
     DynamicAttributeSchema:
       | {
-          key: components['schemas']['schema104'];
-          label: components['schemas']['schema105'];
-          required: components['schemas']['schema106'];
+          key: components['schemas']['schema108'];
+          label: components['schemas']['schema109'];
+          required: components['schemas']['schema110'];
           value: string;
           /** @constant */
           valueType: 'text';
         }
       | {
-          key: components['schemas']['schema104'];
-          label: components['schemas']['schema105'];
-          required: components['schemas']['schema106'];
+          key: components['schemas']['schema108'];
+          label: components['schemas']['schema109'];
+          required: components['schemas']['schema110'];
           value: number;
           /** @constant */
           valueType: 'number';
         }
       | {
-          key: components['schemas']['schema104'];
-          label: components['schemas']['schema105'];
-          required: components['schemas']['schema106'];
+          key: components['schemas']['schema108'];
+          label: components['schemas']['schema109'];
+          required: components['schemas']['schema110'];
           value: boolean;
           /** @constant */
           valueType: 'boolean';
         }
       | {
-          key: components['schemas']['schema104'];
-          label: components['schemas']['schema105'];
-          required: components['schemas']['schema106'];
+          key: components['schemas']['schema108'];
+          label: components['schemas']['schema109'];
+          required: components['schemas']['schema110'];
           /** Format: uri */
           value: string;
           /** @constant */
           valueType: 'url';
         }
       | {
-          key: components['schemas']['schema104'];
-          label: components['schemas']['schema105'];
-          required: components['schemas']['schema106'];
-          value: components['schemas']['schema107'][];
+          key: components['schemas']['schema108'];
+          label: components['schemas']['schema109'];
+          required: components['schemas']['schema110'];
+          value: components['schemas']['schema111'][];
           /** @constant */
           valueType: 'string_list';
         };
@@ -2926,11 +2930,11 @@ export interface components {
       data: {
         experiment: components['schemas']['ExperimentSchema'];
       };
-      meta: components['schemas']['schema131'];
+      meta: components['schemas']['schema135'];
     };
     ExperimentInterventionOptionSchema:
       | {
-          artifactContentHash: components['schemas']['schema82'];
+          artifactContentHash: components['schemas']['schema86'];
           /** Format: uuid */
           artifactId: string;
           /** Format: uuid */
@@ -2949,7 +2953,7 @@ export interface components {
           publicationRecordId: string;
         }
       | {
-          artifactContentHash: components['schemas']['schema82'];
+          artifactContentHash: components['schemas']['schema86'];
           /** Format: uuid */
           artifactId: string;
           /** Format: uuid */
@@ -2963,7 +2967,7 @@ export interface components {
         };
     ExperimentInterventionRequestSchema:
       | {
-          artifactContentHash: components['schemas']['schema82'];
+          artifactContentHash: components['schemas']['schema86'];
           /** Format: uuid */
           artifactId: string;
           /** Format: uuid */
@@ -2982,7 +2986,7 @@ export interface components {
           publicationRecordId: string;
         }
       | {
-          artifactContentHash: components['schemas']['schema82'];
+          artifactContentHash: components['schemas']['schema86'];
           /** Format: uuid */
           artifactId: string;
           /** Format: uuid */
@@ -2998,7 +3002,7 @@ export interface components {
       | {
           /** @constant */
           applicationState: 'PUBLISHED';
-          artifactContentHash: components['schemas']['schema82'];
+          artifactContentHash: components['schemas']['schema86'];
           /** Format: uuid */
           artifactId: string;
           /** Format: uuid */
@@ -3022,7 +3026,7 @@ export interface components {
           applicationDisclosure: 'Approval is a recorded review event, not proof of external application or causation.';
           /** @constant */
           applicationState: 'APPROVED_NOT_PUBLISHED';
-          artifactContentHash: components['schemas']['schema82'];
+          artifactContentHash: components['schemas']['schema86'];
           /** Format: uuid */
           artifactId: string;
           /** Format: uuid */
@@ -3044,14 +3048,14 @@ export interface components {
       scenarioVersion: number;
       surfaceKey: string;
       readonly timeline: {
-        baseline: components['schemas']['schema115'];
-        remeasurement: components['schemas']['schema115'];
+        baseline: components['schemas']['schema119'];
+        remeasurement: components['schemas']['schema119'];
       };
     };
     ExperimentMetricComparisonSchema: {
       baseline: components['schemas']['ExperimentSnapshotSummarySchema'];
       caveat: string;
-      compatibilityHash: components['schemas']['schema82'];
+      compatibilityHash: components['schemas']['schema86'];
       compatibilityKey: string;
       costBreakdown: {
         baseline: components['schemas']['MonetaryCostSchema'][];
@@ -3078,7 +3082,7 @@ export interface components {
           remeasurementRuns: components['schemas']['ExperimentRunOptionSchema'][];
         };
       };
-      meta: components['schemas']['schema131'];
+      meta: components['schemas']['schema135'];
     };
     ExperimentRunOptionSchema: {
       /** Format: date-time */
@@ -3096,30 +3100,30 @@ export interface components {
       surfaceKey: string;
     };
     ExperimentSchema: {
-      baselineRunId: components['schemas']['schema112'];
-      caveat: components['schemas']['schema126'];
-      comparisons: components['schemas']['schema120'];
-      costBreakdown: components['schemas']['schema124'];
-      createdAt: components['schemas']['schema130'];
-      createdByUserId: components['schemas']['schema129'];
-      drillDown: components['schemas']['schema128'];
-      excludedCounts: components['schemas']['schema123'];
-      id: components['schemas']['schema108'];
+      baselineRunId: components['schemas']['schema116'];
+      caveat: components['schemas']['schema130'];
+      comparisons: components['schemas']['schema124'];
+      costBreakdown: components['schemas']['schema128'];
+      createdAt: components['schemas']['schema134'];
+      createdByUserId: components['schemas']['schema133'];
+      drillDown: components['schemas']['schema132'];
+      excludedCounts: components['schemas']['schema127'];
+      id: components['schemas']['schema112'];
       intervention: components['schemas']['ExperimentInterventionSchema'];
       measurementContext: components['schemas']['ExperimentMeasurementContextSchema'];
-      noGuarantee: components['schemas']['schema127'];
-      observedAssociation: components['schemas']['schema125'];
-      remeasurementRunId: components['schemas']['schema113'];
-      sample: components['schemas']['schema122'];
-      scenarioVersion: components['schemas']['schema114'];
-      schemaVersion: components['schemas']['schema111'];
-      tenantId: components['schemas']['schema109'];
-      workspaceId: components['schemas']['schema110'];
+      noGuarantee: components['schemas']['schema131'];
+      observedAssociation: components['schemas']['schema129'];
+      remeasurementRunId: components['schemas']['schema117'];
+      sample: components['schemas']['schema126'];
+      scenarioVersion: components['schemas']['schema118'];
+      schemaVersion: components['schemas']['schema115'];
+      tenantId: components['schemas']['schema113'];
+      workspaceId: components['schemas']['schema114'];
     };
     ExperimentSnapshotSummarySchema: {
-      contentHash: components['schemas']['schema82'];
+      contentHash: components['schemas']['schema86'];
       eligibleDenominator: number;
-      excludedCounts: components['schemas']['schema121'];
+      excludedCounts: components['schemas']['schema125'];
       numerator: number;
       sampleSize: number;
       /** Format: uuid */
@@ -3133,13 +3137,13 @@ export interface components {
       eligibility: {
         /** @constant */
         mode: 'EXPORT_ONLY';
-        packageChecksum: components['schemas']['schema58'];
-        packageId: components['schemas']['schema57'];
+        packageChecksum: components['schemas']['schema62'];
+        packageId: components['schemas']['schema61'];
         reasons: components['schemas']['PublicationEligibilityReasonSchema'][];
       };
       export: {
         href: string;
-        packageChecksum: components['schemas']['schema58'];
+        packageChecksum: components['schemas']['schema62'];
       };
       requestId: string;
       /** @constant */
@@ -3187,7 +3191,7 @@ export interface components {
       caveat: string;
       /** @enum {string} */
       decision: 'REBASELINE' | 'STRATIFY';
-      differingFields: components['schemas']['schema132'][];
+      differingFields: components['schemas']['schema136'][];
       /** @constant */
       outcome: 'INCOMPATIBLE_SCENARIO';
       remeasurementCompatibilityKeys: string[];
@@ -3309,7 +3313,7 @@ export interface components {
         manualImport: components['schemas']['ManualMeasurementImportSchema'];
         slots: components['schemas']['ManualMeasurementImportSlotManifestSchema'][];
       };
-      meta: components['schemas']['schema145'];
+      meta: components['schemas']['schema149'];
     };
     ManualMeasurementImportEntrySchema: {
       /** Format: date-time */
@@ -3320,7 +3324,7 @@ export interface components {
       result: {
         cost: components['schemas']['MonetaryCostSchema'];
         observation: components['schemas']['MeasurementObservationSchema'];
-        rawEvidence: components['schemas']['schema139'];
+        rawEvidence: components['schemas']['schema143'];
         status: components['schemas']['PromptRunStatusSchema'];
       };
       scope: components['schemas']['MeasurementScopeSchema'];
@@ -3329,7 +3333,7 @@ export interface components {
       data: {
         manualImport: components['schemas']['ManualMeasurementImportSchema'];
       };
-      meta: components['schemas']['schema145'];
+      meta: components['schemas']['schema149'];
     };
     ManualMeasurementImportSchema: {
       /** @constant */
@@ -3370,15 +3374,15 @@ export interface components {
       workspaceId: string;
     };
     ManualMeasurementImportSlotManifestSchema: {
-      contentHash: components['schemas']['schema144'];
-      observedAt: components['schemas']['schema137'];
-      prompt: components['schemas']['schema133'];
-      provided: components['schemas']['schema136'];
-      rawEvidenceContentHash: components['schemas']['schema143'];
-      repetition: components['schemas']['schema135'];
-      result: components['schemas']['schema138'];
+      contentHash: components['schemas']['schema148'];
+      observedAt: components['schemas']['schema141'];
+      prompt: components['schemas']['schema137'];
+      provided: components['schemas']['schema140'];
+      rawEvidenceContentHash: components['schemas']['schema147'];
+      repetition: components['schemas']['schema139'];
+      result: components['schemas']['schema142'];
       scope: components['schemas']['MeasurementScopeSchema'];
-      scopeKey: components['schemas']['schema134'];
+      scopeKey: components['schemas']['schema138'];
     };
     MarketSchema: string;
     /** @enum {string} */
@@ -3386,13 +3390,13 @@ export interface components {
       'CONSUMER_UI_SAMPLE' | 'MODEL_API_DIAGNOSTIC' | 'SEARCH_DATA_API' | 'MANUAL_IMPORT';
     MeasurementDashboardEnvelopeSchema: {
       data: {
-        cost: components['schemas']['schema154'];
-        costBreakdown: components['schemas']['schema153'];
+        cost: components['schemas']['schema158'];
+        costBreakdown: components['schemas']['schema157'];
         resultCounts: components['schemas']['MeasurementResultCountsSchema'];
-        sections: components['schemas']['schema149'];
-        snapshot: components['schemas']['schema148'];
+        sections: components['schemas']['schema153'];
+        snapshot: components['schemas']['schema152'];
       };
-      meta: components['schemas']['schema145'];
+      meta: components['schemas']['schema149'];
     };
     MeasurementObservationSchema: {
       accuracy: ('MATCH' | 'MISMATCH' | 'NOT_APPLICABLE') | null;
@@ -3408,8 +3412,8 @@ export interface components {
         limit: number;
         nextOffset: number | null;
         offset: number;
-        requestId: components['schemas']['schema146'];
-        schemaVersion: components['schemas']['schema147'];
+        requestId: components['schemas']['schema150'];
+        schemaVersion: components['schemas']['schema151'];
         total: number;
       };
     };
@@ -3436,7 +3440,7 @@ export interface components {
       data: {
         policy: components['schemas']['MeasurementProviderPolicySchema'];
       };
-      meta: components['schemas']['schema145'];
+      meta: components['schemas']['schema149'];
     };
     MeasurementProviderPolicyRequestSchema: {
       adapterVersion: string;
@@ -3472,7 +3476,7 @@ export interface components {
       data: {
         state: components['schemas']['MeasurementProviderPolicyStateSchema'];
       };
-      meta: components['schemas']['schema145'];
+      meta: components['schemas']['schema149'];
     };
     MeasurementProviderPolicyStateSchema: {
       eligible: boolean;
@@ -3496,7 +3500,7 @@ export interface components {
       data: {
         measurementRun: components['schemas']['MeasurementRunSchema'];
       };
-      meta: components['schemas']['schema145'];
+      meta: components['schemas']['schema149'];
     };
     /** @enum {string} */
     MeasurementRunKindSchema: 'BASELINE' | 'REMEASUREMENT';
@@ -3536,35 +3540,35 @@ export interface components {
     MeasurementRunStatusSchema:
       'QUEUED' | 'RUNNING' | 'COMPLETED' | 'PARTIAL' | 'ERROR' | 'CANCELLED';
     MeasurementScenarioInputSchema: {
-      account: components['schemas']['schema88'];
-      acquisitionMethod: components['schemas']['schema89'];
-      freshSession: components['schemas']['schema90'];
-      model: components['schemas']['schema86'];
-      modelVersion: components['schemas']['schema87'];
-      parameters: components['schemas']['schema92'];
-      providerKey: components['schemas']['schema84'];
-      repetitions: components['schemas']['schema93'];
-      searchEnabled: components['schemas']['schema91'];
-      surfaceKey: components['schemas']['schema85'];
+      account: components['schemas']['schema92'];
+      acquisitionMethod: components['schemas']['schema93'];
+      freshSession: components['schemas']['schema94'];
+      model: components['schemas']['schema90'];
+      modelVersion: components['schemas']['schema91'];
+      parameters: components['schemas']['schema96'];
+      providerKey: components['schemas']['schema88'];
+      repetitions: components['schemas']['schema97'];
+      searchEnabled: components['schemas']['schema95'];
+      surfaceKey: components['schemas']['schema89'];
     };
     MeasurementScenarioSchema: {
-      account: components['schemas']['schema88'];
-      acquisitionMethod: components['schemas']['schema89'];
+      account: components['schemas']['schema92'];
+      acquisitionMethod: components['schemas']['schema93'];
       contentHash: components['schemas']['schema0'];
       /** Format: date-time */
       createdAt: string;
-      freshSession: components['schemas']['schema90'];
+      freshSession: components['schemas']['schema94'];
       id: components['schemas']['schema4'];
-      model: components['schemas']['schema86'];
-      modelVersion: components['schemas']['schema87'];
-      parameters: components['schemas']['schema92'];
+      model: components['schemas']['schema90'];
+      modelVersion: components['schemas']['schema91'];
+      parameters: components['schemas']['schema96'];
       promptRevisionId: components['schemas']['schema4'];
-      providerKey: components['schemas']['schema84'];
+      providerKey: components['schemas']['schema88'];
       /** @enum {string} */
       registryStatus: 'AVAILABLE' | 'UNAVAILABLE' | 'UNKNOWN';
-      repetitions: components['schemas']['schema93'];
-      searchEnabled: components['schemas']['schema91'];
-      surfaceKey: components['schemas']['schema85'];
+      repetitions: components['schemas']['schema97'];
+      searchEnabled: components['schemas']['schema95'];
+      surfaceKey: components['schemas']['schema89'];
       version: number;
     };
     MeasurementScopeSchema: {
@@ -3575,19 +3579,19 @@ export interface components {
     MeasurementSurfaceAdapterDescriptorSchema: {
       acquisitionClass: components['schemas']['MeasurementAcquisitionClassSchema'];
       acquisitionMethod: string;
-      adapterKey: components['schemas']['schema155'];
-      adapterVersion: components['schemas']['schema156'];
-      processingRegion: components['schemas']['schema160'];
-      providerKey: components['schemas']['schema157'];
+      adapterKey: components['schemas']['schema159'];
+      adapterVersion: components['schemas']['schema160'];
+      processingRegion: components['schemas']['schema164'];
+      providerKey: components['schemas']['schema161'];
       requiresAuthorization: boolean;
-      retentionPolicy: components['schemas']['schema162'];
-      storageRegion: components['schemas']['schema161'];
-      subprocessors: components['schemas']['schema164'];
-      surfaceKey: components['schemas']['schema158'];
+      retentionPolicy: components['schemas']['schema166'];
+      storageRegion: components['schemas']['schema165'];
+      subprocessors: components['schemas']['schema168'];
+      surfaceKey: components['schemas']['schema162'];
       /** @enum {string} */
       surfaceKind: 'SEARCH_DATA' | 'CONSUMER_SEARCH' | 'CONSUMER_AI_ANSWER';
-      termsVersion: components['schemas']['schema159'];
-      trainingPolicy: components['schemas']['schema163'];
+      termsVersion: components['schemas']['schema163'];
+      trainingPolicy: components['schemas']['schema167'];
     };
     MembershipEnvelopeSchema: {
       data: {
@@ -3628,19 +3632,19 @@ export interface components {
       };
     };
     OfferingInputSchema: {
-      applicationScenarios: components['schemas']['schema173'];
-      attributes: components['schemas']['schema175'];
-      compatibility: components['schemas']['schema173'];
-      evidenceHints: components['schemas']['schema173'];
-      features: components['schemas']['schema173'];
-      kind: components['schemas']['schema166'];
+      applicationScenarios: components['schemas']['schema177'];
+      attributes: components['schemas']['schema179'];
+      compatibility: components['schemas']['schema177'];
+      evidenceHints: components['schemas']['schema177'];
+      features: components['schemas']['schema177'];
+      kind: components['schemas']['schema170'];
       locale: components['schemas']['LocaleSchema'];
       market: components['schemas']['MarketSchema'];
-      name: components['schemas']['schema167'];
-      principle?: components['schemas']['schema170'];
-      specifications: components['schemas']['schema171'];
-      taxonomy: components['schemas']['schema168'];
-      usage: components['schemas']['schema173'];
+      name: components['schemas']['schema171'];
+      principle?: components['schemas']['schema174'];
+      specifications: components['schemas']['schema175'];
+      taxonomy: components['schemas']['schema172'];
+      usage: components['schemas']['schema177'];
     };
     OfferingListEnvelopeSchema: {
       data: {
@@ -3664,30 +3668,30 @@ export interface components {
       };
     };
     OfferingRevisionSchema: {
-      applicationScenarios: components['schemas']['schema173'];
-      attributes: components['schemas']['schema175'];
-      compatibility: components['schemas']['schema173'];
+      applicationScenarios: components['schemas']['schema177'];
+      attributes: components['schemas']['schema179'];
+      compatibility: components['schemas']['schema177'];
       completeness: components['schemas']['CompletenessSummarySchema'];
       contentHash: string;
-      evidenceHints: components['schemas']['schema173'];
-      features: components['schemas']['schema173'];
+      evidenceHints: components['schemas']['schema177'];
+      features: components['schemas']['schema177'];
       /** Format: uuid */
       id: string;
-      kind: components['schemas']['schema166'];
+      kind: components['schemas']['schema170'];
       locale: components['schemas']['LocaleSchema'];
       market: components['schemas']['MarketSchema'];
-      name: components['schemas']['schema167'];
+      name: components['schemas']['schema171'];
       /** Format: uuid */
       offeringId: string;
-      principle?: components['schemas']['schema170'];
+      principle?: components['schemas']['schema174'];
       /** Format: uuid */
       profileId: string;
       revision: number;
-      specifications: components['schemas']['schema171'];
-      taxonomy: components['schemas']['schema168'];
+      specifications: components['schemas']['schema175'];
+      taxonomy: components['schemas']['schema172'];
       /** Format: uuid */
       tenantId: string;
-      usage: components['schemas']['schema173'];
+      usage: components['schemas']['schema177'];
       /** Format: uuid */
       workspaceId: string;
     };
@@ -3806,10 +3810,10 @@ export interface components {
       };
     };
     ProfileInputSchema: {
-      description?: components['schemas']['schema178'];
-      digitalAssets: components['schemas']['schema179'];
-      displayName: components['schemas']['schema177'];
-      targetMarkets: components['schemas']['schema181'];
+      description?: components['schemas']['schema182'];
+      digitalAssets: components['schemas']['schema183'];
+      displayName: components['schemas']['schema181'];
+      targetMarkets: components['schemas']['schema185'];
     };
     ProfileListEnvelopeSchema: {
       data: {
@@ -3830,15 +3834,15 @@ export interface components {
     ProfileRevisionSchema: {
       completeness: components['schemas']['CompletenessSummarySchema'];
       contentHash: string;
-      description?: components['schemas']['schema178'];
-      digitalAssets: components['schemas']['schema179'];
-      displayName: components['schemas']['schema177'];
+      description?: components['schemas']['schema182'];
+      digitalAssets: components['schemas']['schema183'];
+      displayName: components['schemas']['schema181'];
       /** Format: uuid */
       id: string;
       /** Format: uuid */
       profileId: string;
       revision: number;
-      targetMarkets: components['schemas']['schema181'];
+      targetMarkets: components['schemas']['schema185'];
       /** Format: uuid */
       tenantId: string;
       /** Format: uuid */
@@ -3855,10 +3859,10 @@ export interface components {
       contentTypes: components['schemas']['schema15'];
       measurementGoals: components['schemas']['schema15'];
       objectives: components['schemas']['schema15'];
-      primaryCta: components['schemas']['schema187'];
-      priorityOfferingIds: components['schemas']['schema183'];
+      primaryCta: components['schemas']['schema191'];
+      priorityOfferingIds: components['schemas']['schema187'];
       targetMarkets: components['schemas']['schema15'];
-      targetPersonaIds: components['schemas']['schema185'];
+      targetPersonaIds: components['schemas']['schema189'];
     };
     PromotionStrategyListEnvelopeSchema: {
       data: {
@@ -3873,11 +3877,11 @@ export interface components {
       id: components['schemas']['schema17'];
       measurementGoals: components['schemas']['schema15'];
       objectives: components['schemas']['schema15'];
-      primaryCta: components['schemas']['schema187'];
-      priorityOfferingIds: components['schemas']['schema183'];
+      primaryCta: components['schemas']['schema191'];
+      priorityOfferingIds: components['schemas']['schema187'];
       revision: components['schemas']['schema20'];
       targetMarkets: components['schemas']['schema15'];
-      targetPersonaIds: components['schemas']['schema185'];
+      targetPersonaIds: components['schemas']['schema189'];
       tenantId: components['schemas']['schema18'];
       workspaceId: components['schemas']['schema19'];
     };
@@ -3952,7 +3956,7 @@ export interface components {
         promptRun: components['schemas']['PromptRunSchema'];
         rawEvidence: components['schemas']['RawMeasurementEvidenceSchema'];
       };
-      meta: components['schemas']['schema145'];
+      meta: components['schemas']['schema149'];
     };
     PromptRunSchema: {
       /** @enum {string} */
@@ -4023,14 +4027,14 @@ export interface components {
       data: {
         policy: components['schemas']['ProviderBudgetPolicySchema'];
       };
-      meta: components['schemas']['schema192'];
+      meta: components['schemas']['schema196'];
     };
     ProviderBudgetPolicySchema: {
-      id: components['schemas']['schema188'];
-      limitUnits: components['schemas']['schema190'];
+      id: components['schemas']['schema192'];
+      limitUnits: components['schemas']['schema194'];
       providerKey: components['schemas']['ProviderKeySchema'];
-      tenantId: components['schemas']['schema189'];
-      warningPercent: components['schemas']['schema191'];
+      tenantId: components['schemas']['schema193'];
+      warningPercent: components['schemas']['schema195'];
     };
     ProviderKeySchema: string;
     ProviderSurfaceRegistrySchema: {
@@ -4054,7 +4058,7 @@ export interface components {
       attemptNumber: number;
       errorCode: string | null;
       finishedAt: string | null;
-      id: components['schemas']['schema57'];
+      id: components['schemas']['schema61'];
       /** @enum {string} */
       operation: 'PUBLISH' | 'RECONCILE' | 'ROLLBACK';
       /** @enum {string} */
@@ -4068,7 +4072,7 @@ export interface components {
         | 'UNKNOWN'
         | 'ROLLED_BACK'
         | 'ROLLBACK_FAILED';
-      publicationId: components['schemas']['schema57'];
+      publicationId: components['schemas']['schema61'];
       remoteRef: string | null;
       /** Format: date-time */
       startedAt: string;
@@ -4101,23 +4105,23 @@ export interface components {
       data: {
         eligibility:
           | {
-              adapterVersionId: components['schemas']['schema57'];
-              channelAuthorizationId: components['schemas']['schema57'];
+              adapterVersionId: components['schemas']['schema61'];
+              channelAuthorizationId: components['schemas']['schema61'];
               /** @constant */
               mode: 'PUBLISH_READY';
-              packageChecksum: components['schemas']['schema58'];
-              packageId: components['schemas']['schema57'];
+              packageChecksum: components['schemas']['schema62'];
+              packageId: components['schemas']['schema61'];
             }
           | {
               /** @constant */
               mode: 'EXPORT_ONLY';
-              packageChecksum: components['schemas']['schema58'];
-              packageId: components['schemas']['schema57'];
+              packageChecksum: components['schemas']['schema62'];
+              packageId: components['schemas']['schema61'];
               reasons: components['schemas']['PublicationEligibilityReasonSchema'][];
             };
         export: {
           href: string;
-          packageChecksum: components['schemas']['schema58'];
+          packageChecksum: components['schemas']['schema62'];
         };
       };
       meta: {
@@ -4151,28 +4155,28 @@ export interface components {
       detail: string;
     };
     PublicationRecordSchema: {
-      adapterVersionId: components['schemas']['schema57'];
-      artifactContentHash: components['schemas']['schema58'];
-      artifactRevisionId: components['schemas']['schema57'];
-      channelAuthorizationId: components['schemas']['schema57'];
-      channelPackageId: components['schemas']['schema57'];
-      createdAt: components['schemas']['schema206'];
-      id: components['schemas']['schema57'];
-      idempotencyKey: components['schemas']['schema195'];
-      packageChecksum: components['schemas']['schema58'];
-      remoteRef: components['schemas']['schema196'];
-      remoteState?: components['schemas']['schema197'];
-      requestedByUserId: components['schemas']['schema57'];
-      status: components['schemas']['schema193'];
-      target: components['schemas']['schema194'];
-      updatedAt: components['schemas']['schema207'];
+      adapterVersionId: components['schemas']['schema61'];
+      artifactContentHash: components['schemas']['schema62'];
+      artifactRevisionId: components['schemas']['schema61'];
+      channelAuthorizationId: components['schemas']['schema61'];
+      channelPackageId: components['schemas']['schema61'];
+      createdAt: components['schemas']['schema210'];
+      id: components['schemas']['schema61'];
+      idempotencyKey: components['schemas']['schema199'];
+      packageChecksum: components['schemas']['schema62'];
+      remoteRef: components['schemas']['schema200'];
+      remoteState?: components['schemas']['schema201'];
+      requestedByUserId: components['schemas']['schema61'];
+      status: components['schemas']['schema197'];
+      target: components['schemas']['schema198'];
+      updatedAt: components['schemas']['schema211'];
     };
     PublicationRemoteStateSchema: {
-      isProductionLive: components['schemas']['schema200'];
-      number: components['schemas']['schema199'];
-      receiptEvidence?: components['schemas']['schema204'];
-      rollbackHandle: components['schemas']['schema201'];
-      status: components['schemas']['schema198'];
+      isProductionLive: components['schemas']['schema204'];
+      number: components['schemas']['schema203'];
+      receiptEvidence?: components['schemas']['schema208'];
+      rollbackHandle: components['schemas']['schema205'];
+      status: components['schemas']['schema202'];
     };
     PublicationRemoteStatusRefreshEnvelopeSchema: {
       data: {
@@ -4191,10 +4195,10 @@ export interface components {
       url: string;
     };
     RawMeasurementEvidenceSchema: {
-      citations: components['schemas']['schema141'];
+      citations: components['schemas']['schema145'];
       contentHash: string;
-      error: components['schemas']['schema142'];
-      responseText: components['schemas']['schema140'];
+      error: components['schemas']['schema146'];
+      responseText: components['schemas']['schema144'];
     };
     ReadinessBlockerSchema: {
       message: string;
@@ -4245,9 +4249,9 @@ export interface components {
       reason: components['schemas']['schema32'];
     };
     RequestPublicationSchema: {
-      adapterVersionId?: components['schemas']['schema57'];
-      channelPackageId: components['schemas']['schema57'];
-      expectedPackageChecksum: components['schemas']['schema58'];
+      adapterVersionId?: components['schemas']['schema61'];
+      channelPackageId: components['schemas']['schema61'];
+      expectedPackageChecksum: components['schemas']['schema62'];
       idempotencyKey: string;
       target: string;
     };
@@ -4455,80 +4459,84 @@ export interface components {
     schema54: number | null;
     schema55: number | null;
     schema56: string;
+    schema57: number | null;
+    schema58: ('markdown' | 'html' | 'plain') | null;
+    schema59: number | null;
+    schema60: ('none' | 'top' | 'bottom') | null;
     /** Format: uuid */
-    schema57: string;
-    schema58: string;
-    schema59: string;
-    schema60: string;
-    /** @default  */
     schema61: string;
-    /** @default [] */
-    schema62: components['schemas']['schema63'][];
-    /** Format: uuid */
+    schema62: string;
     schema63: string;
-    /** @default  */
     schema64: string;
+    /** @default  */
+    schema65: string;
     /** @default [] */
-    schema65: components['schemas']['schema66'][];
+    schema66: components['schemas']['schema67'][];
     /** Format: uuid */
-    schema66: string;
-    schema67: {
+    schema67: string;
+    /** @default  */
+    schema68: string;
+    /** @default [] */
+    schema69: components['schemas']['schema70'][];
+    /** Format: uuid */
+    schema70: string;
+    schema71: {
       id: components['schemas']['schema1'];
       revision: number;
     };
-    schema68: string;
-    /** @default  */
-    schema69: string;
-    /** @default  */
-    schema70: string;
-    /** @default  */
-    schema71: string;
-    /** @default  */
     schema72: string;
     /** @default  */
     schema73: string;
-    /** @default true */
-    schema74: boolean;
-    /** @default true */
-    schema75: boolean;
-    /** @default [] */
-    schema76: components['schemas']['schema77'][];
-    /** Format: uuid */
-    schema77: string;
     /** @default  */
-    schema78: string;
-    schema79: string;
-    /** Format: uuid */
-    schema80: string;
+    schema74: string;
+    /** @default  */
+    schema75: string;
+    /** @default  */
+    schema76: string;
+    /** @default  */
+    schema77: string;
+    /** @default true */
+    schema78: boolean;
+    /** @default true */
+    schema79: boolean;
+    /** @default [] */
+    schema80: components['schemas']['schema81'][];
     /** Format: uuid */
     schema81: string;
+    /** @default  */
     schema82: string;
     schema83: string;
+    /** Format: uuid */
     schema84: string;
+    /** Format: uuid */
     schema85: string;
     schema86: string;
     schema87: string;
     schema88: string;
     schema89: string;
-    schema90: boolean;
-    schema91: boolean;
-    schema92: {
+    schema90: string;
+    schema91: string;
+    schema92: string;
+    schema93: string;
+    schema94: boolean;
+    schema95: boolean;
+    schema96: {
       [key: string]: unknown;
     };
-    schema93: number;
+    schema97: number;
     /** Format: uuid */
-    schema94: string;
-    schema95: string;
-    /** @enum {string} */
-    schema96: 'PENDING' | 'VERIFIED' | 'REVOKED';
-    /** Format: date-time */
-    schema97: string;
-    /** Format: date-time */
     schema98: string;
-    schema99: string | null;
-    schema100: string | null;
-    schema101: components['schemas']['schema102'][];
-    schema102: {
+    schema99: string;
+    /** @enum {string} */
+    schema100: 'PENDING' | 'VERIFIED' | 'REVOKED';
+    /** Format: date-time */
+    schema101: string;
+    /** Format: date-time */
+    schema102: string;
+    schema103: string | null;
+    schema104: string | null;
+    schema105: components['schemas']['schema106'][];
+    schema106: {
       challenge: string;
       /** Format: date-time */
       challengeExpiresAt: string;
@@ -4536,126 +4544,126 @@ export interface components {
       /** @enum {string} */
       purpose: 'DELIVERY' | 'RECEIPT' | 'DELIVERY_AND_RECEIPT';
     };
-    schema103: {
+    schema107: {
       requestId: string;
       /** @constant */
       schemaVersion: '1.0.0';
     };
-    schema104: string;
-    schema105: string;
-    schema106: boolean;
-    schema107: string;
-    /** Format: uuid */
     schema108: string;
-    /** Format: uuid */
     schema109: string;
-    /** Format: uuid */
-    schema110: string;
-    /** @constant */
-    schema111: 'experiment.v1';
+    schema110: boolean;
+    schema111: string;
     /** Format: uuid */
     schema112: string;
     /** Format: uuid */
     schema113: string;
-    schema114: number;
-    schema115: {
-      completedAt: components['schemas']['schema118'];
-      evidenceWindow: components['schemas']['schema119'];
-      runId: components['schemas']['schema116'];
-      startedAt: components['schemas']['schema117'];
-    };
+    /** Format: uuid */
+    schema114: string;
+    /** @constant */
+    schema115: 'experiment.v1';
     /** Format: uuid */
     schema116: string;
-    /** Format: date-time */
+    /** Format: uuid */
     schema117: string;
-    /** Format: date-time */
-    schema118: string;
+    schema118: number;
     schema119: {
+      completedAt: components['schemas']['schema122'];
+      evidenceWindow: components['schemas']['schema123'];
+      runId: components['schemas']['schema120'];
+      startedAt: components['schemas']['schema121'];
+    };
+    /** Format: uuid */
+    schema120: string;
+    /** Format: date-time */
+    schema121: string;
+    /** Format: date-time */
+    schema122: string;
+    schema123: {
       /** Format: date-time */
       maxObservedAt: string;
       /** Format: date-time */
       minObservedAt: string;
     };
-    schema120: components['schemas']['ExperimentMetricComparisonSchema'][];
-    schema121: {
+    schema124: components['schemas']['ExperimentMetricComparisonSchema'][];
+    schema125: {
       ERROR: number;
       INCONCLUSIVE: number;
       NOT_APPLICABLE: number;
       NOT_CHECKED: number;
     };
-    schema122: {
+    schema126: {
       baseline: number;
       remeasurement: number;
     };
-    schema123: {
-      baseline: components['schemas']['schema121'];
-      remeasurement: components['schemas']['schema121'];
+    schema127: {
+      baseline: components['schemas']['schema125'];
+      remeasurement: components['schemas']['schema125'];
     };
-    schema124: {
+    schema128: {
       baseline: components['schemas']['MonetaryCostSchema'][];
       remeasurement: components['schemas']['MonetaryCostSchema'][];
     };
-    schema125: string;
-    schema126: string;
-    schema127: string;
-    schema128: {
+    schema129: string;
+    schema130: string;
+    schema131: string;
+    schema132: {
       baselineRunHref: string;
       interventionHref: string;
       remeasurementRunHref: string;
     };
     /** Format: uuid */
-    schema129: string;
+    schema133: string;
     /** Format: date-time */
-    schema130: string;
-    schema131: {
+    schema134: string;
+    schema135: {
       requestId: string;
       /** @constant */
       schemaVersion: '1.0.0';
     };
-    schema132: string;
-    schema133: {
+    schema136: string;
+    schema137: {
       /** Format: uuid */
       id: string;
       ordinal: number;
       text: string;
     };
-    schema134: string;
-    schema135: number;
-    schema136: boolean;
-    schema137: string | null;
-    schema138: {
+    schema138: string;
+    schema139: number;
+    schema140: boolean;
+    schema141: string | null;
+    schema142: {
       cost: components['schemas']['MonetaryCostSchema'];
       observation: components['schemas']['MeasurementObservationSchema'];
-      rawEvidence: components['schemas']['schema139'];
+      rawEvidence: components['schemas']['schema143'];
       status: components['schemas']['PromptRunStatusSchema'];
     } | null;
-    schema139: {
-      citations: components['schemas']['schema141'];
+    schema143: {
+      citations: components['schemas']['schema145'];
       contentHash?: string;
-      error: components['schemas']['schema142'];
-      responseText: components['schemas']['schema140'];
+      error: components['schemas']['schema146'];
+      responseText: components['schemas']['schema144'];
     };
-    schema140: string | null;
-    schema141: components['schemas']['RawCitationSchema'][];
-    schema142: {
+    schema144: string | null;
+    schema145: components['schemas']['RawCitationSchema'][];
+    schema146: {
       code: string;
       message: string;
     } | null;
-    schema143: string | null;
-    schema144: string;
-    schema145: {
-      requestId: components['schemas']['schema146'];
-      schemaVersion: components['schemas']['schema147'];
+    schema147: string | null;
+    schema148: string;
+    schema149: {
+      requestId: components['schemas']['schema150'];
+      schemaVersion: components['schemas']['schema151'];
     };
-    schema146: string;
+    schema150: string;
     /** @constant */
-    schema147: '1.0.0';
-    schema148: {
+    schema151: '1.0.0';
+    schema152: {
       /** Format: uuid */
       measurementRunId: string;
       metrics: components['schemas']['DashboardMetricSchema'][];
     };
-    schema149: [
+    schema153: [
       {
         /** @constant */
         key: 'TECHNICAL_HEALTH';
@@ -4709,9 +4717,9 @@ export interface components {
       {
         cohorts: {
           cohort: components['schemas']['DashboardCohortSchema'];
-          cost: components['schemas']['schema152'];
-          costBreakdown: components['schemas']['schema153'];
-          metricIds: components['schemas']['schema150'];
+          cost: components['schemas']['schema156'];
+          costBreakdown: components['schemas']['schema157'];
+          metricIds: components['schemas']['schema154'];
           resultCounts: components['schemas']['MeasurementResultCountsSchema'];
         }[];
         crossSurfaceAggregate?: unknown;
@@ -4719,80 +4727,80 @@ export interface components {
         key: 'MEASURED_AI_VISIBILITY';
       },
     ];
-    schema150: components['schemas']['schema151'][];
+    schema154: components['schemas']['schema155'][];
     /** Format: uuid */
-    schema151: string;
-    schema152: components['schemas']['MonetaryCostSchema'] | null;
-    schema153: components['schemas']['MonetaryCostSchema'][];
-    schema154: components['schemas']['MonetaryCostSchema'] | null;
     schema155: string;
-    schema156: string;
-    schema157: string;
-    schema158: string;
+    schema156: components['schemas']['MonetaryCostSchema'] | null;
+    schema157: components['schemas']['MonetaryCostSchema'][];
+    schema158: components['schemas']['MonetaryCostSchema'] | null;
     schema159: string;
     schema160: string;
     schema161: string;
     schema162: string;
     schema163: string;
-    schema164: components['schemas']['schema165'][];
+    schema164: string;
     schema165: string;
     schema166: string;
     schema167: string;
-    /** @default [] */
     schema168: components['schemas']['schema169'][];
     schema169: string;
     schema170: string;
+    schema171: string;
     /** @default [] */
-    schema171: components['schemas']['schema172'][];
-    schema172: {
+    schema172: components['schemas']['schema173'][];
+    schema173: string;
+    schema174: string;
+    /** @default [] */
+    schema175: components['schemas']['schema176'][];
+    schema176: {
       name: string;
       unit?: string;
       value: string;
     };
     /** @default [] */
-    schema173: components['schemas']['schema174'][];
-    schema174: string;
-    /** @default [] */
-    schema175: components['schemas']['DynamicAttributeSchema'][];
-    /** @constant */
-    schema176: 'FROZEN';
-    schema177: string;
+    schema177: components['schemas']['schema178'][];
     schema178: string;
     /** @default [] */
-    schema179: components['schemas']['schema180'][];
-    schema180: {
+    schema179: components['schemas']['DynamicAttributeSchema'][];
+    /** @constant */
+    schema180: 'FROZEN';
+    schema181: string;
+    schema182: string;
+    /** @default [] */
+    schema183: components['schemas']['schema184'][];
+    schema184: {
       label: string;
       /** Format: uri */
       url: string;
     };
-    schema181: components['schemas']['schema182'][];
-    schema182: {
+    schema185: components['schemas']['schema186'][];
+    schema186: {
       locale: components['schemas']['LocaleSchema'];
       market: components['schemas']['MarketSchema'];
     };
     /** @default [] */
-    schema183: components['schemas']['schema184'][];
-    /** Format: uuid */
-    schema184: string;
-    /** @default [] */
-    schema185: components['schemas']['schema186'][];
-    /** Format: uuid */
-    schema186: string;
-    /** @default  */
-    schema187: string;
+    schema187: components['schemas']['schema188'][];
     /** Format: uuid */
     schema188: string;
+    /** @default [] */
+    schema189: components['schemas']['schema190'][];
     /** Format: uuid */
-    schema189: string;
-    schema190: number;
-    schema191: number;
-    schema192: {
+    schema190: string;
+    /** @default  */
+    schema191: string;
+    /** Format: uuid */
+    schema192: string;
+    /** Format: uuid */
+    schema193: string;
+    schema194: number;
+    schema195: number;
+    schema196: {
       requestId: string;
       /** @constant */
       schemaVersion: '1.0.0';
     };
     /** @enum {string} */
-    schema193:
+    schema197:
       | 'REQUESTED'
       | 'BUDGET_BLOCKED'
       | 'QUEUED'
@@ -4808,152 +4816,152 @@ export interface components {
       | 'ROLLBACK_QUEUED'
       | 'ROLLED_BACK'
       | 'ROLLBACK_FAILED';
-    schema194: string;
-    schema195: string;
-    schema196: string | null;
-    schema197: components['schemas']['PublicationRemoteStateSchema'] | null;
     schema198: string;
-    schema199: number | null;
-    schema200: boolean;
-    schema201: {
-      [key: string]: components['schemas']['schema203'];
-    } | null;
+    schema199: string;
+    schema200: string | null;
+    schema201: components['schemas']['PublicationRemoteStateSchema'] | null;
     schema202: string;
-    schema203: string | number | boolean;
-    schema204: components['schemas']['SignedWebhookReceiptEvidenceSchema'];
-    schema205: string;
-    /** Format: date-time */
+    schema203: number | null;
+    schema204: boolean;
+    schema205: {
+      [key: string]: components['schemas']['schema207'];
+    } | null;
     schema206: string;
-    /** Format: date-time */
-    schema207: string;
-    schema208: string;
+    schema207: string | number | boolean;
+    schema208: components['schemas']['SignedWebhookReceiptEvidenceSchema'];
     schema209: string;
+    /** Format: date-time */
     schema210: string;
-    /** @constant */
-    schema211: '1.0.0';
-    /** @constant */
-    schema212: 'channel-package.approved.v1';
-    /** Format: uuid */
+    /** Format: date-time */
+    schema211: string;
+    schema212: string;
     schema213: string;
-    schema214: {
+    schema214: string;
+    /** @constant */
+    schema215: '1.0.0';
+    /** @constant */
+    schema216: 'channel-package.approved.v1';
+    /** Format: uuid */
+    schema217: string;
+    schema218: {
       artifact: components['schemas']['ChannelPackageArtifactSchema'];
       channel: {
         channelKey: string;
-        definitionId: components['schemas']['schema213'];
+        definitionId: components['schemas']['schema217'];
       };
       files: {
         'content.html': string;
         'content.md': string;
         'structured-data.json': string;
       };
-      id: components['schemas']['schema213'];
+      id: components['schemas']['schema217'];
       manifest: components['schemas']['ChannelPackageManifestSchema'];
-      packageChecksum: components['schemas']['schema215'];
+      packageChecksum: components['schemas']['schema219'];
       packageRevision: number;
       packageSchemaVersion: string;
-      tenantId: components['schemas']['schema213'];
+      tenantId: components['schemas']['schema217'];
       transformer: {
         key: string;
         version: string;
       };
-      workspaceId: components['schemas']['schema213'];
+      workspaceId: components['schemas']['schema217'];
     };
-    schema215: string;
+    schema219: string;
     /** @constant */
-    schema216: '1.0.0';
+    schema220: '1.0.0';
     /** @constant */
-    schema217: 'channel-package.delivery-receipt.v1';
-    schema218: number;
+    schema221: 'channel-package.delivery-receipt.v1';
+    schema222: number;
     /** @constant */
-    schema219: '1.0.0';
+    schema223: '1.0.0';
     /** @constant */
-    schema220: 'channel-package.delivery-receipt.v1';
-    schema221: string;
-    /** @enum {string} */
-    schema222: 'APPLIED' | 'ALREADY_APPLIED' | 'PENDING' | 'NOT_FOUND' | 'CONFLICT';
-    schema223: number;
-    schema224: string | null;
-    /** Format: date-time */
+    schema224: 'channel-package.delivery-receipt.v1';
     schema225: string;
-    /** @constant */
-    schema226: false;
-    /** @constant */
-    schema227: 'signed-webhook-target.v1';
-    /** Format: uuid */
-    schema228: string;
-    /** Format: uuid */
+    /** @enum {string} */
+    schema226: 'APPLIED' | 'ALREADY_APPLIED' | 'PENDING' | 'NOT_FOUND' | 'CONFLICT';
+    schema227: number;
+    schema228: string | null;
+    /** Format: date-time */
     schema229: string;
-    /** Format: uuid */
-    schema230: string;
-    /** Format: uuid */
-    schema231: string;
+    /** @constant */
+    schema230: false;
+    /** @constant */
+    schema231: 'signed-webhook-target.v1';
     /** Format: uuid */
     schema232: string;
     /** Format: uuid */
     schema233: string;
+    /** Format: uuid */
+    schema234: string;
+    /** Format: uuid */
+    schema235: string;
+    /** Format: uuid */
+    schema236: string;
+    /** Format: uuid */
+    schema237: string;
     /** @enum {string} */
-    schema234: 'COMPLETE' | 'PARTIAL' | 'FAILED_TERMINAL';
-    schema235: string | null;
-    schema236: number;
-    schema237: number;
-    /** Format: date-time */
-    schema238: string;
-    schema239: components['schemas']['CrawlSnapshotSchema'][];
-    schema240: components['schemas']['BaselineFindingSchema'][];
+    schema238: 'COMPLETE' | 'PARTIAL' | 'FAILED_TERMINAL';
+    schema239: string | null;
+    schema240: number;
     schema241: number;
-    schema242: number;
+    /** Format: date-time */
+    schema242: string;
+    schema243: components['schemas']['CrawlSnapshotSchema'][];
+    schema244: components['schemas']['BaselineFindingSchema'][];
+    schema245: number;
+    schema246: number;
     /** Format: uuid */
-    schema243: string;
-    /** Format: uuid */
-    schema244: string;
-    /** Format: uuid */
-    schema245: string;
-    schema246: string;
     schema247: string;
     /** Format: uuid */
     schema248: string;
+    /** Format: uuid */
     schema249: string;
     schema250: string;
+    schema251: string;
+    /** Format: uuid */
+    schema252: string;
+    schema253: string;
+    schema254: string;
     /** @constant */
-    schema251: '1.0.0';
-    schema252: components['schemas']['TenantExportManifestObjectSchema'][];
-    schema253: components['schemas']['TenantExportManifestFileSchema'][];
+    schema255: '1.0.0';
+    schema256: components['schemas']['TenantExportManifestObjectSchema'][];
+    schema257: components['schemas']['TenantExportManifestFileSchema'][];
     /** @enum {string} */
-    schema254: 'PENDING' | 'READY' | 'FAILED';
-    schema255: boolean;
-    schema256: string | null;
-    schema257: {
+    schema258: 'PENDING' | 'READY' | 'FAILED';
+    schema259: boolean;
+    schema260: string | null;
+    schema261: {
       requestId: string;
       /** @constant */
       schemaVersion: '1.0.0';
     };
     /** Format: uuid */
-    schema258: string;
+    schema262: string;
     /** @enum {string} */
-    schema259: 'OAUTH' | 'APPLICATION_PASSWORD' | 'APPROVED_TOKEN';
-    schema260: string;
-    schema261: number;
-    schema262: components['schemas']['schema263'][];
-    schema263: number;
+    schema263: 'OAUTH' | 'APPLICATION_PASSWORD' | 'APPROVED_TOKEN';
+    schema264: string;
+    schema265: number;
+    schema266: components['schemas']['schema267'][];
+    schema267: number;
     SearchDataConnectorDescriptorSchema: {
       /** @constant */
       acquisitionClass: 'SEARCH_DATA_API';
       /** @constant */
       acquisitionMethod: 'OFFICIAL_API';
-      adapterKey: components['schemas']['schema155'];
-      adapterVersion: components['schemas']['schema156'];
-      processingRegion: components['schemas']['schema160'];
-      providerKey: components['schemas']['schema157'];
+      adapterKey: components['schemas']['schema159'];
+      adapterVersion: components['schemas']['schema160'];
+      processingRegion: components['schemas']['schema164'];
+      providerKey: components['schemas']['schema161'];
       /** @constant */
       requiresAuthorization: true;
-      retentionPolicy: components['schemas']['schema162'];
-      storageRegion: components['schemas']['schema161'];
-      subprocessors: components['schemas']['schema164'];
-      surfaceKey: components['schemas']['schema158'];
+      retentionPolicy: components['schemas']['schema166'];
+      storageRegion: components['schemas']['schema165'];
+      subprocessors: components['schemas']['schema168'];
+      surfaceKey: components['schemas']['schema162'];
       /** @constant */
       surfaceKind: 'SEARCH_DATA';
-      termsVersion: components['schemas']['schema159'];
-      trainingPolicy: components['schemas']['schema163'];
+      termsVersion: components['schemas']['schema163'];
+      trainingPolicy: components['schemas']['schema167'];
     };
     SessionEnvelopeSchema: {
       data: {
@@ -4975,14 +4983,14 @@ export interface components {
       apiVersion: string;
       destination:
         | {
-            handle: components['schemas']['schema209'];
+            handle: components['schemas']['schema213'];
             /** @constant */
             kind: 'PAGE';
             /** @constant */
             operation: 'CREATE';
           }
         | {
-            handle: components['schemas']['schema209'];
+            handle: components['schemas']['schema213'];
             /** @constant */
             kind: 'PAGE';
             /** @constant */
@@ -4990,16 +4998,16 @@ export interface components {
             remoteId: string;
           }
         | {
-            blogId: components['schemas']['schema210'];
-            handle: components['schemas']['schema209'];
+            blogId: components['schemas']['schema214'];
+            handle: components['schemas']['schema213'];
             /** @constant */
             kind: 'BLOG_ARTICLE';
             /** @constant */
             operation: 'CREATE';
           }
         | {
-            blogId: components['schemas']['schema210'];
-            handle: components['schemas']['schema209'];
+            blogId: components['schemas']['schema214'];
+            handle: components['schemas']['schema213'];
             /** @constant */
             kind: 'BLOG_ARTICLE';
             /** @constant */
@@ -5007,14 +5015,14 @@ export interface components {
             remoteId: string;
           }
         | {
-            handle: components['schemas']['schema209'];
+            handle: components['schemas']['schema213'];
             /** @constant */
             kind: 'PRODUCT';
             /** @constant */
             operation: 'CREATE';
           }
         | {
-            handle: components['schemas']['schema209'];
+            handle: components['schemas']['schema213'];
             /** @constant */
             kind: 'PRODUCT';
             /** @constant */
@@ -5023,91 +5031,91 @@ export interface components {
           };
       /** @constant */
       schemaVersion: 'shopify-draft-target.v1';
-      shopDomain: components['schemas']['schema208'];
+      shopDomain: components['schemas']['schema212'];
     };
     ShopifyShopAuthorizationTargetV1Schema: {
       /** @constant */
       schemaVersion: 'shopify-shop-auth.v1';
-      shopDomain: components['schemas']['schema208'];
+      shopDomain: components['schemas']['schema212'];
     };
     SignedWebhookDeliveryV1Schema: {
-      channelPackage: components['schemas']['schema214'];
-      deliveryId: components['schemas']['schema213'];
-      eventType: components['schemas']['schema212'];
-      publicationId: components['schemas']['schema213'];
-      schemaVersion: components['schemas']['schema211'];
+      channelPackage: components['schemas']['schema218'];
+      deliveryId: components['schemas']['schema217'];
+      eventType: components['schemas']['schema216'];
+      publicationId: components['schemas']['schema217'];
+      schemaVersion: components['schemas']['schema215'];
     };
     SignedWebhookEndpointVerificationEnvelopeSchema: {
       data: {
         verification: components['schemas']['SignedWebhookEndpointVerificationSchema'];
       };
-      meta: components['schemas']['schema103'];
+      meta: components['schemas']['schema107'];
     };
     SignedWebhookEndpointVerificationListEnvelopeSchema: {
       data: {
         verifications: components['schemas']['SignedWebhookEndpointVerificationSchema'][];
       };
-      meta: components['schemas']['schema103'];
+      meta: components['schemas']['schema107'];
     };
     SignedWebhookEndpointVerificationPathParamsSchema: {
-      verificationId: components['schemas']['schema94'];
+      verificationId: components['schemas']['schema98'];
     };
     SignedWebhookEndpointVerificationSchema: {
       algorithm: components['schemas']['SignedWebhookSigningAlgorithmSchema'];
-      challengeExpiresAt: components['schemas']['schema98'];
-      channelDefinitionId: components['schemas']['schema94'];
-      createdAt: components['schemas']['schema97'];
+      challengeExpiresAt: components['schemas']['schema102'];
+      channelDefinitionId: components['schemas']['schema98'];
+      createdAt: components['schemas']['schema101'];
       endpointUrl: components['schemas']['SignedWebhookUrlSchema'];
-      id: components['schemas']['schema94'];
+      id: components['schemas']['schema98'];
       keyId: components['schemas']['SignedWebhookKeyIdSchema'];
       receiptUrl: components['schemas']['SignedWebhookUrlSchema'];
-      revokedAt: components['schemas']['schema100'];
-      status: components['schemas']['schema96'];
-      verificationReference: components['schemas']['schema95'];
-      verifiedAt: components['schemas']['schema99'];
+      revokedAt: components['schemas']['schema104'];
+      status: components['schemas']['schema100'];
+      verificationReference: components['schemas']['schema99'];
+      verifiedAt: components['schemas']['schema103'];
     };
     SignedWebhookKeyIdSchema: string;
     SignedWebhookReceiptEvidenceSchema: {
-      deliveryId: components['schemas']['schema57'];
-      receiptId: components['schemas']['schema205'];
+      deliveryId: components['schemas']['schema61'];
+      receiptId: components['schemas']['schema209'];
       /** Format: date-time */
       receivedAt: string;
-      receiverEffectId: components['schemas']['schema205'];
-      requestBodySha256: components['schemas']['schema58'];
+      receiverEffectId: components['schemas']['schema209'];
+      requestBodySha256: components['schemas']['schema62'];
       /** @constant */
       schemaVersion: 'signed-webhook-receipt-evidence.v1';
       verifiedAlgorithm: components['schemas']['SignedWebhookSigningAlgorithmSchema'];
       verifiedKeyId: components['schemas']['SignedWebhookKeyIdSchema'];
     };
     SignedWebhookReceiptQueryV1Schema: {
-      artifactContentHash: components['schemas']['schema215'];
-      artifactRevisionId: components['schemas']['schema213'];
-      channelPackageId: components['schemas']['schema213'];
-      deliveryId: components['schemas']['schema213'];
-      packageChecksum: components['schemas']['schema215'];
-      packageRevision: components['schemas']['schema218'];
-      publicationId: components['schemas']['schema213'];
-      queryType: components['schemas']['schema217'];
-      requestBodySha256: components['schemas']['schema215'];
-      schemaVersion: components['schemas']['schema216'];
+      artifactContentHash: components['schemas']['schema219'];
+      artifactRevisionId: components['schemas']['schema217'];
+      channelPackageId: components['schemas']['schema217'];
+      deliveryId: components['schemas']['schema217'];
+      packageChecksum: components['schemas']['schema219'];
+      packageRevision: components['schemas']['schema222'];
+      publicationId: components['schemas']['schema217'];
+      queryType: components['schemas']['schema221'];
+      requestBodySha256: components['schemas']['schema219'];
+      schemaVersion: components['schemas']['schema220'];
     };
     SignedWebhookReceiptV1Schema: {
-      artifactContentHash: components['schemas']['schema215'];
-      artifactRevisionId: components['schemas']['schema213'];
-      channelPackageId: components['schemas']['schema213'];
-      deliveryId: components['schemas']['schema213'];
-      isProductionLive: components['schemas']['schema226'];
-      packageChecksum: components['schemas']['schema215'];
-      packageRevision: components['schemas']['schema223'];
-      publicationId: components['schemas']['schema213'];
-      receiptId: components['schemas']['schema221'];
-      receiptType: components['schemas']['schema220'];
-      receivedAt: components['schemas']['schema225'];
-      receiverEffectId: components['schemas']['schema224'];
+      artifactContentHash: components['schemas']['schema219'];
+      artifactRevisionId: components['schemas']['schema217'];
+      channelPackageId: components['schemas']['schema217'];
+      deliveryId: components['schemas']['schema217'];
+      isProductionLive: components['schemas']['schema230'];
+      packageChecksum: components['schemas']['schema219'];
+      packageRevision: components['schemas']['schema227'];
+      publicationId: components['schemas']['schema217'];
+      receiptId: components['schemas']['schema225'];
+      receiptType: components['schemas']['schema224'];
+      receivedAt: components['schemas']['schema229'];
+      receiverEffectId: components['schemas']['schema228'];
       remoteRef: components['schemas']['SignedWebhookUrlSchema'];
-      requestBodySha256: components['schemas']['schema215'];
-      schemaVersion: components['schemas']['schema219'];
-      status: components['schemas']['schema222'];
+      requestBodySha256: components['schemas']['schema219'];
+      schemaVersion: components['schemas']['schema223'];
+      status: components['schemas']['schema226'];
       verifiedAlgorithm: components['schemas']['SignedWebhookSigningAlgorithmSchema'];
       verifiedKeyId: components['schemas']['SignedWebhookKeyIdSchema'];
     };
@@ -5116,10 +5124,10 @@ export interface components {
     SignedWebhookTargetV1Schema: {
       algorithm: components['schemas']['SignedWebhookSigningAlgorithmSchema'];
       endpointUrl: components['schemas']['SignedWebhookUrlSchema'];
-      endpointVerificationId: components['schemas']['schema228'];
+      endpointVerificationId: components['schemas']['schema232'];
       keyId: components['schemas']['SignedWebhookKeyIdSchema'];
       receiptUrl: components['schemas']['SignedWebhookUrlSchema'];
-      schemaVersion: components['schemas']['schema227'];
+      schemaVersion: components['schemas']['schema231'];
     };
     SignedWebhookUrlSchema: string;
     SiteBaselineEnvelopeSchema: {
@@ -5152,18 +5160,18 @@ export interface components {
       };
     };
     SiteBaselineSchema: {
-      completedAt: components['schemas']['schema238'];
-      errorCode: components['schemas']['schema235'];
-      findings: components['schemas']['schema240'];
-      id: components['schemas']['schema229'];
-      jobId: components['schemas']['schema233'];
-      pageCount: components['schemas']['schema236'];
-      siteId: components['schemas']['schema232'];
-      snapshots: components['schemas']['schema239'];
-      status: components['schemas']['schema234'];
-      tenantId: components['schemas']['schema230'];
-      totalBytes: components['schemas']['schema237'];
-      workspaceId: components['schemas']['schema231'];
+      completedAt: components['schemas']['schema242'];
+      errorCode: components['schemas']['schema239'];
+      findings: components['schemas']['schema244'];
+      id: components['schemas']['schema233'];
+      jobId: components['schemas']['schema237'];
+      pageCount: components['schemas']['schema240'];
+      siteId: components['schemas']['schema236'];
+      snapshots: components['schemas']['schema243'];
+      status: components['schemas']['schema238'];
+      tenantId: components['schemas']['schema234'];
+      totalBytes: components['schemas']['schema241'];
+      workspaceId: components['schemas']['schema235'];
     };
     SiteEnvelopeSchema: {
       data: {
@@ -5228,7 +5236,7 @@ export interface components {
     StartArtifactGenerationRequestSchema: {
       briefId: components['schemas']['schema6'];
       /** @description Deprecated client estimate; accepted for compatibility and ignored by the server. */
-      estimatedUnits?: components['schemas']['schema241'];
+      estimatedUnits?: components['schemas']['schema245'];
       idempotencyKey: string;
       locale: string;
       market: string;
@@ -5246,13 +5254,13 @@ export interface components {
       baselineId: components['schemas']['schema1'];
       comparisonClaimRevisionIds: components['schemas']['schema1'][];
       /** @description Deprecated client estimate; accepted for compatibility and ignored by the server. */
-      estimatedUnits?: components['schemas']['schema242'];
+      estimatedUnits?: components['schemas']['schema246'];
       idempotencyKey: string;
       /** @constant */
       methodPolicyVersion: 'content-plan-v1';
-      offering: components['schemas']['schema67'];
+      offering: components['schemas']['schema71'];
       primaryClaimRevisionIds: components['schemas']['schema1'][];
-      profile: components['schemas']['schema67'];
+      profile: components['schemas']['schema71'];
       promptRevisionId: components['schemas']['schema1'];
       promptSetId: components['schemas']['schema1'];
     };
@@ -5264,18 +5272,18 @@ export interface components {
         job: components['schemas']['JobSchema'];
         measurementRun: components['schemas']['MeasurementRunSchema'];
       };
-      meta: components['schemas']['schema145'];
+      meta: components['schemas']['schema149'];
     };
     StartMeasurementRunRequestSchema: {
-      expectedManualImportHash?: components['schemas']['schema249'];
-      expectedPromptHash: components['schemas']['schema246'];
-      expectedScenarioHash: components['schemas']['schema247'];
-      idempotencyKey: components['schemas']['schema250'];
+      expectedManualImportHash?: components['schemas']['schema253'];
+      expectedPromptHash: components['schemas']['schema250'];
+      expectedScenarioHash: components['schemas']['schema251'];
+      idempotencyKey: components['schemas']['schema254'];
       kind: components['schemas']['MeasurementRunKindSchema'];
-      manualImportId?: components['schemas']['schema248'];
-      promptRevisionId: components['schemas']['schema244'];
-      promptSetId: components['schemas']['schema243'];
-      scenarioId: components['schemas']['schema245'];
+      manualImportId?: components['schemas']['schema252'];
+      promptRevisionId: components['schemas']['schema248'];
+      promptSetId: components['schemas']['schema247'];
+      scenarioId: components['schemas']['schema249'];
     };
     StepStateSchema: {
       blockingReason: string | null;
@@ -5321,13 +5329,13 @@ export interface components {
       data: {
         policy: components['schemas']['TenantBudgetPolicySchema'];
       };
-      meta: components['schemas']['schema192'];
+      meta: components['schemas']['schema196'];
     };
     TenantBudgetPolicySchema: {
-      id: components['schemas']['schema188'];
-      limitUnits: components['schemas']['schema190'];
-      tenantId: components['schemas']['schema189'];
-      warningPercent: components['schemas']['schema191'];
+      id: components['schemas']['schema192'];
+      limitUnits: components['schemas']['schema194'];
+      tenantId: components['schemas']['schema193'];
+      warningPercent: components['schemas']['schema195'];
     };
     TenantDeletionReceiptEnvelopeSchema: {
       data: {
@@ -5342,7 +5350,7 @@ export interface components {
       requestedAt: components['schemas']['schema24'];
       scope: components['schemas']['DeletionScopeSchema'];
       secretForceDeleteBy: components['schemas']['schema24'];
-      state: components['schemas']['schema176'];
+      state: components['schemas']['schema180'];
     };
     TenantExportDisclosuresSchema: {
       /** @constant */
@@ -5371,9 +5379,9 @@ export interface components {
     };
     TenantExportManifestSchema: {
       disclosures: components['schemas']['TenantExportDisclosuresSchema'];
-      files: components['schemas']['schema253'];
-      objects: components['schemas']['schema252'];
-      schemaVersion: components['schemas']['schema251'];
+      files: components['schemas']['schema257'];
+      objects: components['schemas']['schema256'];
+      schemaVersion: components['schemas']['schema255'];
       tenantId: components['schemas']['schema23'];
       timeRange: components['schemas']['PrivacyTimeRangeSchema'];
     };
@@ -5388,13 +5396,13 @@ export interface components {
       | 'PUBLICATION'
       | 'AUDIT_EVENT';
     TenantExportSchema: {
-      archiveReady: components['schemas']['schema255'];
-      archiveStatus: components['schemas']['schema254'];
+      archiveReady: components['schemas']['schema259'];
+      archiveStatus: components['schemas']['schema258'];
       checksum: components['schemas']['schema25'];
       createdAt: components['schemas']['schema24'];
       id: components['schemas']['schema23'];
       manifest: components['schemas']['TenantExportManifestSchema'];
-      objectRef: components['schemas']['schema256'];
+      objectRef: components['schemas']['schema260'];
     };
     /** @enum {string} */
     TenantRoleSchema:
@@ -5420,19 +5428,19 @@ export interface components {
         pendingFaqs: components['schemas']['WebsiteImportFaqCandidateSchema'][];
         profileId: string | null;
       };
-      meta: components['schemas']['schema257'];
+      meta: components['schemas']['schema261'];
     };
     WebsiteImportConfirmRequestSchema: {
       /** @default true */
       createProfile: boolean;
       /** @default [] */
-      offeringCandidateIds: components['schemas']['schema258'][];
+      offeringCandidateIds: components['schemas']['schema262'][];
     };
     WebsiteImportEnvelopeSchema: {
       data: {
         websiteImport: components['schemas']['WebsiteImportSessionSchema'];
       };
-      meta: components['schemas']['schema257'];
+      meta: components['schemas']['schema261'];
     };
     WebsiteImportFaqCandidateSchema: {
       answer: string;
@@ -5481,63 +5489,63 @@ export interface components {
     /** @enum {string} */
     WebsiteImportStatusSchema: 'PENDING_CONFIRMATION' | 'CONFIRMED';
     WordPressDraftTargetV1Schema: {
-      authMode: components['schemas']['schema259'];
+      authMode: components['schemas']['schema263'];
       destination:
         | {
             /** @constant */
             kind: 'PAGE';
             /** @constant */
             operation: 'CREATE';
-            slug: components['schemas']['schema260'];
+            slug: components['schemas']['schema264'];
           }
         | {
             /** @constant */
             kind: 'PAGE';
             /** @constant */
             operation: 'UPDATE';
-            remoteId: components['schemas']['schema261'];
-            slug: components['schemas']['schema260'];
+            remoteId: components['schemas']['schema265'];
+            slug: components['schemas']['schema264'];
           }
         | {
-            categoryIds: components['schemas']['schema262'];
+            categoryIds: components['schemas']['schema266'];
             /** @constant */
             kind: 'POST';
             /** @constant */
             operation: 'CREATE';
-            slug: components['schemas']['schema260'];
+            slug: components['schemas']['schema264'];
           }
         | {
-            categoryIds: components['schemas']['schema262'];
+            categoryIds: components['schemas']['schema266'];
             /** @constant */
             kind: 'POST';
             /** @constant */
             operation: 'UPDATE';
-            remoteId: components['schemas']['schema261'];
-            slug: components['schemas']['schema260'];
+            remoteId: components['schemas']['schema265'];
+            slug: components['schemas']['schema264'];
           }
         | {
-            categoryIds: components['schemas']['schema262'];
+            categoryIds: components['schemas']['schema266'];
             /** @constant */
             kind: 'PRODUCT';
             /** @constant */
             operation: 'CREATE';
-            slug: components['schemas']['schema260'];
+            slug: components['schemas']['schema264'];
           }
         | {
-            categoryIds: components['schemas']['schema262'];
+            categoryIds: components['schemas']['schema266'];
             /** @constant */
             kind: 'PRODUCT';
             /** @constant */
             operation: 'UPDATE';
-            remoteId: components['schemas']['schema261'];
-            slug: components['schemas']['schema260'];
+            remoteId: components['schemas']['schema265'];
+            slug: components['schemas']['schema264'];
           };
       /** @constant */
       schemaVersion: 'wordpress-draft-target.v1';
       siteUrl: string;
     };
     WordPressSiteAuthorizationTargetV1Schema: {
-      authMode: components['schemas']['schema259'];
+      authMode: components['schemas']['schema263'];
       /** @constant */
       schemaVersion: 'wordpress-site-auth.v1';
       siteUrl: string;
@@ -5563,13 +5571,13 @@ export interface components {
       data: {
         policy: components['schemas']['WorkspaceBudgetPolicySchema'];
       };
-      meta: components['schemas']['schema192'];
+      meta: components['schemas']['schema196'];
     };
     WorkspaceBudgetPolicySchema: {
-      id: components['schemas']['schema188'];
-      limitUnits: components['schemas']['schema190'];
-      tenantId: components['schemas']['schema189'];
-      warningPercent: components['schemas']['schema191'];
+      id: components['schemas']['schema192'];
+      limitUnits: components['schemas']['schema194'];
+      tenantId: components['schemas']['schema193'];
+      warningPercent: components['schemas']['schema195'];
       /** Format: uuid */
       workspaceId: string;
     };
